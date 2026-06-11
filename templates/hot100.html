@@ -401,7 +401,6 @@
                     {% endfor %}
 
                     {% if chart_songs|length > 10 %}
-                    <tr class="section-row"><td colspan="7" style="padding:0"><div class="section-label">11 – 100</div></td></tr>
                     {% for song in chart_songs[10:] %}
                     <tr data-artist="{{ song.artist|e }}" data-song="{{ song.song|e }}">
                         <td class="cell-rank"><div class="rank-num">{{ song.rank }}</div></td>
