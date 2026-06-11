@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ artist_name }} - Chart History</title>
+    <style>
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: url('/static/fonts/SFPRODISPLAYMEDIUM.OTF') format('opentype');
+            font-weight: 400 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #09090b;
+            --surface: #111113;
+            --surface-hover: #18181b;
+            --border: #27272a;
+            --border-accent: #3f3f46;
+            --text: #fafafa;
+            --text-muted: #71717a;
+            --text-dim: #52525b;
+            --accent: #fafafa;
+            --accent-dim: rgba(250,250,250,0.08);
+            --green: #4ade80;
+            --green-dim: rgba(74,222,128,0.12);
+            --red: #f87171;
+            --yellow: #fbbf24;
+            --yellow-dim: rgba(251,191,36,0.12);
+            --spotify: #1DB954;
+            --spotify-dim: rgba(29,185,84,0.10);
+            --section-gap: 1.75rem;
+            --stat-min-width: 7.5rem;
+            --num-font: 'SF Pro Display', -apple-system, BlinkMacSystemFont, ui-sans-serif, sans-serif;
+            --stat-value-size: 1.05rem;
+            --stat-label-size: 0.68rem;
+            --stat-label-tracking: 0.08em;
+            --row-pad-y: 0.85rem;
+            --row-pad-x: 0.85rem;
+            --hairline: rgba(255,255,255,0.04);
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        .nav {
+            display: flex;
+            gap: 0.25rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--bg);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(12px);
+        }
+        .nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            transition: color 0.15s, background 0.15s;
+        }
+        .nav a:hover { color: var(--text); background: var(--surface); }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 3rem; }
+
+        .page-header {
+            padding: 2.5rem 0 2rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+        .page-title { font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; }
+        .page-subtitle { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+        .stats-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+            flex-wrap: wrap;
+        }
+        .stat-pill {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+        .stat-pill-value { font-size: 1.25rem; font-weight: 700; color: var(--text); }
+        .stat-pill-label { font-size: 0.75rem; color: var(--text-muted); }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 1.25rem;
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 1.125rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .card-title { font-size: 0.875rem; font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
+        .card-body { padding: 1.5rem; }
+
+        /* Artist overview */
+        .artist-overview { display: none; }
+        .artist-profile { display: flex; align-items: flex-start; gap: 1.5rem; }
+        .artist-image {
+            width: 76px; height: 76px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--border-accent);
+            flex-shrink: 0;
+        }
+        .artist-meta { flex: 1; min-width: 0; }
+        .artist-name { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.35rem; }
+        .artist-genres { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-bottom: 0.625rem; }
+        .genre-tag {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            background: var(--surface-hover);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0.2rem 0.5rem;
+        }
+        .spotify-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(var(--stat-min-width), 1fr));
+            gap: 0;
+            margin: 0.85rem 0 0.5rem;
+            padding: 0.85rem 0.25rem;
+            background: linear-gradient(180deg, rgba(29,185,84,0.04), rgba(29,185,84,0) 70%), var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            align-items: stretch;
+        }
+        .spotify-stat {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 0.25rem 1rem;
+            min-height: 3rem;
+            border-right: 1px solid var(--hairline);
+        }
+        .spotify-stat:last-child { border-right: none; }
+        .spotify-stat-value {
+            font-size: var(--stat-value-size);
+            font-weight: 700;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
+            letter-spacing: -0.01em;
+            line-height: 1.05;
+        }
+        .spotify-stat-label {
+            font-size: var(--stat-label-size);
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: var(--stat-label-tracking);
+            font-weight: 600;
+        }
+        .popularity-bar-wrap { display: flex; align-items: center; gap: 0.5rem; }
+        .popularity-bar {
+            height: 4px;
+            flex: 1;
+            min-width: 40px;
+            max-width: 80px;
+            border-radius: 2px;
+            background: var(--border);
+            overflow: hidden;
+        }
+        .popularity-fill { height: 100%; background: var(--spotify); border-radius: 2px; transition: width 0.6s ease; }
+        @media (max-width: 640px) {
+            .spotify-stat { border-right: none; border-bottom: 1px solid var(--border); }
+            .spotify-stat:last-child { border-bottom: none; }
+        }
+        .social-icons { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .social-icon {
+            height: 32px;
+            border-radius: 16px;
+            background: var(--spotify);
+            border: 1px solid var(--spotify);
+            display: inline-flex; align-items: center; gap: 0.375rem;
+            padding: 0 0.85rem;
+            text-decoration: none;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            transition: all 0.15s;
+        }
+        .social-icon:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(29,185,84,0.4); }
+        .social-icon svg { flex-shrink: 0; }
+
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border) 18%, var(--border) 82%, transparent);
+            margin: var(--section-gap) 0 1.25rem;
+        }
+
+        /* Chart */
+        .chart-wrap { padding: 1.5rem; }
+        .chart-wrap canvas { width: 100% !important; }
+
+        /* Tabs */
+        .tabs-nav { display: flex; border-bottom: 1px solid var(--border); }
+        .tab-btn {
+            padding: 1rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: all 0.15s;
+        }
+        .tab-btn:hover { color: var(--text); background: var(--accent-dim); }
+        .tab-btn.active { color: var(--text); border-bottom-color: var(--text); }
+
+        /* Table */
+        .chart-table { width: 100%; border-collapse: collapse; }
+        .chart-table thead th {
+            padding: 0.625rem 0.75rem;
+            text-align: left;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        .chart-table thead th:first-child { padding-left: 1.25rem; }
+        .chart-table thead th:last-child { padding-right: 1.25rem; }
+        .chart-table tbody tr {
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.1s;
+            animation: rowIn 0.3s both;
+        }
+        @keyframes rowIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        .chart-table tbody tr:last-child { border-bottom: none; }
+        .chart-table tbody tr:hover { background: var(--surface-hover); }
+        .chart-table td { padding: 0.75rem; vertical-align: middle; }
+        .chart-table td:first-child { padding-left: 1.25rem; }
+        .chart-table td:last-child { padding-right: 1.25rem; }
+
+        .peak-badge-cell {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            min-width: 2.5rem;
+            text-align: center;
+        }
+        .peak-badge-cell.peak-1 { color: var(--yellow); }
+        .peak-badge-cell.peak-top10 { color: var(--green); }
+
+        .cell-art { width: 60px; }
+        .art-thumb {
+            width: 44px; height: 44px;
+            border-radius: 6px;
+            overflow: hidden;
+            background: var(--surface-hover);
+            border: 1px solid var(--border);
+        }
+        .art-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .song-title { font-size: 0.9rem; font-weight: 600; color: var(--text); line-height: 1.3; }
+        .song-hint { font-size: 0.72rem; color: var(--text-dim); margin-top: 0.1rem; }
+        .stat-val { font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; }
+
+        .row-number-one { background: var(--yellow-dim); }
+        .row-number-one:hover { background: rgba(251,191,36,0.18) !important; }
+        .row-number-one .song-title { color: var(--yellow); }
+
+        .col-hide { }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            animation: fadeIn 0.2s;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal-content {
+            background: var(--surface);
+            margin: 5% auto;
+            border: 1px solid var(--border-accent);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 540px;
+            max-height: 82vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: slideIn 0.2s;
+        }
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: none; opacity: 1; } }
+        .modal-header {
+            padding: 1.125rem 1.5rem;
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .modal-header h2 { font-size: 0.95rem; font-weight: 600; letter-spacing: -0.01em; }
+        .modal-close {
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.15s;
+            background: none;
+            border: none;
+            font-family: inherit;
+        }
+        .modal-close:hover { color: var(--text); }
+        .modal-body { padding: 1rem 1.5rem; overflow-y: auto; flex: 1; }
+        .song-streams-strip {
+            align-items: baseline;
+            gap: 0.6rem;
+            padding: 0.625rem 0.85rem;
+            margin-bottom: 0.75rem;
+            background: var(--surface-hover);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+        .song-streams-value { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+        .song-streams-daily { font-size: 0.75rem; color: #1DB954; font-weight: 600; }
+        .song-streams-meta { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.02em; margin-left: auto; }
+        .modal-body::-webkit-scrollbar { width: 4px; }
+        .modal-body::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 2px; }
+
+        .weekly-list { display: flex; flex-direction: column; gap: 0.4rem; }
+        .weekly-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.12s;
+            text-decoration: none;
+            color: inherit;
+        }
+        .weekly-row:hover { border-color: var(--green); background: var(--surface-hover); transform: translateX(3px); }
+        .weekly-row.is-peak { border-color: var(--text); }
+        .week-meta { display: flex; flex-direction: column; gap: 0.15rem; }
+        .week-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+        .week-date { font-size: 0.875rem; color: var(--text); }
+        .week-right { display: flex; align-items: center; gap: 0.5rem; }
+        .week-rank { font-size: 1.4rem; font-weight: 700; color: var(--text); }
+        .peak-tag {
+            background: var(--text);
+            color: var(--bg);
+            padding: 0.15rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        /* Actions */
+        .actions-card { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
+        select#reportType {
+            padding: 0.75rem 1rem;
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-family: inherit;
+            cursor: pointer;
+            width: 100%;
+        }
+        select#reportType:focus { outline: none; border-color: var(--border-accent); }
+        .btn-download {
+            width: 100%;
+            padding: 0.875rem;
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .btn-download:hover { opacity: 0.88; }
+        .btn-secondary {
+            display: block;
+            width: 100%;
+            padding: 0.875rem;
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-family: inherit;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.15s;
+        }
+        .btn-secondary:hover { color: var(--text); border-color: var(--border-accent); background: var(--surface-hover); }
+
+        footer {
+            text-align: center;
+            color: var(--text-dim);
+            padding: 2rem 0 1rem;
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+            margin-top: 1rem;
+        }
+        .footer-social-links { display: flex; justify-content: center; gap: 1rem; margin-bottom: 0.75rem; }
+        .footer-link { color: var(--text-dim); opacity: 0.6; text-decoration: none; padding: 0.4rem; border-radius: 6px; transition: all 0.2s; display: flex; }
+        .footer-link:hover { opacity: 1; transform: translateY(-2px); }
+
+        @media (max-width: 640px) {
+            .container { padding: 0 1rem 2rem; }
+            .stats-row { gap: 0.5rem; }
+            .col-hide { display: none; }
+            .artist-profile { flex-direction: column; text-align: center; }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <nav class="nav">
+        <a href="{{ url_for('index') }}">Home</a>
+        <a href="{{ url_for('top100') }}">Top 100</a>
+        <a href="{{ url_for('albums200') }}">Album Charts 200</a>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <div class="page-title">{{ artist_name }}</div>
+            <div class="page-subtitle">U.S. Top Charts 100 — Chart History</div>
+            <div class="stats-row">
+                <div class="stat-pill">
+                    <span class="stat-pill-value">{{ total_songs }}</span>
+                    <span class="stat-pill-label">Songs Charted</span>
+                </div>
+                <div class="stat-pill">
+                    <span class="stat-pill-value">{{ top_10_hits }}</span>
+                    <span class="stat-pill-label">Top 10 Hits</span>
+                </div>
+                <div class="stat-pill">
+                    <span class="stat-pill-value">{{ number_ones }}</span>
+                    <span class="stat-pill-label">#1 Songs</span>
+                </div>
+                {% if albums and albums|length > 0 %}
+                <div class="stat-pill">
+                    <span class="stat-pill-value">{{ total_albums }}</span>
+                    <span class="stat-pill-label">Albums Charted</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Artist Overview (shown via JS) -->
+        <div class="card artist-overview" id="artistOverview">
+            <div class="card-body">
+                <div class="artist-profile">
+                    <img id="artistImage" src="" alt="Artist" class="artist-image">
+                    <div class="artist-meta">
+                        <div class="artist-name" id="artistDisplayName"></div>
+                        <div class="artist-genres" id="artistGenres"></div>
+                        <div class="spotify-stats" id="spotifyStats"></div>
+                        <div class="social-icons" id="artistSocialLinks"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Peak Chart -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Peak Chart Positions — click a bar to see week-by-week</span>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="chartCanvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Songs / Albums Table -->
+        <div class="card">
+            <div class="tabs-nav">
+                <button class="tab-btn active" id="songsTab" onclick="switchTab('songs')">Songs ({{ total_songs }})</button>
+                {% if albums and albums|length > 0 %}
+                <button class="tab-btn" id="albumsTab" onclick="switchTab('albums')">Albums ({{ total_albums }})</button>
+                {% endif %}
+            </div>
+
+            <div id="songsContent">
+                <table class="chart-table">
+                    <thead>
+                        <tr>
+                            <th>Peak</th>
+                            <th class="cell-art"></th>
+                            <th>Song</th>
+                            <th class="col-hide">Weeks</th>
+                            <th class="col-hide">First Charted</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for song in songs %}
+                        <tr class="{% if song.is_number_one %}row-number-one{% endif %}"
+                            data-song="{{ song.name|e }}"
+                            data-song-only="{{ song.song_only|e }}"
+                            data-artist-only="{{ song.artist_only|e }}">
+                            <td>
+                                <div class="peak-badge-cell {% if song.peak == 1 %}peak-1{% elif song.peak <= 10 %}peak-top10{% endif %}">#{{ song.peak }}</div>
+                            </td>
+                            <td class="cell-art">
+                                <div class="art-thumb">
+                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Crect fill='%2318181b' width='44' height='44'/%3E%3C/svg%3E"
+                                         alt="" loading="lazy">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="song-title">{{ song.song_only }}</div>
+                                
+                            </td>
+                            <td class="col-hide"><div class="stat-val">{{ song.weeks }}</div></td>
+                            <td class="col-hide"><div class="stat-val">{{ song.first_date }}</div></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if albums and albums|length > 0 %}
+            <div id="albumsContent" style="display:none;">
+                <table class="chart-table">
+                    <thead>
+                        <tr>
+                            <th>Peak</th>
+                            <th class="cell-art"></th>
+                            <th>Album</th>
+                            <th class="col-hide">Weeks</th>
+                            <th class="col-hide">First Charted</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for album in albums %}
+                        <tr class="{% if album.is_number_one %}row-number-one{% endif %}"
+                            data-album="{{ album.name|e }}"
+                            data-album-only="{{ album.album_only|e }}"
+                            data-artist-only="{{ album.artist_only|e }}">
+                            <td>
+                                <div class="peak-badge-cell {% if album.peak == 1 %}peak-1{% elif album.peak <= 10 %}peak-top10{% endif %}">#{{ album.peak }}</div>
+                            </td>
+                            <td class="cell-art">
+                                <div class="art-thumb">
+                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Crect fill='%2318181b' width='44' height='44'/%3E%3C/svg%3E"
+                                         alt="" loading="lazy">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="song-title">{{ album.name }}</div>
+                                
+                            </td>
+                            <td class="col-hide"><div class="stat-val">{{ album.weeks }}</div></td>
+                            <td class="col-hide"><div class="stat-val">{{ album.first_date }}</div></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Weekly Detail Modal -->
+        <div id="songModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalSongName"></h2>
+                    <button class="modal-close" id="modalCloseBtn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="songStreamsStrip" class="song-streams-strip" style="display:none;"></div>
+                    <div id="weeklyData" class="weekly-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="card">
+            <div class="actions-card">
+                <select id="reportType">
+                    <option value="songs">Songs Report</option>
+                    {% if albums and albums|length > 0 %}
+                    <option value="albums">Albums Report</option>
+                    {% endif %}
+                </select>
+                <button id="downloadBtn" class="btn-download" data-artist="{{ artist_name|e }}">Download Excel Report</button>
+                <a href="{{ url_for('index') }}" class="btn-secondary">Search Another Artist</a>
+            </div>
+        </div>
+
+        <!-- Rate Limit Modal -->
+        <div id="rateLimitModal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Download Limit Reached</h2>
+                    <button class="modal-close" id="rateLimitClose">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p id="rateLimitMessage" style="color:var(--text-muted);padding:0.5rem 0;"></p>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="footer-social-links">
+                <a href="https://www.youtube.com/@HistoryCharts" target="_blank" class="footer-link" title="YouTube">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                </a>
+                <a href="https://www.patreon.com/Chart_History" target="_blank" class="footer-link" title="Patreon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003"/></svg>
+                </a>
+            </div>
+            <p>U.S. Top Charts 100 Chart Analyzer</p>
+        </footer>
+    </div>
+
+    <script>
+        const chartData = {{ chart_data|tojson }};
+        const artistName = {{ artist_name|tojson }};
+
+        // ── Artist info ───────────────────────────────────────────────
+        fetch('/api/artist-info/' + encodeURIComponent(artistName))
+            .then(r => r.ok ? r.json() : Promise.reject())
+            .then(data => {
+                if (data.error) return;
+                document.getElementById('artistOverview').style.display = 'block';
+                document.getElementById('artistDisplayName').textContent = data.name;
+                const img = document.getElementById('artistImage');
+                if (data.image_url) {
+                    img.src = data.image_url;
+                    img.onerror = () => { img.style.display = 'none'; };
+                } else {
+                    img.style.display = 'none';
+                }
+                // Genres
+                const genresEl = document.getElementById('artistGenres');
+                if (data.spotify_genres && data.spotify_genres.length) {
+                    data.spotify_genres.forEach(g => {
+                        const tag = document.createElement('span');
+                        tag.className = 'genre-tag';
+                        tag.textContent = g;
+                        genresEl.appendChild(tag);
+                    });
+                }
+
+                // Spotify stats: followers + popularity
+                const statsEl = document.getElementById('spotifyStats');
+                function formatBig(raw) {
+                    return raw >= 1000000
+                        ? (raw / 1000000).toFixed(1) + 'M'
+                        : raw >= 1000 ? Math.round(raw / 1000) + 'K' : String(raw);
+                }
+                function addStat(value, label) {
+                    const statDiv = document.createElement('div');
+                    statDiv.className = 'spotify-stat';
+                    const val = document.createElement('span');
+                    val.className = 'spotify-stat-value';
+                    val.textContent = value;
+                    const lbl = document.createElement('span');
+                    lbl.className = 'spotify-stat-label';
+                    lbl.textContent = label;
+                    statDiv.appendChild(val);
+                    statDiv.appendChild(lbl);
+                    statsEl.appendChild(statDiv);
+                }
+                if (data.monthly_listeners != null) {
+                    addStat(formatBig(data.monthly_listeners), 'Listeners');
+                }
+                if (data.listeners_peak != null) {
+                    addStat(formatBig(data.listeners_peak), 'Peak Listeners');
+                }
+                if (data.spotify_followers != null) {
+                    const raw = data.spotify_followers;
+                    const fmtd = raw >= 1000000
+                        ? (raw / 1000000).toFixed(1) + 'M'
+                        : raw >= 1000 ? Math.round(raw / 1000) + 'K' : String(raw);
+                    const statDiv = document.createElement('div');
+                    statDiv.className = 'spotify-stat';
+                    const val = document.createElement('span');
+                    val.className = 'spotify-stat-value';
+                    val.textContent = fmtd;
+                    const lbl = document.createElement('span');
+                    lbl.className = 'spotify-stat-label';
+                    lbl.textContent = 'Followers';
+                    statDiv.appendChild(val);
+                    statDiv.appendChild(lbl);
+                    statsEl.appendChild(statDiv);
+                }
+                if (data.spotify_popularity != null) {
+                    const statDiv = document.createElement('div');
+                    statDiv.className = 'spotify-stat';
+                    const barWrap = document.createElement('div');
+                    barWrap.className = 'popularity-bar-wrap';
+                    const bar = document.createElement('div');
+                    bar.className = 'popularity-bar';
+                    const fill = document.createElement('div');
+                    fill.className = 'popularity-fill';
+                    fill.style.width = data.spotify_popularity + '%';
+                    bar.appendChild(fill);
+                    const score = document.createElement('span');
+                    score.className = 'spotify-stat-value';
+                    score.style.fontSize = '0.875rem';
+                    score.textContent = String(data.spotify_popularity);
+                    barWrap.appendChild(bar);
+                    barWrap.appendChild(score);
+                    const lbl = document.createElement('span');
+                    lbl.className = 'spotify-stat-label';
+                    lbl.textContent = 'Popularity';
+                    statDiv.appendChild(barWrap);
+                    statDiv.appendChild(lbl);
+                    statsEl.appendChild(statDiv);
+                }
+
+                // Spotify link button with SVG logo
+                if (data.spotify_url) {
+                    const links = document.getElementById('artistSocialLinks');
+                    const a = document.createElement('a');
+                    a.href = data.spotify_url;
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    a.className = 'social-icon';
+                    a.title = 'Open on Spotify';
+                    const svgNS = 'http://www.w3.org/2000/svg';
+                    const svg = document.createElementNS(svgNS, 'svg');
+                    svg.setAttribute('width', '14');
+                    svg.setAttribute('height', '14');
+                    svg.setAttribute('viewBox', '0 0 24 24');
+                    svg.setAttribute('fill', 'currentColor');
+                    const path = document.createElementNS(svgNS, 'path');
+                    path.setAttribute('d', 'M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z');
+                    svg.appendChild(path);
+                    a.appendChild(svg);
+                    a.appendChild(document.createTextNode('Spotify'));
+                    links.appendChild(a);
+                }
+            })
+            .catch(() => {});
+
+        // ── Lazy load artwork ─────────────────────────────────────────
+        const imgObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                const img = entry.target;
+                if (img.dataset.loaded) return;
+                img.dataset.loaded = '1';
+                const row = img.closest('tr');
+                if (!row) return;
+                const songOnly = row.dataset.songOnly;
+                const albumOnly = row.dataset.albumOnly;
+                const artistOnly = row.dataset.artistOnly;
+                const endpoint = songOnly
+                    ? '/api/song-image/' + encodeURIComponent(artistOnly) + '/' + encodeURIComponent(songOnly)
+                    : albumOnly
+                    ? '/api/album-image/' + encodeURIComponent(artistOnly) + '/' + encodeURIComponent(albumOnly)
+                    : null;
+                if (endpoint) {
+                    fetch(endpoint)
+                        .then(r => r.ok ? r.json() : Promise.reject())
+                        .then(d => { if (d.image_url) img.src = d.image_url; })
+                        .catch(() => {});
+                }
+                imgObserver.unobserve(img);
+            });
+        }, { rootMargin: '100px' });
+        document.querySelectorAll('.art-thumb img').forEach(img => imgObserver.observe(img));
+
+        // ── Row animations ────────────────────────────────────────────
+        document.querySelectorAll('.chart-table tbody tr').forEach((row, i) => {
+            row.style.animationDelay = Math.min(i * 0.025, 1.0) + 's';
+        });
+
+        // ── Peak bar chart ────────────────────────────────────────────
+        const songs = Object.keys(chartData);
+        const peaks = songs.map(s => chartData[s].length ? Math.min(...chartData[s].map(e => e.rank)) : 100);
+
+        const order = Array.from({length: songs.length}, (_, i) => i)
+            .sort((a, b) => peaks[a] - peaks[b]);
+
+        const truncate = (s, n) => s.length > n ? s.slice(0, n) + '\u2026' : s;
+        const sortedLabels = order.map(i => truncate(songs[i].split(' (')[0], 26));
+        const sortedPeaks  = order.map(i => peaks[i]);
+        const sortedNames  = order.map(i => songs[i]);
+        const sortedColors = sortedPeaks.map(p =>
+            p === 1  ? 'rgba(251,191,36,0.85)' :
+            p <= 10  ? 'rgba(74,222,128,0.75)'  :
+            p <= 40  ? 'rgba(250,250,250,0.35)'  :
+                       'rgba(250,250,250,0.18)'
+        );
+
+        const barH = Math.max(26, Math.min(38, 360 / Math.max(sortedLabels.length, 1)));
+        const ctx = document.getElementById('chartCanvas').getContext('2d');
+        ctx.canvas.height = Math.max(160, sortedLabels.length * (barH + 5) + 48);
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: sortedLabels,
+                datasets: [{
+                    data: sortedPeaks,
+                    backgroundColor: sortedColors,
+                    borderRadius: 4,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 500 },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: items => sortedNames[items[0].dataIndex],
+                            label: item => '  Peak: #' + item.raw
+                        },
+                        backgroundColor: '#111113',
+                        titleColor: '#fafafa',
+                        bodyColor: '#71717a',
+                        borderColor: '#27272a',
+                        borderWidth: 1,
+                        padding: 10
+                    }
+                },
+                scales: {
+                    x: {
+                        reverse: true,
+                        min: 1,
+                        max: 100,
+                        grid: { color: '#27272a' },
+                        ticks: {
+                            color: '#71717a',
+                            callback: v => Number.isInteger(v) ? '#' + v : ''
+                        },
+                        title: { display: true, text: 'Peak Position  (\u2190 #1 is best)', color: '#52525b', font: { size: 11 } }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { color: '#a1a1aa', font: { size: 11 } }
+                    }
+                },
+                onClick: (evt, elements) => {
+                    if (elements.length) showSongDetails(sortedNames[elements[0].index]);
+                }
+            }
+        });
+
+        // ── Row clicks ────────────────────────────────────────────────
+        document.querySelectorAll('#songsContent tbody tr').forEach(row => {
+            row.addEventListener('click', () => showSongDetails(row.dataset.song));
+        });
+        document.querySelectorAll('#albumsContent tbody tr').forEach(row => {
+            row.addEventListener('click', () => showAlbumDetails(row.dataset.album));
+        });
+
+        // ── Modal helpers ─────────────────────────────────────────────
+        const songModal = document.getElementById('songModal');
+
+        function makeWeekRow(date, weekLabel, rank, isPeak, href) {
+            // date is a 'YYYY-MM-DD' string; new Date() would parse it as UTC and
+            // shift to the prior day in negative-offset timezones. Parse parts manually.
+            const [y, mo, dy] = String(date).split('-');
+            const fmt = mo + '/' + dy + '/' + y;
+
+            const a = document.createElement('a');
+            a.className = 'weekly-row' + (isPeak ? ' is-peak' : '');
+            a.href = href;
+
+            const left = document.createElement('div');
+            left.className = 'week-meta';
+            const lbl = document.createElement('span');
+            lbl.className = 'week-label';
+            lbl.textContent = weekLabel;
+            const dt = document.createElement('span');
+            dt.className = 'week-date';
+            dt.textContent = fmt;
+            left.appendChild(lbl);
+            left.appendChild(dt);
+
+            const right = document.createElement('div');
+            right.className = 'week-right';
+            const rankEl = document.createElement('span');
+            rankEl.className = 'week-rank';
+            rankEl.textContent = '#' + rank;
+            right.appendChild(rankEl);
+            if (isPeak) {
+                const tag = document.createElement('span');
+                tag.className = 'peak-tag';
+                tag.textContent = 'PEAK';
+                right.appendChild(tag);
+            }
+
+            a.appendChild(left);
+            a.appendChild(right);
+            return a;
+        }
+
+        function fmtStreams(n) {
+            if (n == null) return null;
+            if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+            if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+            if (n >= 1e3) return Math.round(n / 1e3) + 'K';
+            return String(n);
+        }
+
+        function loadSongStreams(artistOnly, songOnly) {
+            const stripBox = document.getElementById('songStreamsStrip');
+            stripBox.style.display = 'none';
+            stripBox.textContent = '';
+            fetch('/api/song-streams/' + encodeURIComponent(artistOnly) + '/' + encodeURIComponent(songOnly))
+                .then(r => r.ok ? r.json() : Promise.reject())
+                .then(d => {
+                    if (d.streams == null) return;
+                    const val = document.createElement('span');
+                    val.className = 'song-streams-value';
+                    val.textContent = fmtStreams(d.streams) + ' streams';
+                    stripBox.appendChild(val);
+                    if (d.daily != null) {
+                        const daily = document.createElement('span');
+                        daily.className = 'song-streams-daily';
+                        daily.textContent = '+' + fmtStreams(d.daily) + ' today';
+                        stripBox.appendChild(daily);
+                    }
+                    if (d.last_updated) {
+                        const meta = document.createElement('span');
+                        meta.className = 'song-streams-meta';
+                        meta.textContent = 'Spotify · updated ' + d.last_updated;
+                        stripBox.appendChild(meta);
+                    }
+                    stripBox.style.display = 'flex';
+                })
+                .catch(() => {});
+        }
+
+        function showSongDetails(songName) {
+            document.getElementById('modalSongName').textContent = songName;
+            const container = document.getElementById('weeklyData');
+            container.textContent = '';
+            songModal.style.display = 'block';
+
+            // Fetch Spotify stream count from kworb (best-effort).
+            // Find the row for this song to get artist_only / song_only
+            const row = document.querySelector('#songsContent tbody tr[data-song="' + CSS.escape(songName) + '"]');
+            if (row && row.dataset.artistOnly && row.dataset.songOnly) {
+                loadSongStreams(row.dataset.artistOnly, row.dataset.songOnly);
+            } else {
+                document.getElementById('songStreamsStrip').style.display = 'none';
+            }
+
+            const data = chartData[songName];
+            if (!data || !data.length) {
+                const p = document.createElement('p');
+                p.style.color = 'var(--text-muted)';
+                p.style.paddingTop = '0.5rem';
+                p.textContent = 'No chart data available.';
+                container.appendChild(p);
+                return;
+            }
+
+            const sorted = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const best = Math.min(...sorted.map(e => e.rank));
+            sorted.forEach((entry, i) => {
+                const href = '/top100?date=' + entry.date
+                    + '&highlight=' + encodeURIComponent(songName)
+                    + '&rank=' + entry.rank;
+                container.appendChild(makeWeekRow(entry.date, 'Week ' + (i+1), entry.rank, entry.rank === best, href));
+            });
+        }
+
+        function showAlbumDetails(albumName) {
+            document.getElementById('modalSongName').textContent = albumName;
+            document.getElementById('songStreamsStrip').style.display = 'none';
+            const container = document.getElementById('weeklyData');
+            container.textContent = '';
+            songModal.style.display = 'block';
+
+            const loading = document.createElement('p');
+            loading.style.color = 'var(--text-muted)';
+            loading.style.paddingTop = '0.5rem';
+            loading.textContent = 'Loading\u2026';
+            container.appendChild(loading);
+
+            fetch('/api/album-history?artist=' + encodeURIComponent(artistName) + '&album=' + encodeURIComponent(albumName))
+                .then(r => r.ok ? r.json() : Promise.reject())
+                .then(data => {
+                    container.textContent = '';
+                    if (data.error || !data.history) {
+                        const p = document.createElement('p');
+                        p.style.color = 'var(--text-muted)';
+                        p.textContent = 'No data available.';
+                        container.appendChild(p);
+                        return;
+                    }
+                    data.history.forEach(entry => {
+                        const href = '/albums200?date=' + entry.date
+                            + '&highlight=' + encodeURIComponent(albumName)
+                            + '&rank=' + entry.rank;
+                        container.appendChild(makeWeekRow(entry.date, 'Week ' + entry.weeks, entry.rank, entry.rank === data.peak, href));
+                    });
+                })
+                .catch(() => {
+                    container.textContent = '';
+                    const p = document.createElement('p');
+                    p.style.color = 'var(--red)';
+                    p.textContent = 'Error loading album data.';
+                    container.appendChild(p);
+                });
+        }
+
+        // ── Modal close ───────────────────────────────────────────────
+        const rateLimitModal = document.getElementById('rateLimitModal');
+        document.getElementById('modalCloseBtn').addEventListener('click', () => { songModal.style.display = 'none'; });
+        document.getElementById('rateLimitClose').addEventListener('click', () => { rateLimitModal.style.display = 'none'; });
+        window.addEventListener('click', e => {
+            if (e.target === songModal) songModal.style.display = 'none';
+            if (e.target === rateLimitModal) rateLimitModal.style.display = 'none';
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                songModal.style.display = 'none';
+                rateLimitModal.style.display = 'none';
+            }
+        });
+
+        // ── Tab switching ─────────────────────────────────────────────
+        function switchTab(tab) {
+            document.getElementById('songsContent').style.display = tab === 'songs' ? '' : 'none';
+            const ac = document.getElementById('albumsContent');
+            if (ac) ac.style.display = tab === 'albums' ? '' : 'none';
+            document.getElementById('songsTab').classList.toggle('active', tab === 'songs');
+            const at = document.getElementById('albumsTab');
+            if (at) at.classList.toggle('active', tab === 'albums');
+        }
+
+        // ── Download ──────────────────────────────────────────────────
+        document.getElementById('downloadBtn').addEventListener('click', async function() {
+            const artist = this.dataset.artist;
+            const type = document.getElementById('reportType').value;
+            try {
+                const resp = await fetch('/download/' + encodeURIComponent(artist) + '/' + type);
+                if (resp.status === 429) {
+                    const d = await resp.json();
+                    document.getElementById('rateLimitMessage').textContent = d.message;
+                    rateLimitModal.style.display = 'block';
+                } else if (resp.ok) {
+                    const blob = await resp.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = artist.replace(/ /g, '_') + '_' + (type === 'albums' ? 'Albums' : 'Songs') + '_Chart_History.xlsx';
+                    document.body.appendChild(a);
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    const d = await resp.json();
+                    alert(d.error || 'Download failed.');
+                }
+            } catch { alert('Download error. Please try again.'); }
+        });
+    </script>
+</body>
+</html>

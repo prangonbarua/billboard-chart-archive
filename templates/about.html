@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - US Top Charts</title>
+    <style>
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: url('/static/fonts/SFPRODISPLAYMEDIUM.OTF') format('opentype');
+            font-weight: 400 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #09090b;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .about-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        .about-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .about-header h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .about-header p {
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-bottom: 2rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: #fff;
+        }
+
+        .faq-section {
+            margin-top: 3rem;
+        }
+
+        .faq-title {
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 3rem;
+            letter-spacing: -0.02em;
+            text-align: center;
+        }
+
+        .faq-item {
+            margin-bottom: 3rem;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                        transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .faq-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .faq-question {
+            font-size: clamp(1.125rem, 2vw, 1.375rem);
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 0.75rem;
+        }
+
+        .faq-answer {
+            font-size: clamp(0.95rem, 1.5vw, 1.05rem);
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .support-link {
+            color: #fff;
+            text-decoration: underline;
+            text-decoration-color: #fff;
+            text-decoration-thickness: 1px;
+            text-underline-offset: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .support-link:hover {
+            color: #fff;
+            text-decoration-thickness: 2px;
+            opacity: 0.8;
+        }
+
+        .arrow-back {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            display: inline-block;
+            margin-right: 0.3em;
+        }
+
+        @media (max-width: 768px) {
+            .about-container {
+                padding: 2rem 1.5rem;
+            }
+
+            .faq-section {
+                margin-top: 2rem;
+            }
+
+            .faq-item {
+                margin-bottom: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="about-container">
+        <a href="{{ url_for('index') }}" class="back-link"><span class="arrow-back">←</span> Back to Home</a>
+
+        <div class="about-header">
+            <h1>About Us</h1>
+            <p>Making music chart history accessible to everyone</p>
+        </div>
+
+        <div class="faq-section">
+            <div class="faq-item">
+                <div class="faq-question">How often is this updated?</div>
+                <div class="faq-answer">
+                    The chart data is automatically updated weekly to include the latest U.S. music charts.
+                    Updates typically occur within 24-48 hours of new chart data being released.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Why was this made?</div>
+                <div class="faq-answer">
+                    This tool was created to provide free access to historical US music chart data.
+                    Chart history is an important part of music culture and should remain accessible to fans, researchers, and the general public.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">What data is included?</div>
+                <div class="faq-answer">
+                    The database includes complete US music chart data from 1958 to 2025, spanning the entire history of the top 100 songs chart.
+                    This includes song titles, artist names, chart positions, peak positions, weeks on chart, and comprehensive historical performance data.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">How do I use this?</div>
+                <div class="faq-answer">
+                    Visit the U.S. Top Charts 100 page to view the latest charts, or use the artist search feature to analyze any artist's complete chart history.
+                    You'll receive a detailed analysis with downloadable data and interactive visualizations.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Is this free?</div>
+                <div class="faq-answer">
+                    Yes, this tool is completely free to use. We believe chart data should be accessible to everyone.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Can I download the data?</div>
+                <div class="faq-answer">
+                    Absolutely! When you analyze an artist's chart history, you'll have the option to download the data in CSV format for your own analysis and research.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Who built this?</div>
+                <div class="faq-answer">
+                    This project is maintained by independent developers who are passionate about music history and open data.
+                    We believe that cultural data like chart history should be freely accessible to fans, researchers, and historians.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">I love this, how can I support you?</div>
+                <div class="faq-answer">
+                    Thank you for your interest in supporting this project! This platform is provided free of charge to ensure that chart data remains accessible to everyone.
+                    If you find this resource valuable and would like to help maintain and improve it, you can support the project through my <a href="https://www.patreon.com/Chart_History" target="_blank" rel="noopener noreferrer" class="support-link">Patreon</a>.
+                    Your contributions help cover hosting costs, data updates, and ongoing development.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Apple-style scroll animations for FAQ items
+        const observerOptions = {
+            threshold: 0.15,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    // Add a slight delay for each item to create a staggered effect
+                    setTimeout(() => {
+                        entry.target.classList.add('visible');
+                    }, index * 100);
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        // Observe all FAQ items
+        document.querySelectorAll('.faq-item').forEach(item => {
+            observer.observe(item);
+        });
+    </script>
+</body>
+</html>

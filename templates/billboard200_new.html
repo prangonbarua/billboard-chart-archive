@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>U.S. Top Charts 100</title>
+    <style>
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: url('/static/fonts/SFPRODISPLAYMEDIUM.OTF') format('opentype');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: url('/static/fonts/SFPRODISPLAYMEDIUM.OTF') format('opentype');
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: url('/static/fonts/SFPRODISPLAYMEDIUM.OTF') format('opentype');
+            font-weight: 600;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: url('/static/fonts/SFPRODISPLAYMEDIUM.OTF') format('opentype');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem 2rem;
+        }
+
+        /* Navigation */
+        .nav {
+            display: flex;
+            gap: 2rem;
+            padding: 1.5rem 2rem;
+            background: #0a0a0a;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .nav a {
+            color: #888;
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav a:hover {
+            color: #fff;
+        }
+
+        .nav a.active {
+            color: #ff6b35;
+        }
+
+        /* Header Section */
+        .chart-header {
+            padding: 3rem 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .chart-title-section {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .chart-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .chart-subtitle {
+            font-size: 1.25rem;
+            color: #ff6b35;
+            font-weight: 600;
+        }
+
+        .chart-info {
+            font-size: 0.95rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        /* Date Navigation */
+        .date-navigation {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            background: #111;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #222;
+        }
+
+        .nav-button {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .nav-button:hover {
+            background: #ff6b35;
+            border-color: #ff6b35;
+        }
+
+        .nav-button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .nav-button:disabled:hover {
+            background: #1a1a1a;
+            border-color: #333;
+        }
+
+        .date-selectors {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .date-selectors label {
+            font-size: 0.875rem;
+            color: #999;
+            font-weight: 500;
+        }
+
+        select {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #ff6b35;
+        }
+
+        select:hover {
+            border-color: #555;
+        }
+
+        /* #1 Song Hero Section */
+        .number-one-hero {
+            background: linear-gradient(135deg, #1a0f0a 0%, #2a1505 100%);
+            border: 2px solid #ff6b35;
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin: 2rem 0 3rem;
+            box-shadow: 0 10px 40px rgba(255, 107, 53, 0.3);
+            position: relative;
+            overflow: hidden;
+            animation: pulse 3s ease-in-out infinite, fadeInUp 0.6s ease-out;
+        }
+
+        .number-one-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 107, 53, 0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 10px 40px rgba(255, 107, 53, 0.3);
+            }
+            50% {
+                box-shadow: 0 10px 50px rgba(255, 107, 53, 0.5);
+            }
+        }
+
+        .number-one-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .number-one-artwork {
+            width: 200px;
+            height: 200px;
+            border-radius: 12px;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            border: 3px solid #ff6b35;
+        }
+
+        .number-one-artwork img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .number-one-details {
+            flex: 1;
+        }
+
+        .number-one-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #ff6b35;
+            color: #000;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.375rem 0.75rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+        }
+
+        .number-one-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+        }
+
+        .number-one-artist {
+            font-size: 1.5rem;
+            color: #ff6b35;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .number-one-stats {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .hero-stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hero-stat-label {
+            font-size: 0.75rem;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.25rem;
+        }
+
+        .hero-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* Top 10 Section */
+        .section-header {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin: 3rem 0 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .section-header::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, #333, transparent);
+        }
+
+        .top-ten-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .top-ten-item {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .top-ten-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: #ff6b35;
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .top-ten-item:hover {
+            background: #151515;
+            border-color: #ff6b35;
+            transform: translateX(6px);
+            box-shadow: 0 4px 16px rgba(255, 107, 53, 0.2);
+        }
+
+        .top-ten-item:hover::before {
+            transform: scaleY(1);
+        }
+
+        .top-ten-rank-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 50px;
+        }
+
+        .top-ten-rank {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1;
+            transition: color 0.3s, transform 0.3s;
+        }
+
+        .top-ten-item:hover .top-ten-rank {
+            color: #ff6b35;
+            transform: scale(1.1);
+        }
+
+        .top-ten-change {
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-top: 0.25rem;
+            padding: 0.125rem 0.375rem;
+            border-radius: 3px;
+        }
+
+        .top-ten-artwork {
+            width: 60px;
+            height: 60px;
+            border-radius: 6px;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s;
+        }
+
+        .top-ten-item:hover .top-ten-artwork {
+            transform: scale(1.1) rotate(2deg);
+        }
+
+        .top-ten-artwork img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .top-ten-song-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .top-ten-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 0.25rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .top-ten-artist {
+            font-size: 0.875rem;
+            color: #888;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .top-ten-stats {
+            display: flex;
+            gap: 1.5rem;
+            margin-left: auto;
+        }
+
+        .top-ten-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 60px;
+        }
+
+        .top-ten-stat-label {
+            font-size: 0.7rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .top-ten-stat-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .change-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .change-indicator.up {
+            background: rgba(74, 222, 128, 0.15);
+            color: #4ade80;
+        }
+
+        .change-indicator.down {
+            background: rgba(248, 113, 113, 0.15);
+            color: #f87171;
+        }
+
+        .change-indicator.same {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+        }
+
+        .change-indicator.new {
+            background: rgba(255, 107, 53, 0.15);
+            color: #ff6b35;
+        }
+
+        .change-indicator.re-entry {
+            background: rgba(168, 85, 247, 0.15);
+            color: #a855f7;
+        }
+
+        /* Standard Chart List (11-100) */
+        .chart-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .chart-item {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chart-item:hover {
+            background: #151515;
+            border-color: #333;
+            transform: translateX(4px);
+        }
+
+        .chart-rank-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 50px;
+        }
+
+        .chart-rank {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1;
+        }
+
+        .chart-change {
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-top: 0.25rem;
+            padding: 0.125rem 0.375rem;
+            border-radius: 3px;
+        }
+
+        .chart-artwork {
+            width: 60px;
+            height: 60px;
+            border-radius: 6px;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .chart-artwork img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .chart-song-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chart-song-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 0.25rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chart-song-artist {
+            font-size: 0.875rem;
+            color: #888;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chart-stats {
+            display: flex;
+            gap: 1.5rem;
+            margin-left: auto;
+        }
+
+        .chart-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 60px;
+        }
+
+        .chart-stat-label {
+            font-size: 0.7rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chart-stat-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-content {
+            background: #111;
+            margin: 3% auto;
+            padding: 0;
+            border: 1px solid #222;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .close {
+            color: #666;
+            font-size: 2rem;
+            font-weight: 300;
+            cursor: pointer;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #fff;
+        }
+
+        .modal-body {
+            padding: 2rem;
+            max-height: calc(85vh - 100px);
+            overflow-y: auto;
+        }
+
+        footer {
+            margin-top: 4rem;
+            padding: 2rem;
+            border-top: 1px solid #1a1a1a;
+            text-align: center;
+        }
+
+        .footer-social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-link {
+            color: #666;
+            transition: color 0.2s, transform 0.2s;
+        }
+
+        .footer-link:hover {
+            color: #ff6b35;
+            transform: translateY(-2px);
+        }
+
+        footer p {
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .chart-stats,
+            .top-ten-stats {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem 1rem;
+            }
+
+            .nav {
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .chart-header {
+                padding: 2rem 0 1rem;
+            }
+
+            .chart-title {
+                font-size: 2rem;
+            }
+
+            .chart-subtitle {
+                font-size: 1rem;
+            }
+
+            .date-navigation {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .date-selectors {
+                flex-wrap: wrap;
+            }
+
+            .number-one-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .number-one-artwork {
+                width: 150px;
+                height: 150px;
+                margin: 0 auto;
+            }
+
+            .number-one-title {
+                font-size: 1.75rem;
+            }
+
+            .number-one-artist {
+                font-size: 1.25rem;
+            }
+
+            .number-one-stats {
+                justify-content: center;
+            }
+
+            .top-ten-item {
+                gap: 0.75rem;
+            }
+
+            .top-ten-rank {
+                font-size: 1.25rem;
+            }
+
+            .chart-item {
+                gap: 0.75rem;
+            }
+
+            .chart-rank-section {
+                min-width: 40px;
+            }
+
+            .chart-rank {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="{{ url_for('index') }}">Home</a>
+        <a href="{{ url_for('top100') }}" class="active">Top 100</a>
+        <a href="{{ url_for('albums200') }}">U.S. Album Charts 200</a>
+    </nav>
+
+    <div class="container">
+        <div class="chart-header">
+            <div class="chart-title-section">
+                <h1 class="chart-title">The Hot 100</h1>
+                <p class="chart-subtitle">{{ selected_date }}</p>
+                <p class="chart-info">The week's most popular current songs across all genres, ranked by streaming activity, radio airplay, and sales data.</p>
+            </div>
+
+            <div class="date-navigation">
+                <button class="nav-button" id="prevWeek">← Previous</button>
+                <div class="date-selectors">
+                    <label for="yearSelect">Year</label>
+                    <select id="yearSelect" onchange="filterWeeks()"></select>
+                    <label for="dateSelect">Week</label>
+                    <select id="dateSelect" onchange="changeDate(this.value)">
+                        {% for date in available_dates %}
+                        <option value="{{ date }}" {% if date == selected_date %}selected{% endif %}>
+                            {{ date }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button class="nav-button" id="nextWeek">Next →</button>
+            </div>
+        </div>
+
+        {% if chart_songs and chart_songs|length > 0 %}
+        <!-- #1 Song Hero -->
+        <div class="number-one-hero">
+            <div class="number-one-content">
+                <div class="number-one-artwork">
+                    <img
+                        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%231a1a1a' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23ff6b35' font-size='80'%3E♪%3C/text%3E%3C/svg%3E"
+                        alt="{{ chart_songs[0].song }}"
+                        class="hero-artwork-img"
+                        data-song="{{ chart_songs[0].song }}"
+                        data-artist="{{ chart_songs[0].artist }}"
+                    >
+                </div>
+                <div class="number-one-details">
+                    <span class="number-one-badge">
+                        <span>#1 ON THE HOT 100</span>
+                    </span>
+                    <h2 class="number-one-title">{{ chart_songs[0].song }}</h2>
+                    <p class="number-one-artist">{{ chart_songs[0].artist }}</p>
+                    <div class="number-one-stats">
+                        <div class="hero-stat">
+                            <span class="hero-stat-label">Peak Position</span>
+                            <span class="hero-stat-value">#{{ chart_songs[0].peak }}</span>
+                        </div>
+                        <div class="hero-stat">
+                            <span class="hero-stat-label">Weeks on Chart</span>
+                            <span class="hero-stat-value">{{ chart_songs[0].weeks }}</span>
+                        </div>
+                        {% if chart_songs[0].last_week %}
+                        <div class="hero-stat">
+                            <span class="hero-stat-label">Last Week</span>
+                            <span class="hero-stat-value">#{{ chart_songs[0].last_week }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top 10 (positions 2-10) -->
+        {% if chart_songs|length > 1 %}
+        <h2 class="section-header">Top 10</h2>
+        <div class="top-ten-list">
+            {% for song in chart_songs[1:10] %}
+            <div class="top-ten-item" onclick="showSongHistory('{{ song.artist }}', '{{ song.song }}')">
+                <div class="top-ten-rank-section">
+                    <div class="top-ten-rank">{{ song.rank }}</div>
+                    {% if song.change == 'new' %}
+                    <span class="top-ten-change change-indicator new">NEW</span>
+                    {% elif song.change == 're-entry' %}
+                    <span class="top-ten-change change-indicator re-entry">RE</span>
+                    {% elif song.change == 'up' %}
+                    <span class="top-ten-change change-indicator up">▲ {{ song.change_amount }}</span>
+                    {% elif song.change == 'down' %}
+                    <span class="top-ten-change change-indicator down">▼ {{ song.change_amount }}</span>
+                    {% elif song.change == 'same' %}
+                    <span class="top-ten-change change-indicator same">—</span>
+                    {% endif %}
+                </div>
+
+                <div class="top-ten-artwork">
+                    <img
+                        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Crect fill='%231a1a1a' width='60' height='60'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-size='25'%3E♪%3C/text%3E%3C/svg%3E"
+                        alt="{{ song.song }}"
+                        data-song="{{ song.song }}"
+                        data-artist="{{ song.artist }}"
+                        loading="lazy"
+                    >
+                </div>
+
+                <div class="top-ten-song-info">
+                    <div class="top-ten-title">{{ song.song }}</div>
+                    <div class="top-ten-artist">{{ song.artist }}</div>
+                </div>
+
+                <div class="top-ten-stats">
+                    <div class="top-ten-stat">
+                        <span class="top-ten-stat-label">Last</span>
+                        <span class="top-ten-stat-value">{% if song.last_week %}#{{ song.last_week }}{% else %}—{% endif %}</span>
+                    </div>
+                    <div class="top-ten-stat">
+                        <span class="top-ten-stat-label">Peak</span>
+                        <span class="top-ten-stat-value">#{{ song.peak }}</span>
+                    </div>
+                    <div class="top-ten-stat">
+                        <span class="top-ten-stat-label">Weeks</span>
+                        <span class="top-ten-stat-value">{{ song.weeks }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Rest of Chart (11-100) -->
+        {% if chart_songs|length > 10 %}
+        <h2 class="section-header">Songs 11-100</h2>
+        <div class="chart-list">
+            {% for song in chart_songs[10:] %}
+            <div class="chart-item" onclick="showSongHistory('{{ song.artist }}', '{{ song.song }}')">
+                <div class="chart-rank-section">
+                    <div class="chart-rank">{{ song.rank }}</div>
+                    {% if song.change == 'new' %}
+                    <span class="chart-change change-indicator new">NEW</span>
+                    {% elif song.change == 're-entry' %}
+                    <span class="chart-change change-indicator re-entry">RE</span>
+                    {% elif song.change == 'up' %}
+                    <span class="chart-change change-indicator up">▲ {{ song.change_amount }}</span>
+                    {% elif song.change == 'down' %}
+                    <span class="chart-change change-indicator down">▼ {{ song.change_amount }}</span>
+                    {% elif song.change == 'same' %}
+                    <span class="chart-change change-indicator same">—</span>
+                    {% endif %}
+                </div>
+
+                <div class="chart-artwork">
+                    <img
+                        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Crect fill='%231a1a1a' width='60' height='60'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-size='25'%3E♪%3C/text%3E%3C/svg%3E"
+                        alt="{{ song.song }}"
+                        data-song="{{ song.song }}"
+                        data-artist="{{ song.artist }}"
+                        loading="lazy"
+                    >
+                </div>
+
+                <div class="chart-song-info">
+                    <div class="chart-song-title">{{ song.song }}</div>
+                    <div class="chart-song-artist">{{ song.artist }}</div>
+                </div>
+
+                <div class="chart-stats">
+                    <div class="chart-stat">
+                        <span class="chart-stat-label">Last</span>
+                        <span class="chart-stat-value">{% if song.last_week %}#{{ song.last_week }}{% else %}—{% endif %}</span>
+                    </div>
+                    <div class="chart-stat">
+                        <span class="chart-stat-label">Peak</span>
+                        <span class="chart-stat-value">#{{ song.peak }}</span>
+                    </div>
+                    <div class="chart-stat">
+                        <span class="chart-stat-label">Weeks</span>
+                        <span class="chart-stat-value">{{ song.weeks }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <footer>
+            <div class="footer-social-links">
+                <a href="https://www.youtube.com/@HistoryCharts" target="_blank" class="footer-link" title="YouTube" aria-label="YouTube">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                </a>
+                <a href="https://www.patreon.com/Chart_History" target="_blank" class="footer-link" title="Patreon" aria-label="Patreon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003"/>
+                    </svg>
+                </a>
+            </div>
+            <p>The Hot 100 Chart • Tracking music history since 1958</p>
+        </footer>
+    </div>
+
+    <!-- Song History Modal -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle"></h2>
+                <span class="close" onclick="closeHistoryModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const allDates = {{ available_dates|tojson }};
+        const selectedDate = "{{ selected_date }}";
+
+        // Initialize year selector
+        function initYearSelector() {
+            const yearSelect = document.getElementById('yearSelect');
+            const years = [...new Set(allDates.map(date => date.split('-')[0]))].sort().reverse();
+
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            });
+
+            if (selectedDate) {
+                const currentYear = selectedDate.split('-')[0];
+                yearSelect.value = currentYear;
+                filterWeeks();
+            }
+        }
+
+        function filterWeeks() {
+            const yearSelect = document.getElementById('yearSelect');
+            const dateSelect = document.getElementById('dateSelect');
+            const selectedYear = yearSelect.value;
+
+            dateSelect.innerHTML = '';
+            const filteredDates = allDates.filter(date => date.startsWith(selectedYear));
+
+            filteredDates.forEach(date => {
+                const option = document.createElement('option');
+                option.value = date;
+                option.textContent = date;
+                if (date === selectedDate) option.selected = true;
+                dateSelect.appendChild(option);
+            });
+        }
+
+        function changeDate(date) {
+            window.location.href = `{{ url_for('top100') }}?date=${date}`;
+        }
+
+        // Previous/Next week navigation
+        document.getElementById('prevWeek').addEventListener('click', () => {
+            const currentIndex = allDates.indexOf(selectedDate);
+            if (currentIndex > 0) {
+                changeDate(allDates[currentIndex - 1]);
+            }
+        });
+
+        document.getElementById('nextWeek').addEventListener('click', () => {
+            const currentIndex = allDates.indexOf(selectedDate);
+            if (currentIndex < allDates.length - 1) {
+                changeDate(allDates[currentIndex + 1]);
+            }
+        });
+
+        // Disable buttons if at start/end
+        const currentIndex = allDates.indexOf(selectedDate);
+        if (currentIndex === 0) {
+            document.getElementById('prevWeek').disabled = true;
+        }
+        if (currentIndex === allDates.length - 1) {
+            document.getElementById('nextWeek').disabled = true;
+        }
+
+        initYearSelector();
+
+        // Lazy load images
+        const imageObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    const song = img.getAttribute('data-song');
+                    const artist = img.getAttribute('data-artist');
+
+                    if (song && artist && !img.hasAttribute('data-loaded')) {
+                        img.setAttribute('data-loaded', 'true');
+                        const placeholder = img.src;
+                        fetch(`/api/song-image/${encodeURIComponent(artist)}/${encodeURIComponent(song)}`)
+                            .then(response => response.ok ? response.json() : null)
+                            .then(data => {
+                                if (data && data.image_url) {
+                                    img.onerror = () => { img.onerror = null; img.src = placeholder; };
+                                    img.src = data.image_url;
+                                }
+                            })
+                            .catch(err => console.log('Image load error:', err));
+                        imageObserver.unobserve(img);
+                    }
+                }
+            });
+        }, { rootMargin: '100px' });
+
+        document.querySelectorAll('[data-song]').forEach(img => imageObserver.observe(img));
+
+        function showSongHistory(artist, song) {
+            const modal = document.getElementById('historyModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+
+            modalTitle.textContent = `${song} - ${artist}`;
+            modalContent.innerHTML = '<p style="text-align: center; color: #999;">Loading...</p>';
+            modal.style.display = 'block';
+
+            fetch(`/api/song-history?artist=${encodeURIComponent(artist)}&song=${encodeURIComponent(song)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        modalContent.innerHTML = '<p style="text-align: center; color: #f87171;">No history found</p>';
+                        return;
+                    }
+
+                    let html = `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                            <div style="background: #1a1a1a; padding: 1.5rem; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 2rem; font-weight: 700; color: #ff6b35;">#${data.peak}</div>
+                                <div style="font-size: 0.875rem; color: #888; margin-top: 0.5rem;">Peak Position</div>
+                            </div>
+                            <div style="background: #1a1a1a; padding: 1.5rem; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 2rem; font-weight: 700; color: #fff;">${data.total_weeks}</div>
+                                <div style="font-size: 0.875rem; color: #888; margin-top: 0.5rem;">Total Weeks</div>
+                            </div>
+                        </div>
+                        <h3 style="margin-bottom: 1rem; color: #fff;">Chart History</h3>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 400px; overflow-y: auto;">
+                    `;
+
+                    data.history.forEach(entry => {
+                        const isPeak = entry.rank === data.peak;
+                        html += `
+                            <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: ${isPeak ? '#1a2a1a' : '#1a1a1a'}; border-radius: 6px; border: 1px solid ${isPeak ? '#2a4a2a' : '#222'};">
+                                <div style="min-width: 100px; color: #888; font-size: 0.875rem;">${entry.date}</div>
+                                <div style="min-width: 60px; font-size: 1.125rem; font-weight: 700; color: #fff;">#${entry.rank}</div>
+                                <div style="font-size: 0.875rem; color: #666;">Week ${entry.weeks}</div>
+                                ${isPeak ? '<div style="margin-left: auto; background: #1a3a1a; color: #6bff6b; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">PEAK</div>' : ''}
+                            </div>
+                        `;
+                    });
+
+                    html += '</div>';
+                    modalContent.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    modalContent.innerHTML = '<p style="text-align: center; color: #f87171;">Error loading history</p>';
+                });
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('historyModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('historyModal');
+            if (event.target === modal) {
+                closeHistoryModal();
+            }
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeHistoryModal();
+            }
+        });
+    </script>
+</body>
+</html>
