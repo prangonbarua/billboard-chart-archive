@@ -69,7 +69,7 @@ html, body, * {
     top: 0;
     bottom: 0;
     width: 180px;
-    z-index: 2147483647;
+    z-index: 1; /* below modal backdrops so overlays cover the rails */
     pointer-events: none;
     background-color: #ffffff;
     background-repeat: no-repeat;
@@ -78,12 +78,12 @@ html, body, * {
   }
   body::before {
     left: 0;
-    border-right: 1px solid #0c492c;
+    border-right: 1px solid #0fbf74;
     background-image: url('/static/dither-left.png');
   }
   body::after {
     right: 0;
-    border-left: 1px solid #0c492c;
+    border-left: 1px solid #0fbf74;
     background-image: url('/static/dither-right.png');
   }
 }
