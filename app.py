@@ -270,7 +270,7 @@ def process_album_data_excel(artist_name):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return redirect('/top100')
 
 @app.route('/about')
 def about():

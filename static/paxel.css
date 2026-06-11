@@ -51,3 +51,31 @@ img {
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: #f5f5f3; }
 ::-webkit-scrollbar-thumb { background: #ff6600; border-radius: 0; }
+
+/* Dithered side rails with orange column edges (Paxel report layout) */
+@media (min-width: 1100px) {
+  html { background: #ffffff; }
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    top: 0; bottom: 0;
+    width: 188px;
+    z-index: -1;
+    pointer-events: none;
+  }
+  body::before {
+    left: 0;
+    background: url('/static/dither-left.png') repeat-y left top;
+    border-right: 1px solid #ff6600;
+  }
+  body::after {
+    right: 0;
+    background: url('/static/dither-right.png') repeat-y right top;
+    border-left: 1px solid #ff6600;
+  }
+  body {
+    background: transparent !important;
+    padding-left: 210px !important;
+    padding-right: 210px !important;
+  }
+}
