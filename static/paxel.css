@@ -72,7 +72,7 @@ html, body, * {
     z-index: 2147483647;
     pointer-events: none;
     background-color: #ffffff;
-    background-repeat: repeat-y;
+    background-repeat: no-repeat;
     background-size: 180px auto;
     image-rendering: pixelated;
   }
