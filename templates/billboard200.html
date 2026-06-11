@@ -358,7 +358,6 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr class="section-row"><td colspan="7" style="padding:0"><div class="section-label">Top 10</div></td></tr>
                     {% for song in chart_songs[1:10] %}
                     <tr class="top10" data-artist="{{ song.artist|e }}" data-song="{{ song.song|e }}">
                         <td class="cell-rank"><div class="rank-num">{{ song.rank }}</div></td>
