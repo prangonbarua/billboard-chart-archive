@@ -48,10 +48,12 @@ img {
   border-radius: 0 !important;
 }
 
-/* Scrollbars to match light surfaces */
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: #f5f5f3; }
-::-webkit-scrollbar-thumb { background: #0c492c; border-radius: 0; }
+/* Scrollbars hidden — scrolling still works, no visible bar */
+html, body, * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
 /* Dithered side rails — fixed columns at each screen edge, dense at the
    outer edge fading inward, with a 1px dark-green inner rule. */
