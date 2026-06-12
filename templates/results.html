@@ -454,11 +454,34 @@
 </head>
 <body>
 
+    <style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&display=swap');
+  .nav { align-items: center; }
+  .v3-nav-upload {
+    margin-left: auto;
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: 'JetBrains Mono', monospace !important; font-size: 12px !important;
+    font-weight: 700; letter-spacing: -0.01em;
+    color: #111111 !important; text-decoration: none; white-space: nowrap;
+    padding: 0.375rem 0.25rem;
+  }
+  .v3-nav-upload:hover { color: #0c492c !important; background: none !important; }
+  .v3-nav-upload svg { display: block; }
+    </style>
     <nav class="nav">
         <a href="{{ url_for('index') }}">Home</a>
         <a href="{{ url_for('top100') }}">The Hot 100</a>
         <a href="{{ url_for('albums200') }}">Billboard 200</a>
         <a href="{{ url_for('search') }}" class="active">Reports</a>
+        <a href="{{ url_for('download_csv', artist_name=artist_name) }}" class="v3-nav-upload" aria-label="Download CSV">
+  [
+  <svg width="11" height="11" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M8 2v8M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M2 10v3a1 1 0 001 1h10a1 1 0 001-1v-3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  Download CSV
+  ]
+</a>
     </nav>
 
     <div class="container">
