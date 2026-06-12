@@ -600,20 +600,6 @@
             </div>
         </div>
 
-        <!-- Actions -->
-        <div class="card">
-            <div class="actions-card">
-                <select id="reportType">
-                    <option value="songs">Songs Report</option>
-                    {% if albums and albums|length > 0 %}
-                    <option value="albums">Albums Report</option>
-                    {% endif %}
-                </select>
-                <button id="downloadBtn" class="btn-download" data-artist="{{ artist_name|e }}">Download Excel Report</button>
-                <a href="{{ url_for('index') }}" class="btn-secondary">Search Another Artist</a>
-            </div>
-        </div>
-
         <!-- Rate Limit Modal -->
         <div id="rateLimitModal" class="modal" style="display:none;">
             <div class="modal-content">
@@ -636,7 +622,6 @@
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003"/></svg>
                 </a>
             </div>
-            <p>U.S. Top Charts 100 Chart Analyzer</p>
         </footer>
     </div>
 
@@ -864,32 +849,6 @@
             if (at) at.classList.toggle('active', tab === 'albums');
         }
 
-        // ── Download ──────────────────────────────────────────────────
-        document.getElementById('downloadBtn').addEventListener('click', async function() {
-            const artist = this.dataset.artist;
-            const type = document.getElementById('reportType').value;
-            try {
-                const resp = await fetch('/download/' + encodeURIComponent(artist) + '/' + type);
-                if (resp.status === 429) {
-                    const d = await resp.json();
-                    document.getElementById('rateLimitMessage').textContent = d.message;
-                    rateLimitModal.style.display = 'block';
-                } else if (resp.ok) {
-                    const blob = await resp.blob();
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = artist.replace(/ /g, '_') + '_' + (type === 'albums' ? 'Albums' : 'Songs') + '_Chart_History.xlsx';
-                    document.body.appendChild(a);
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                } else {
-                    const d = await resp.json();
-                    alert(d.error || 'Download failed.');
-                }
-            } catch { alert('Download error. Please try again.'); }
-        });
     </script>
 </body>
 </html>
