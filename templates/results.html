@@ -459,6 +459,13 @@
 </head>
 <body>
 
+    <nav class="nav">
+        <a href="{{ url_for('index') }}">Home</a>
+        <a href="{{ url_for('top100') }}">The Hot 100</a>
+        <a href="{{ url_for('albums200') }}">Billboard 200</a>
+        <a href="{{ url_for('search') }}" class="active">Reports</a>
+    </nav>
+
     <div class="container">
         <div class="page-header">
             <div class="page-title">{{ artist_name }}</div>
