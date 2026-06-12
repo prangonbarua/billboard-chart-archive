@@ -27,6 +27,12 @@
   font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif !important;
 }
 
+/* No motion anywhere: kill all CSS animations and transitions */
+*, *::before, *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
 html, body {
   background: #ffffff !important;
   color: #000000 !important;
