@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports &mdash; Billboard Chart Archive</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --surface: #f5f5f3;
+            --surface-hover: #ccffe9;
+            --border: rgba(12, 73, 44, 0.5);
+            --border-accent: #0fbf74;
+            --text: #000000;
+            --text-muted: #333333;
+            --text-dim: #6b6b6b;
+            --accent: #0c492c;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .nav {
+            display: flex;
+            gap: 0.25rem;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .nav a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 0.375rem 0.75rem;
+        }
+        .nav a:hover { color: var(--text); background: var(--surface); }
+        .nav a.active { color: var(--text); background: var(--surface-hover); }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 4rem 2rem 6rem; }
+
+        h1 { font-size: 3rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 1.25rem; }
+        .sub { font-size: 1.0625rem; color: var(--text-muted); line-height: 1.6; max-width: 60ch; margin-bottom: 2.5rem; }
+
+        .flash { border: 1px solid var(--border-accent); background: var(--surface-hover); padding: 0.75rem 1rem; font-size: 0.875rem; margin-bottom: 1.5rem; }
+
+        .search-box { position: relative; margin-bottom: 3.5rem; }
+        .search-form {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border-accent);
+            background: var(--bg);
+        }
+        .search-form input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 1.125rem 1.25rem;
+            font-size: 1rem;
+            color: var(--text);
+        }
+        .search-form input:focus { outline: none; }
+        .search-form button {
+            border: none;
+            background: transparent;
+            color: var(--accent);
+            font-size: 1.25rem;
+            padding: 0 1.25rem;
+            cursor: pointer;
+        }
+        .search-form button:hover { color: #000000; }
+
+        .suggest {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            border: 1px solid var(--border-accent);
+            border-top: none;
+            background: var(--bg);
+            z-index: 10;
+            display: none;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+        .suggest div { padding: 0.625rem 1.25rem; font-size: 0.9375rem; cursor: pointer; }
+        .suggest div:hover, .suggest div.sel { background: var(--surface-hover); }
+
+        .eyebrow { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 1.5rem; }
+
+        .past-row {
+            display: flex;
+            align-items: baseline;
+            gap: 0.75rem;
+            padding: 0.875rem 0;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+        .past-row:hover .go { transform: translateX(4px); }
+        .past-row .num { font-weight: 700; font-size: 1rem; white-space: nowrap; }
+        .past-row .query { color: var(--text-muted); font-size: 1rem; }
+        .past-row .spacer { flex: 1; }
+        .past-row .when { color: var(--text-dim); font-size: 0.9375rem; white-space: nowrap; }
+        .past-row .go { font-size: 1.0625rem; color: var(--text); }
+        .empty { color: var(--text-dim); font-size: 0.9375rem; }
+        .clear-btn { margin-top: 2rem; background: none; border: 1px solid var(--border); color: var(--text-dim); font-size: 0.75rem; padding: 0.375rem 0.75rem; cursor: pointer; display: none; }
+        .clear-btn:hover { color: var(--text); border-color: var(--border-accent); }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='paxel.css') }}">
+</head>
+<body>
+    <nav class="nav">
+        <a href="{{ url_for('index') }}">Home</a>
+        <a href="{{ url_for('top100') }}">The Hot 100</a>
+        <a href="{{ url_for('albums200') }}">Billboard 200</a>
+        <a href="{{ url_for('search') }}" class="active">Reports</a>
+    </nav>
+
+    <div class="container">
+        <h1>Your reports</h1>
+        <p class="sub">Search any artist to generate a full chart report &mdash; every Hot 100 and Billboard 200 entry, peaks, weeks on chart, and chart-run graphs. Type a name below.</p>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="flash">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <div class="search-box">
+            <form class="search-form" id="searchForm" method="POST" action="{{ url_for('analyze') }}" autocomplete="off">
+                <input type="text" name="artist_name" id="artistInput" placeholder="Artist name" spellcheck="false">
+                <button type="submit" aria-label="Search">&#8594;</button>
+            </form>
+            <div class="suggest" id="suggest"></div>
+        </div>
+
+        <div class="eyebrow">Past reports</div>
+        <div id="pastList"><p class="empty">No reports yet. Your searches will show up here.</p></div>
+        <button class="clear-btn" id="clearBtn">Clear history</button>
+    </div>
+
+    <script>
+        const form = document.getElementById('searchForm');
+        const input = document.getElementById('artistInput');
+        const suggest = document.getElementById('suggest');
+        const pastList = document.getElementById('pastList');
+        const clearBtn = document.getElementById('clearBtn');
+        const KEY = 'pastSearches';
+
+        const getPast = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } };
+
+        function renderPast() {
+            const past = getPast();
+            if (!past.length) {
+                pastList.innerHTML = '<p class="empty">No reports yet. Your searches will show up here.</p>';
+                clearBtn.style.display = 'none';
+                return;
+            }
+            pastList.innerHTML = '';
+            past.slice().reverse().forEach((item, ri) => {
+                const n = past.length - ri;
+                const row = document.createElement('a');
+                row.className = 'past-row';
+                row.href = '#';
+                const num = document.createElement('span'); num.className = 'num'; num.textContent = 'Report #' + n;
+                const q = document.createElement('span'); q.className = 'query'; q.textContent = item.q;
+                const sp = document.createElement('span'); sp.className = 'spacer';
+                const when = document.createElement('span'); when.className = 'when';
+                when.textContent = new Date(item.d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                const go = document.createElement('span'); go.className = 'go'; go.textContent = '→';
+                row.append(num, q, sp, when, go);
+                row.addEventListener('click', e => { e.preventDefault(); input.value = item.q; form.submit(); });
+                pastList.appendChild(row);
+            });
+            clearBtn.style.display = 'inline-block';
+        }
+
+        form.addEventListener('submit', () => {
+            const q = input.value.trim();
+            if (!q) return;
+            const past = getPast().filter(p => p.q.toLowerCase() !== q.toLowerCase());
+            past.push({ q: q, d: Date.now() });
+            localStorage.setItem(KEY, JSON.stringify(past.slice(-50)));
+        });
+
+        clearBtn.addEventListener('click', () => { localStorage.removeItem(KEY); renderPast(); });
+
+        // Autocomplete
+        let selIdx = -1, items = [];
+        let debounce;
+        input.addEventListener('input', () => {
+            clearTimeout(debounce);
+            const q = input.value.trim();
+            if (q.length < 2) { suggest.style.display = 'none'; return; }
+            debounce = setTimeout(async () => {
+                try {
+                    const res = await fetch('/api/artists?q=' + encodeURIComponent(q));
+                    if (!res.ok) return;
+                    const names = (await res.json()).artists || [];
+                    suggest.innerHTML = '';
+                    items = []; selIdx = -1;
+                    names.slice(0, 8).forEach(name => {
+                        const d = document.createElement('div');
+                        d.textContent = name;
+                        d.addEventListener('mousedown', () => { input.value = name; suggest.style.display = 'none'; form.requestSubmit(); });
+                        suggest.appendChild(d); items.push(d);
+                    });
+                    suggest.style.display = items.length ? 'block' : 'none';
+                } catch {}
+            }, 150);
+        });
+        input.addEventListener('keydown', e => {
+            if (suggest.style.display !== 'block') return;
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                selIdx = e.key === 'ArrowDown' ? Math.min(selIdx + 1, items.length - 1) : Math.max(selIdx - 1, 0);
+                items.forEach((d, i) => d.classList.toggle('sel', i === selIdx));
+            } else if (e.key === 'Enter' && selIdx >= 0) {
+                input.value = items[selIdx].textContent;
+                suggest.style.display = 'none';
+            } else if (e.key === 'Escape') {
+                suggest.style.display = 'none';
+            }
+        });
+        document.addEventListener('click', e => { if (!e.target.closest('.search-box')) suggest.style.display = 'none'; });
+
+        renderPast();
+    </script>
+</body>
+</html>

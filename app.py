@@ -272,6 +272,10 @@ def process_album_data_excel(artist_name):
 def index():
     return redirect('/top100')
 
+@app.route('/search')
+def search():
+    return render_template('search.html')
+
 @app.route('/about')
 def about():
     return render_template('about.html')
@@ -411,7 +415,7 @@ def analyze():
     artist_name = request.form.get('artist_name', '').strip()
     if not artist_name:
         flash('Please enter an artist name', 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('search'))
 
     try:
         # Prepare visualization data for songs
@@ -419,7 +423,7 @@ def analyze():
 
         if viz_data is None:
             flash(f'No results found for artist: {artist_name}', 'error')
-            return redirect(url_for('index'))
+            return redirect(url_for('search'))
 
         # Prepare album data
         album_data = prepare_album_data(artist_name)
@@ -441,7 +445,7 @@ def analyze():
 
     except Exception as e:
         flash(f'An error occurred: {str(e)}', 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('search'))
 
 @app.route('/api/artists')
 def get_artists():
@@ -1016,7 +1020,7 @@ def albums200():
     """Billboard 200 Weekly Albums Chart Viewer"""
     if BILLBOARD_200_DATA is None:
         flash('Billboard 200 data is not available', 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('search'))
 
     # Get the selected date from query params (default to latest)
     selected_date = request.args.get('date', None)
