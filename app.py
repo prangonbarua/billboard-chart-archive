@@ -107,7 +107,11 @@ else:
 # mutated in-process, so these are constant for the process lifetime).
 _hot100_dates_parsed = pd.to_datetime(BILLBOARD_DATA['Date'], errors='coerce')
 # Sorted, stripped, unique modern (1990+) artists for the autocomplete endpoint
-MODERN_ARTISTS = sorted(BILLBOARD_DATA.loc[_hot100_dates_parsed >= '1990-01-01', 'Artist'].str.strip().unique())
+_modern_raw = BILLBOARD_DATA.loc[_hot100_dates_parsed >= '1990-01-01', 'Artist'].str.strip().unique()
+# Exclude combined collab credits ("X Featuring Y", "X & Y Duet With Z") — the
+# base artist search already matches those rows, so they are noise in autocomplete.
+_collab_markers = (' featuring ', ' feat. ', ' feat ', ' with ', ' x ', ' & ', ' + ', ' duet ', ' / ')
+MODERN_ARTISTS = sorted(a for a in _modern_raw if not any(m in a.lower() for m in _collab_markers))
 # Available Hot 100 chart dates (newest first) as display strings
 HOT100_AVAILABLE_DATES = [pd.Timestamp(d).strftime('%Y-%m-%d') for d in sorted(_hot100_dates_parsed[_hot100_dates_parsed.dt.year >= 1958].dropna().unique(), reverse=True)]
 
