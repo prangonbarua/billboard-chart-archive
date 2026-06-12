@@ -274,7 +274,6 @@
             min-width: 2.5rem;
             text-align: center;
         }
-        .peak-badge-cell.peak-1 { color: var(--yellow); }
         .peak-badge-cell.peak-top10 { color: var(--green); }
 
         .cell-art { width: 60px; }
@@ -291,9 +290,6 @@
         .song-hint { font-size: 0.72rem; color: var(--text-dim); margin-top: 0.1rem; }
         .stat-val { font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; }
 
-        .row-number-one { background: var(--yellow-dim); }
-        .row-number-one:hover { background: rgba(251,191,36,0.18) !important; }
-        .row-number-one .song-title { color: var(--yellow); }
 
         .col-hide { }
 
@@ -463,11 +459,14 @@
         .dl-csv {
             margin-left: auto;
             font-family: 'SF Mono', Menlo, Consolas, monospace !important;
-            font-size: 0.8125rem !important;
-            background: #ccffe9;
+            font-size: 0.875rem !important;
+            font-weight: 500;
+            color: #000000 !important;
+            background: none;
             white-space: nowrap;
+            padding: 0.375rem 0.25rem;
         }
-        .dl-csv:hover { background: #a8ffdc; }
+        .dl-csv:hover { background: #ccffe9 !important; }
     </style>
     <nav class="nav">
         <a href="{{ url_for('index') }}">Home</a>
@@ -520,7 +519,6 @@
                             <th class="cell-art"></th>
                             <th>Song</th>
                             <th class="col-hide">Weeks</th>
-                            <th class="col-hide">First Charted</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -543,7 +541,6 @@
                                 
                             </td>
                             <td class="col-hide"><div class="stat-val">{{ song.weeks }}</div></td>
-                            <td class="col-hide"><div class="stat-val">{{ song.first_date }}</div></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -559,7 +556,6 @@
                             <th class="cell-art"></th>
                             <th>Album</th>
                             <th class="col-hide">Weeks</th>
-                            <th class="col-hide">First Charted</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -582,7 +578,6 @@
                                 
                             </td>
                             <td class="col-hide"><div class="stat-val">{{ album.weeks }}</div></td>
-                            <td class="col-hide"><div class="stat-val">{{ album.first_date }}</div></td>
                         </tr>
                         {% endfor %}
                     </tbody>
