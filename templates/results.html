@@ -458,11 +458,23 @@
 </head>
 <body>
 
+    <style>
+        .nav { align-items: center; }
+        .dl-csv {
+            margin-left: auto;
+            font-family: 'SF Mono', Menlo, Consolas, monospace !important;
+            font-size: 0.8125rem !important;
+            background: #ccffe9;
+            white-space: nowrap;
+        }
+        .dl-csv:hover { background: #a8ffdc; }
+    </style>
     <nav class="nav">
         <a href="{{ url_for('index') }}">Home</a>
         <a href="{{ url_for('top100') }}">The Hot 100</a>
         <a href="{{ url_for('albums200') }}">Billboard 200</a>
         <a href="{{ url_for('search') }}" class="active">Reports</a>
+        <a class="dl-csv" href="{{ url_for('download_csv', artist_name=artist_name) }}">[ &#8595; Download CSV ]</a>
     </nav>
 
     <div class="container">

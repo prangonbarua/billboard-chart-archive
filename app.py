@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from flask import Flask, render_template, request, send_file, flash, redirect, url_for, jsonify
+from flask import Flask, render_template, request, send_file, flash, redirect, url_for, jsonify, Response
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -1238,6 +1238,24 @@ def get_current_number_one():
             'date': str(latest_date)
         })
 
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/download-csv/<artist_name>')
+def download_csv(artist_name):
+    """Download the artist's full Hot 100 chart history as CSV"""
+    try:
+        artist_lower = artist_name.strip().lower()
+        mask = BILLBOARD_DATA['Artist'].str.strip().str.lower().str.contains(artist_lower, na=False, regex=False)
+        df = BILLBOARD_DATA[mask]
+        if df.empty:
+            return jsonify({'error': 'No data for artist'}), 404
+        safe_name = re.sub(r'[^\w\s-]', '', artist_name).strip().replace(' ', '_')
+        return Response(
+            df.to_csv(index=False),
+            mimetype='text/csv',
+            headers={'Content-Disposition': f'attachment; filename="{safe_name}_Chart_History.csv"'}
+        )
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
