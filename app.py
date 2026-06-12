@@ -343,7 +343,7 @@ def prepare_visualization_data(artist_name):
         }
         for song, row in agg.iterrows()
     ]
-    songs_list.sort(key=lambda x: (x['peak'], x['first_date_sort']))
+    songs_list.sort(key=lambda x: (-x['weeks'], x['peak']))
 
     top_10_hits = int((agg['peak'] <= 10).sum())
     number_ones = int((agg['peak'] == 1).sum())
@@ -404,7 +404,7 @@ def prepare_album_data(artist_name):
         }
         for album, row in agg.iterrows()
     ]
-    albums_list.sort(key=lambda x: (x['peak'], x['first_date_sort']))
+    albums_list.sort(key=lambda x: (-x['weeks'], x['peak']))
 
     return {
         'albums': albums_list,
