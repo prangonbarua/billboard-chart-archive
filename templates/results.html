@@ -454,7 +454,6 @@
             .artist-profile { flex-direction: column; text-align: center; }
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="/static/paxel.css">
 </head>
 <body>
@@ -489,13 +488,6 @@
                     <span class="stat-pill-label">Albums Charted</span>
                 </div>
                 {% endif %}
-            </div>
-        </div>
-
-        <!-- Peak Chart -->
-        <div class="card">
-            <div class="chart-wrap">
-                <canvas id="chartCanvas"></canvas>
             </div>
         </div>
 
@@ -676,82 +668,6 @@
         // ── Row animations ────────────────────────────────────────────
         document.querySelectorAll('.chart-table tbody tr').forEach((row, i) => {
             row.style.animationDelay = Math.min(i * 0.025, 1.0) + 's';
-        });
-
-        // ── Peak bar chart ────────────────────────────────────────────
-        const songs = Object.keys(chartData);
-        const peaks = songs.map(s => chartData[s].length ? Math.min(...chartData[s].map(e => e.rank)) : 100);
-
-        const order = Array.from({length: songs.length}, (_, i) => i)
-            .sort((a, b) => peaks[a] - peaks[b]);
-
-        const truncate = (s, n) => s.length > n ? s.slice(0, n) + '\u2026' : s;
-        const sortedLabels = order.map(i => truncate(songs[i].split(' (')[0], 26));
-        const sortedPeaks  = order.map(i => peaks[i]);
-        const sortedNames  = order.map(i => songs[i]);
-        const sortedColors = sortedPeaks.map(p =>
-            p === 1  ? 'rgba(251,191,36,0.85)' :
-            p <= 10  ? 'rgba(74,222,128,0.75)'  :
-            p <= 40  ? 'rgba(250,250,250,0.35)'  :
-                       'rgba(250,250,250,0.18)'
-        );
-
-        const barH = Math.max(26, Math.min(38, 360 / Math.max(sortedLabels.length, 1)));
-        const ctx = document.getElementById('chartCanvas').getContext('2d');
-        ctx.canvas.height = Math.max(160, sortedLabels.length * (barH + 5) + 48);
-
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: sortedLabels,
-                datasets: [{
-                    data: sortedPeaks,
-                    backgroundColor: sortedColors,
-                    borderRadius: 4,
-                    borderSkipped: false,
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: { duration: 0 },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            title: items => sortedNames[items[0].dataIndex],
-                            label: item => '  Peak: #' + item.raw
-                        },
-                        backgroundColor: '#ffffff',
-                        titleColor: '#111111',
-                        bodyColor: '#71717a',
-                        borderColor: 'rgba(2, 255, 154,0.35)',
-                        borderWidth: 1,
-                        padding: 10
-                    }
-                },
-                scales: {
-                    x: {
-                        reverse: true,
-                        min: 1,
-                        max: 100,
-                        grid: { color: 'rgba(2, 255, 154,0.35)' },
-                        ticks: {
-                            color: '#71717a',
-                            callback: v => Number.isInteger(v) ? '#' + v : ''
-                        },
-                        title: { display: true, text: 'Peak Position  (\u2190 #1 is best)', color: '#52525b', font: { size: 11 } }
-                    },
-                    y: {
-                        grid: { display: false },
-                        ticks: { color: '#a1a1aa', font: { size: 11 } }
-                    }
-                },
-                onClick: (evt, elements) => {
-                    if (elements.length) showSongDetails(sortedNames[elements[0].index]);
-                }
-            }
         });
 
         // ── Row clicks ────────────────────────────────────────────────
