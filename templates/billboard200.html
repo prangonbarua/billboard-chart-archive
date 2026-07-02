@@ -312,7 +312,7 @@
         </div>
 
         {% if chart_songs and chart_songs|length > 0 %}
-        <div class="hero">
+        <div class="hero" data-artist="{{ chart_songs[0].artist|e }}" data-song="{{ chart_songs[0].song|e }}" style="cursor:pointer">
             <div class="hero-inner">
                 <div class="hero-art">
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Crect fill='%23f5f5f3' width='160' height='160'/%3E%3C/svg%3E"
@@ -541,6 +541,8 @@
         document.querySelectorAll('.chart-table tbody tr[data-artist]').forEach(row => {
             row.addEventListener('click', () => showSongHistory(row.dataset.artist, row.dataset.song));
         });
+        const heroEl = document.querySelector('.hero[data-artist]');
+        if (heroEl) heroEl.addEventListener('click', () => showSongHistory(heroEl.dataset.artist, heroEl.dataset.song));
 
         function showSongHistory(artist, song) {
             const modal = document.getElementById('historyModal');

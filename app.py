@@ -959,12 +959,12 @@ def top100():
         # PRE-CALCULATE cumulative weeks for all songs on this chart (PERFORMANCE OPTIMIZATION)
         # Filter data up to selected date once
         historical_data = data[data['Date'] <= selected_date_dt].copy()
-        historical_data['Song_Clean'] = historical_data['Song'].str.strip()
-        historical_data['Artist_Clean'] = historical_data['Artist'].str.strip()
+        historical_data['Song_Clean'] = historical_data['Song'].str.strip().str.casefold()
+        historical_data['Artist_Clean'] = historical_data['Artist'].str.strip().str.casefold()
 
         # Restrict history to the song/artist pairs actually on this chart, so the
         # lookups below materialize ~100 keys instead of one per pair that ever charted.
-        chart_pairs = set(zip(date_data['Song'].str.strip(), date_data['Artist'].str.strip()))
+        chart_pairs = set(zip(date_data['Song'].str.strip().str.casefold(), date_data['Artist'].str.strip().str.casefold()))
         pair_index = pd.MultiIndex.from_frame(historical_data[['Song_Clean', 'Artist_Clean']])
         historical_data = historical_data[pair_index.isin(chart_pairs)]
 
@@ -981,7 +981,7 @@ def top100():
             artist_name = row['Artist'].strip() if pd.notna(row['Artist']) else ''
 
             # Lookup cumulative weeks from pre-calculated dictionary
-            cumulative_weeks = weeks_lookup.get((song_name, artist_name), 1)
+            cumulative_weeks = weeks_lookup.get((song_name.casefold(), artist_name.casefold()), 1)
 
             song_info = {
                 'rank': safe_int(row['Rank'], 0),
@@ -995,7 +995,7 @@ def top100():
             # Calculate position change
             if song_info['last_week'] is None:
                 # Re-entry if it charted before the selected date, else new (O(1) lookup)
-                if prior_counts.get((song_name, artist_name), 0) > 0:
+                if prior_counts.get((song_name.casefold(), artist_name.casefold()), 0) > 0:
                     song_info['change'] = 're-entry'
                 else:
                     song_info['change'] = 'new'
@@ -1054,12 +1054,12 @@ def albums200():
 
         # PRE-CALCULATE cumulative weeks for all albums on this chart
         historical_data = data[data['Date'] <= selected_date_dt].copy()
-        historical_data['Song_Clean'] = historical_data['Song'].str.strip()
-        historical_data['Artist_Clean'] = historical_data['Artist'].str.strip()
+        historical_data['Song_Clean'] = historical_data['Song'].str.strip().str.casefold()
+        historical_data['Artist_Clean'] = historical_data['Artist'].str.strip().str.casefold()
 
         # Restrict history to the album/artist pairs actually on this chart, so the
         # lookups below materialize ~200 keys instead of one per pair that ever charted.
-        chart_pairs = set(zip(date_data['Song'].str.strip(), date_data['Artist'].str.strip()))
+        chart_pairs = set(zip(date_data['Song'].str.strip().str.casefold(), date_data['Artist'].str.strip().str.casefold()))
         pair_index = pd.MultiIndex.from_frame(historical_data[['Song_Clean', 'Artist_Clean']])
         historical_data = historical_data[pair_index.isin(chart_pairs)]
 
@@ -1076,7 +1076,7 @@ def albums200():
             artist_name = row['Artist'].strip() if pd.notna(row['Artist']) else ''
 
             # Lookup cumulative weeks from pre-calculated dictionary
-            cumulative_weeks = weeks_lookup.get((song_name, artist_name), 1)
+            cumulative_weeks = weeks_lookup.get((song_name.casefold(), artist_name.casefold()), 1)
 
             song_info = {
                 'rank': safe_int(row['Rank'], 0),
@@ -1090,7 +1090,7 @@ def albums200():
             # Calculate position change
             if song_info['last_week'] is None:
                 # Re-entry if it charted before the selected date, else new (O(1) lookup)
-                if prior_counts.get((song_name, artist_name), 0) > 0:
+                if prior_counts.get((song_name.casefold(), artist_name.casefold()), 0) > 0:
                     song_info['change'] = 're-entry'
                 else:
                     song_info['change'] = 'new'
@@ -1249,14 +1249,44 @@ def get_current_number_one():
 def download_csv(artist_name):
     """Download the artist's full Hot 100 chart history as CSV"""
     try:
+        import io, csv as csvmod
         artist_lower = artist_name.strip().lower()
         mask = BILLBOARD_DATA['Artist'].str.strip().str.lower().str.contains(artist_lower, na=False, regex=False)
-        df = BILLBOARD_DATA[mask]
+        df = BILLBOARD_DATA[mask].copy()
         if df.empty:
             return jsonify({'error': 'No data for artist'}), 404
+
+        # Pivot layout: songs as columns, Image row, then one row per chart
+        # week with each song's rank that week (blank when not charting)
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        df = df.dropna(subset=['Date'])
+        df['Song'] = df['Song'].astype(str)
+        df['Rank'] = pd.to_numeric(df['Rank'], errors='coerce')
+
+        songs = df.groupby('Song', observed=True)['Date'].min().sort_values().index.tolist()
+        pivot = df.pivot_table(index='Date', columns='Song', values='Rank',
+                               aggfunc='min', observed=True).sort_index()
+
+        images = {}
+        if 'Image URL' in df.columns:
+            for song, grp in df.groupby('Song', observed=True):
+                urls = grp['Image URL'].dropna()
+                urls = urls[urls.astype(str).str.startswith('http')]
+                images[song] = str(urls.iloc[0]) if len(urls) else ''
+
+        buf = io.StringIO()
+        writer = csvmod.writer(buf)
+        writer.writerow(['Song'] + songs)
+        writer.writerow(['Image'] + [images.get(s, '') for s in songs])
+        for date, row in pivot.iterrows():
+            date_str = f"{date.month}/{date.day}/{date.year}"
+            writer.writerow([date_str] + [
+                (int(row[s]) if pd.notna(row.get(s)) else '') for s in songs
+            ])
+
         safe_name = re.sub(r'[^\w\s-]', '', artist_name).strip().replace(' ', '_')
         return Response(
-            df.to_csv(index=False),
+            buf.getvalue(),
             mimetype='text/csv',
             headers={'Content-Disposition': f'attachment; filename="{safe_name}_Chart_History.csv"'}
         )
