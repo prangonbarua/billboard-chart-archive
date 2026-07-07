@@ -452,6 +452,7 @@ def analyze():
         return redirect(url_for('search'))
 
 @app.route('/api/artists')
+@limiter.exempt
 def get_artists():
     """API endpoint for artist autocomplete"""
     query = request.args.get('q', '').lower()
@@ -613,7 +614,7 @@ def get_song_streams(artist_name, song_name):
     daily = entry.get('daily') if entry else None
     return {'streams': streams, 'daily': daily, 'last_updated': cached.get('last_updated')}
 
-@app.route('/api/artist-info/<artist_name>')
+@app.route('/api/artist-info/<path:artist_name>')
 def get_artist_info(artist_name):
     """API endpoint for artist information from Spotify (image) + Wikipedia/Billboard overview"""
 
@@ -928,6 +929,7 @@ def get_album_image(artist_name, album_name):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/top100')
+@limiter.exempt
 def top100():
     """Hot 100 Weekly Chart Viewer"""
     # Get the selected date from query params (default to latest)
@@ -953,6 +955,11 @@ def top100():
             flash('Invalid date', 'error')
             return redirect(url_for('top100'))
         date_data = data[data['Date'] == selected_date_dt]
+        if date_data.empty and available_dates:
+            avail = pd.to_datetime(pd.Series(available_dates))
+            selected_date_dt = avail.iloc[(avail - selected_date_dt).abs().argmin()]
+            selected_date = selected_date_dt.strftime('%Y-%m-%d')
+            date_data = data[data['Date'] == selected_date_dt]
         date_data = date_data.sort_values('Rank')
         date_data = date_data.dropna(subset=['Rank'])
 
@@ -1020,6 +1027,7 @@ def top100():
     )
 
 @app.route('/albums200')
+@limiter.exempt
 def albums200():
     """Billboard 200 Weekly Albums Chart Viewer"""
     if BILLBOARD_200_DATA is None:
@@ -1049,6 +1057,11 @@ def albums200():
             flash('Invalid date', 'error')
             return redirect(url_for('albums200'))
         date_data = data[data['Date'] == selected_date_dt]
+        if date_data.empty and available_dates:
+            avail = pd.to_datetime(pd.Series(available_dates))
+            selected_date_dt = avail.iloc[(avail - selected_date_dt).abs().argmin()]
+            selected_date = selected_date_dt.strftime('%Y-%m-%d')
+            date_data = data[data['Date'] == selected_date_dt]
         date_data = date_data.sort_values('Rank')
         date_data = date_data.dropna(subset=['Rank'])
 
@@ -1115,6 +1128,7 @@ def albums200():
     )
 
 @app.route('/api/song-history')
+@limiter.exempt
 def get_song_history():
     """Get full chart history for a specific song (using query parameters to support slashes in names)"""
     artist = request.args.get('artist', '')
@@ -1162,6 +1176,7 @@ def get_song_history():
     })
 
 @app.route('/api/album-history')
+@limiter.exempt
 def get_album_history():
     """Get full chart history for a specific album (using query parameters to support slashes in names)"""
     if BILLBOARD_200_DATA is None:
@@ -1245,7 +1260,7 @@ def get_current_number_one():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/download-csv/<artist_name>')
+@app.route('/download-csv/<path:artist_name>')
 def download_csv(artist_name):
     """Download the artist's full Hot 100 chart history as CSV"""
     try:
@@ -1263,25 +1278,33 @@ def download_csv(artist_name):
         df['Song'] = df['Song'].astype(str)
         df['Rank'] = pd.to_numeric(df['Rank'], errors='coerce')
 
-        songs = df.groupby('Song', observed=True)['Date'].min().sort_values().index.tolist()
-        pivot = df.pivot_table(index='Date', columns='Song', values='Rank',
+        df['Artist'] = df['Artist'].astype(str)
+        # Key columns by (song, artist) so same-titled songs by different
+        # credits stay separate; disambiguate the header only when needed
+        pairs = df.groupby(['Song', 'Artist'], observed=True)['Date'].min().sort_values().index.tolist()
+        pivot = df.pivot_table(index='Date', columns=['Song', 'Artist'], values='Rank',
                                aggfunc='min', observed=True).sort_index()
+
+        title_counts = {}
+        for s, a in pairs:
+            title_counts[s] = title_counts.get(s, 0) + 1
+        headers = [s if title_counts[s] == 1 else f"{s} ({a})" for s, a in pairs]
 
         images = {}
         if 'Image URL' in df.columns:
-            for song, grp in df.groupby('Song', observed=True):
+            for pair, grp in df.groupby(['Song', 'Artist'], observed=True):
                 urls = grp['Image URL'].dropna()
                 urls = urls[urls.astype(str).str.startswith('http')]
-                images[song] = str(urls.iloc[0]) if len(urls) else ''
+                images[pair] = str(urls.iloc[0]) if len(urls) else ''
 
         buf = io.StringIO()
         writer = csvmod.writer(buf)
-        writer.writerow(['Song'] + songs)
-        writer.writerow(['Image'] + [images.get(s, '') for s in songs])
+        writer.writerow(['Song'] + headers)
+        writer.writerow(['Image'] + [images.get(p, '') for p in pairs])
         for date, row in pivot.iterrows():
             date_str = f"{date.month}/{date.day}/{date.year}"
             writer.writerow([date_str] + [
-                (int(row[s]) if pd.notna(row.get(s)) else '') for s in songs
+                (int(row[p]) if pd.notna(row.get(p)) else '') for p in pairs
             ])
 
         safe_name = re.sub(r'[^\w\s-]', '', artist_name).strip().replace(' ', '_')
@@ -1293,7 +1316,7 @@ def download_csv(artist_name):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/download/<artist_name>/<report_type>')
+@app.route('/download/<path:artist_name>/<report_type>')
 def download_excel(artist_name, report_type='songs'):
     """Download Excel file for artist - songs or albums"""
     try:
@@ -1326,7 +1349,7 @@ if __name__ == '__main__':
     print("="*60)
     print("\nStarting server...")
     port = int(os.environ.get('PORT', 5001))
-    debug_mode = os.environ.get('FLASK_ENV', 'development') == 'development'
+    debug_mode = os.environ.get('FLASK_ENV', 'production') == 'development'
     print(f"Open your browser and go to: http://localhost:{port}")
     print("\nPress CTRL+C to stop the server")
     print("="*60 + "\n")
