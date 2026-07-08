@@ -647,9 +647,9 @@
                     pvAudio.style.cssText = 'height:36px;flex:1;min-width:0;';
                     pv.appendChild(pvInfo); pv.appendChild(pvAudio);
                     const pvMute = document.createElement('button');
-                    pvMute.textContent = '\uD83D\uDD0A';
+                    pvMute.textContent = 'Mute';
                     pvMute.title = 'Mute';
-                    pvMute.style.cssText = 'font-size:0.9375rem;padding:0.3rem 0.5rem;cursor:pointer;background:var(--surface-hover);color:var(--text);border:1px solid var(--border);flex-shrink:0;';
+                    pvMute.style.cssText = 'font-family:inherit;font-size:0.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:0.4rem 0.65rem;cursor:pointer;background:var(--surface-hover);color:var(--text);border:1px solid var(--border);flex-shrink:0;';
                     const pvVol = document.createElement('input');
                     pvVol.type = 'range'; pvVol.min = 0; pvVol.max = 100;
                     pvVol.value = localStorage.getItem('previewVolume') || 80;
@@ -659,12 +659,12 @@
                     pvVol.addEventListener('input', () => {
                         pvAudio.volume = pvVol.value / 100;
                         pvAudio.muted = false;
-                        pvMute.textContent = pvVol.value == 0 ? '\uD83D\uDD07' : '\uD83D\uDD0A';
+                        pvMute.textContent = pvVol.value == 0 ? 'Unmute' : 'Mute';
                         localStorage.setItem('previewVolume', pvVol.value);
                     });
                     pvMute.addEventListener('click', () => {
                         pvAudio.muted = !pvAudio.muted;
-                        pvMute.textContent = pvAudio.muted ? '\uD83D\uDD07' : '\uD83D\uDD0A';
+                        pvMute.textContent = pvAudio.muted ? 'Unmute' : 'Mute';
                     });
                     pv.appendChild(pvMute); pv.appendChild(pvVol);
                     body.appendChild(pv);
