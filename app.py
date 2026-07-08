@@ -895,6 +895,35 @@ def get_song_image(artist_name, song_name):
         print(f"Deezer API error for '{song_name}' by {artist_name}: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/song-preview/<path:artist_name>/<path:song_name>')
+@limiter.exempt
+def get_song_preview(artist_name, song_name):
+    """API endpoint to get a 30-second audio preview from Deezer API"""
+    try:
+        import requests
+        from urllib.parse import quote
+
+        query = f"{song_name} {artist_name}"
+        url = f"https://api.deezer.com/search/track?q={quote(query)}&limit=3"
+        response = requests.get(url, timeout=5)
+
+        if response.status_code == 200:
+            items = response.json().get('data', [])
+            for item in items:
+                preview = item.get('preview')
+                if preview:
+                    return jsonify({
+                        'preview_url': preview,
+                        'track_name': item.get('title', ''),
+                        'source': 'deezer'
+                    })
+
+        return jsonify({'error': 'Preview not found'}), 404
+
+    except Exception as e:
+        print(f"Deezer preview error for '{song_name}' by {artist_name}: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/album-image/<path:artist_name>/<path:album_name>')
 @limiter.exempt
 def get_album_image(artist_name, album_name):

@@ -602,6 +602,36 @@
                         })
                         .catch(() => { listenersBox.style.display = 'none'; });
 
+
+                    // Song preview (Deezer 30s clip)
+                    const pv = document.createElement('div');
+                    pv.style.cssText = 'display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;';
+                    const pvBtn = document.createElement('button');
+                    pvBtn.textContent = 'Play preview';
+                    pvBtn.style.cssText = 'padding:0.5rem 1.1rem;cursor:pointer;font:inherit;font-weight:600;background:var(--surface-hover);color:var(--text);border:1px solid var(--border);';
+                    const pvLbl = document.createElement('span');
+                    pvLbl.style.cssText = 'font-size:0.8125rem;color:var(--text-muted);';
+                    pv.appendChild(pvBtn); pv.appendChild(pvLbl);
+                    body.appendChild(pv);
+                    if (window.__previewAudio) { window.__previewAudio.pause(); window.__previewAudio = null; }
+                    pvBtn.addEventListener('click', () => {
+                        const a = window.__previewAudio;
+                        if (a && !a.paused) { a.pause(); pvBtn.textContent = 'Play preview'; return; }
+                        if (a) { a.play(); pvBtn.textContent = 'Pause'; return; }
+                        pvLbl.textContent = 'Loading...';
+                        fetch('/api/song-preview/' + encodeURIComponent(artist) + '/' + encodeURIComponent(song))
+                            .then(r => r.ok ? r.json() : Promise.reject())
+                            .then(d => {
+                                const audio = new Audio(d.preview_url);
+                                window.__previewAudio = audio;
+                                audio.addEventListener('ended', () => { pvBtn.textContent = 'Play preview'; });
+                                audio.play();
+                                pvBtn.textContent = 'Pause';
+                                pvLbl.textContent = '30-second preview';
+                            })
+                            .catch(() => { pvLbl.textContent = 'Preview not available'; pvBtn.disabled = true; });
+                    });
+
                     const h3 = document.createElement('div');
                     h3.className = 'history-section-title';
                     h3.textContent = 'Chart History';
@@ -635,7 +665,7 @@
         }
 
         const historyModal = document.getElementById('historyModal');
-        function closeHistoryModal() { historyModal.style.display = 'none'; }
+        function closeHistoryModal() { historyModal.style.display = 'none'; if (window.__previewAudio) { window.__previewAudio.pause(); window.__previewAudio = null; } }
         document.getElementById('modalClose').addEventListener('click', closeHistoryModal);
         window.addEventListener('click', e => { if (e.target === historyModal) closeHistoryModal(); });
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHistoryModal(); });
