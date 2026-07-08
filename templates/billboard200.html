@@ -605,32 +605,31 @@
 
                     // Song preview (Deezer 30s clip)
                     const pv = document.createElement('div');
-                    pv.style.cssText = 'display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;';
-                    const pvBtn = document.createElement('button');
-                    pvBtn.textContent = 'Play preview';
-                    pvBtn.style.cssText = 'padding:0.5rem 1.1rem;cursor:pointer;font:inherit;font-weight:600;background:var(--surface-hover);color:var(--text);border:1px solid var(--border);';
-                    const pvLbl = document.createElement('span');
-                    pvLbl.style.cssText = 'font-size:0.8125rem;color:var(--text-muted);';
-                    pv.appendChild(pvBtn); pv.appendChild(pvLbl);
+                    pv.style.cssText = 'display:none;align-items:center;gap:0.75rem;margin-bottom:1.5rem;';
+                    const pvInfo = document.createElement('div');
+                    pvInfo.style.cssText = 'min-width:0;flex-shrink:0;';
+                    const pvName = document.createElement('div');
+                    pvName.style.cssText = 'font-size:0.8125rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px;';
+                    const pvSrc = document.createElement('div');
+                    pvSrc.style.cssText = 'font-size:0.6875rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;';
+                    pvSrc.textContent = '30s preview';
+                    pvInfo.appendChild(pvName); pvInfo.appendChild(pvSrc);
+                    const pvAudio = document.createElement('audio');
+                    pvAudio.controls = true;
+                    pvAudio.preload = 'none';
+                    pvAudio.style.cssText = 'height:36px;flex:1;min-width:0;';
+                    pv.appendChild(pvInfo); pv.appendChild(pvAudio);
                     body.appendChild(pv);
                     if (window.__previewAudio) { window.__previewAudio.pause(); window.__previewAudio = null; }
-                    pvBtn.addEventListener('click', () => {
-                        const a = window.__previewAudio;
-                        if (a && !a.paused) { a.pause(); pvBtn.textContent = 'Play preview'; return; }
-                        if (a) { a.play(); pvBtn.textContent = 'Pause'; return; }
-                        pvLbl.textContent = 'Loading...';
-                        fetch('/api/song-preview/' + encodeURIComponent(artist) + '/' + encodeURIComponent(song))
-                            .then(r => r.ok ? r.json() : Promise.reject())
-                            .then(d => {
-                                const audio = new Audio(d.preview_url);
-                                window.__previewAudio = audio;
-                                audio.addEventListener('ended', () => { pvBtn.textContent = 'Play preview'; });
-                                audio.play();
-                                pvBtn.textContent = 'Pause';
-                                pvLbl.textContent = '30-second preview';
-                            })
-                            .catch(() => { pvLbl.textContent = 'Preview not available'; pvBtn.disabled = true; });
-                    });
+                    window.__previewAudio = pvAudio;
+                    fetch('/api/song-preview/' + encodeURIComponent(artist) + '/' + encodeURIComponent(song))
+                        .then(r => r.ok ? r.json() : Promise.reject())
+                        .then(d => {
+                            pvAudio.src = d.preview_url;
+                            pvName.textContent = d.track_name || song;
+                            pv.style.display = 'flex';
+                        })
+                        .catch(() => {});
 
                     const h3 = document.createElement('div');
                     h3.className = 'history-section-title';
