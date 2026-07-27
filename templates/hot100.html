@@ -561,7 +561,11 @@
         const heroEl = document.querySelector('.hero[data-artist]');
         if (heroEl) heroEl.addEventListener('click', () => showSongHistory(heroEl.dataset.artist, heroEl.dataset.song));
 
+        // Sequence token so a slow response for a previously clicked song can't
+        // overwrite the modal after another song (or a close) superseded it
+        let historyReq = 0;
         function showSongHistory(artist, song) {
+            const reqId = ++historyReq;
             const modal = document.getElementById('historyModal');
             const titleEl = document.getElementById('modalTitle');
             const body = document.getElementById('modalBody');
@@ -577,6 +581,7 @@
             fetch('/api/song-history?artist=' + encodeURIComponent(artist) + '&song=' + encodeURIComponent(song))
                 .then(r => r.ok ? r.json() : Promise.reject(r.status))
                 .then(data => {
+                    if (reqId !== historyReq) return;
                     body.textContent = '';
                     if (data.error) {
                         const err = document.createElement('p');
@@ -710,6 +715,7 @@
                     body.appendChild(list);
                 })
                 .catch(() => {
+                    if (reqId !== historyReq) return;
                     body.textContent = '';
                     const err = document.createElement('p');
                     err.className = 'modal-error';
@@ -718,7 +724,7 @@
                 });
         }
 
-        function closeHistoryModal() { document.getElementById('historyModal').style.display = 'none'; if (window.__previewAudio) { window.__previewAudio.pause(); window.__previewAudio = null; } }
+        function closeHistoryModal() { historyReq++; document.getElementById('historyModal').style.display = 'none'; if (window.__previewAudio) { window.__previewAudio.pause(); window.__previewAudio = null; } }
         document.getElementById('modalClose').addEventListener('click', closeHistoryModal);
         window.addEventListener('click', e => { if (e.target === document.getElementById('historyModal')) closeHistoryModal(); });
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHistoryModal(); });

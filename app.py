@@ -989,6 +989,7 @@ def top100():
         if pd.isna(selected_date_dt):
             flash('Invalid date', 'error')
             return redirect(url_for('top100'))
+        selected_date = selected_date_dt.strftime('%Y-%m-%d')
         date_data = data[data['Date'] == selected_date_dt]
         if date_data.empty and available_dates:
             avail = pd.to_datetime(pd.Series(available_dates))
@@ -1008,22 +1009,33 @@ def top100():
         # lookups below materialize ~100 keys instead of one per pair that ever charted.
         chart_pairs = set(zip(date_data['Song'].str.strip().str.casefold(), date_data['Artist'].str.strip().str.casefold().str.replace(_CREDIT_MARKER_RE, '', regex=True)))
         pair_index = pd.MultiIndex.from_frame(historical_data[['Song_Clean', 'Artist_Clean']])
-        historical_data = historical_data[pair_index.isin(chart_pairs)]
+        historical_data = historical_data[pair_index.isin(chart_pairs)].copy()
 
-        # Cumulative weeks (appearances through the selected date) per song+artist
-        weeks_lookup = historical_data.groupby(['Song_Clean', 'Artist_Clean']).size().to_dict()
-
-        # Appearances strictly before the selected date — one pass, used for re-entry vs new
-        prior = historical_data[historical_data['Date'] < selected_date_dt]
-        prior_counts = prior.groupby(['Song_Clean', 'Artist_Clean']).size().to_dict()
+        # Chart dates per exact credit, and per primary-artist key (credit variants merged)
+        historical_data['Artist_Full'] = historical_data['Artist'].str.strip().str.casefold()
+        exact_dates = historical_data.groupby(['Song_Clean', 'Artist_Full'])['Date'].agg(set).to_dict()
+        pair_dates = historical_data.groupby(['Song_Clean', 'Artist_Clean'])['Date'].agg(set).to_dict()
+        chart_week_index = {pd.Timestamp(d): i for i, d in enumerate(available_dates)}
 
         for _, row in date_data.iterrows():
             # Get song info
             song_name = row['Song'].strip() if pd.notna(row['Song']) else ''
             artist_name = row['Artist'].strip() if pd.notna(row['Artist']) else ''
 
-            # Lookup cumulative weeks from pre-calculated dictionary
-            cumulative_weeks = weeks_lookup.get((song_name.casefold(), primary_artist(artist_name)), 1)
+            # Weeks = all weeks under the exact credit, plus credit-variant weeks only
+            # within the contiguous run ending at this chart week — so mid-run credit
+            # drift still merges, but a later same-titled version with a different
+            # credit doesn't inherit an older version's weeks
+            merged_dates = pair_dates.get((song_name.casefold(), primary_artist(artist_name)), set())
+            song_dates = set(exact_dates.get((song_name.casefold(), artist_name.casefold()), set()))
+            cur = selected_date_dt
+            while cur in merged_dates:
+                song_dates.add(cur)
+                idx = chart_week_index.get(cur)
+                if idx is None or idx + 1 >= len(available_dates):
+                    break
+                cur = pd.Timestamp(available_dates[idx + 1])
+            cumulative_weeks = len(song_dates) or 1
 
             song_info = {
                 'rank': safe_int(row['Rank'], 0),
@@ -1036,8 +1048,8 @@ def top100():
 
             # Calculate position change
             if song_info['last_week'] is None:
-                # Re-entry if it charted before the selected date, else new (O(1) lookup)
-                if prior_counts.get((song_name.casefold(), primary_artist(artist_name)), 0) > 0:
+                # Re-entry if it charted before the selected date, else new
+                if song_dates - {selected_date_dt}:
                     song_info['change'] = 're-entry'
                 else:
                     song_info['change'] = 'new'
@@ -1091,6 +1103,7 @@ def albums200():
         if pd.isna(selected_date_dt):
             flash('Invalid date', 'error')
             return redirect(url_for('albums200'))
+        selected_date = selected_date_dt.strftime('%Y-%m-%d')
         date_data = data[data['Date'] == selected_date_dt]
         if date_data.empty and available_dates:
             avail = pd.to_datetime(pd.Series(available_dates))
@@ -1109,22 +1122,33 @@ def albums200():
         # lookups below materialize ~200 keys instead of one per pair that ever charted.
         chart_pairs = set(zip(date_data['Song'].str.strip().str.casefold(), date_data['Artist'].str.strip().str.casefold().str.replace(_CREDIT_MARKER_RE, '', regex=True)))
         pair_index = pd.MultiIndex.from_frame(historical_data[['Song_Clean', 'Artist_Clean']])
-        historical_data = historical_data[pair_index.isin(chart_pairs)]
+        historical_data = historical_data[pair_index.isin(chart_pairs)].copy()
 
-        # Cumulative weeks (appearances through the selected date) per album+artist
-        weeks_lookup = historical_data.groupby(['Song_Clean', 'Artist_Clean']).size().to_dict()
-
-        # Appearances strictly before the selected date — one pass, used for re-entry vs new
-        prior = historical_data[historical_data['Date'] < selected_date_dt]
-        prior_counts = prior.groupby(['Song_Clean', 'Artist_Clean']).size().to_dict()
+        # Chart dates per exact credit, and per primary-artist key (credit variants merged)
+        historical_data['Artist_Full'] = historical_data['Artist'].str.strip().str.casefold()
+        exact_dates = historical_data.groupby(['Song_Clean', 'Artist_Full'])['Date'].agg(set).to_dict()
+        pair_dates = historical_data.groupby(['Song_Clean', 'Artist_Clean'])['Date'].agg(set).to_dict()
+        chart_week_index = {pd.Timestamp(d): i for i, d in enumerate(available_dates)}
 
         for _, row in date_data.iterrows():
             # Get album info
             song_name = row['Song'].strip() if pd.notna(row['Song']) else ''
             artist_name = row['Artist'].strip() if pd.notna(row['Artist']) else ''
 
-            # Lookup cumulative weeks from pre-calculated dictionary
-            cumulative_weeks = weeks_lookup.get((song_name.casefold(), primary_artist(artist_name)), 1)
+            # Weeks = all weeks under the exact credit, plus credit-variant weeks only
+            # within the contiguous run ending at this chart week — so mid-run credit
+            # drift still merges, but a later same-titled version with a different
+            # credit doesn't inherit an older version's weeks
+            merged_dates = pair_dates.get((song_name.casefold(), primary_artist(artist_name)), set())
+            song_dates = set(exact_dates.get((song_name.casefold(), artist_name.casefold()), set()))
+            cur = selected_date_dt
+            while cur in merged_dates:
+                song_dates.add(cur)
+                idx = chart_week_index.get(cur)
+                if idx is None or idx + 1 >= len(available_dates):
+                    break
+                cur = pd.Timestamp(available_dates[idx + 1])
+            cumulative_weeks = len(song_dates) or 1
 
             song_info = {
                 'rank': safe_int(row['Rank'], 0),
@@ -1137,8 +1161,8 @@ def albums200():
 
             # Calculate position change
             if song_info['last_week'] is None:
-                # Re-entry if it charted before the selected date, else new (O(1) lookup)
-                if prior_counts.get((song_name.casefold(), primary_artist(artist_name)), 0) > 0:
+                # Re-entry if it charted before the selected date, else new
+                if song_dates - {selected_date_dt}:
                     song_info['change'] = 're-entry'
                 else:
                     song_info['change'] = 'new'
@@ -1301,6 +1325,8 @@ def download_csv(artist_name):
     try:
         import io, csv as csvmod
         artist_lower = artist_name.strip().lower()
+        if not artist_lower:
+            return jsonify({'error': 'Missing artist name'}), 400
         mask = BILLBOARD_DATA['Artist'].str.strip().str.lower().str.contains(artist_lower, na=False, regex=False)
         df = BILLBOARD_DATA[mask].copy()
         if df.empty:
@@ -1357,6 +1383,8 @@ def download_excel(artist_name, report_type='songs'):
     try:
         if report_type not in ('songs', 'albums'):
             return jsonify({'error': 'Invalid report type'}), 400
+        if not artist_name.strip():
+            return jsonify({'error': 'Missing artist name'}), 400
         safe_name = re.sub(r'[^\w\s-]', '', artist_name).strip().replace(' ', '_')
         if report_type == 'albums':
             output_file, error = process_album_data_excel(artist_name)

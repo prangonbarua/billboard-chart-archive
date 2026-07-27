@@ -1,0 +1,51 @@
+name: Weekly chart update
+
+on:
+  schedule:
+    # Billboard publishes new charts on Tuesdays; run Wednesday 13:00 UTC
+    - cron: "0 13 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      HAS_RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install scraper dependencies
+        run: pip install requests beautifulsoup4 pandas
+
+      - name: Scrape latest charts
+        run: python3 scripts/fast_billboard_scraper.py
+
+      - name: Commit updated data
+        id: commit
+        run: |
+          git add data/hot100.csv data/billboard200.csv
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No new chart data."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Update chart data"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy to Railway
+        if: steps.commit.outputs.changed == 'true' && env.HAS_RAILWAY_TOKEN == 'true'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          npm install -g @railway/cli
+          railway up --service billboard-chart-archive --detach

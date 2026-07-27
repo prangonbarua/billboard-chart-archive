@@ -544,7 +544,11 @@
         const heroEl = document.querySelector('.hero[data-artist]');
         if (heroEl) heroEl.addEventListener('click', () => showSongHistory(heroEl.dataset.artist, heroEl.dataset.song));
 
+        // Sequence token so a slow response for a previously clicked album can't
+        // overwrite the modal after another album (or a close) superseded it
+        let historyReq = 0;
         function showSongHistory(artist, song) {
+            const reqId = ++historyReq;
             const modal = document.getElementById('historyModal');
             const titleEl = document.getElementById('modalTitle');
             const body = document.getElementById('modalBody');
@@ -560,6 +564,7 @@
             fetch('/api/album-history?artist=' + encodeURIComponent(artist) + '&album=' + encodeURIComponent(song))
                 .then(r => r.ok ? r.json() : Promise.reject(r.status))
                 .then(data => {
+                    if (reqId !== historyReq) return;
                     body.textContent = '';
                     if (data.error) {
                         const err = document.createElement('p');
@@ -678,6 +683,7 @@
                     body.appendChild(list);
                 })
                 .catch(() => {
+                    if (reqId !== historyReq) return;
                     body.textContent = '';
                     const err = document.createElement('p'); err.className = 'modal-error'; err.textContent = 'Error loading history';
                     body.appendChild(err);
@@ -685,7 +691,7 @@
         }
 
         const historyModal = document.getElementById('historyModal');
-        function closeHistoryModal() { historyModal.style.display = 'none'; if (window.__previewAudio) { window.__previewAudio.pause(); window.__previewAudio = null; } }
+        function closeHistoryModal() { historyReq++; historyModal.style.display = 'none'; if (window.__previewAudio) { window.__previewAudio.pause(); window.__previewAudio = null; } }
         document.getElementById('modalClose').addEventListener('click', closeHistoryModal);
         window.addEventListener('click', e => { if (e.target === historyModal) closeHistoryModal(); });
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHistoryModal(); });

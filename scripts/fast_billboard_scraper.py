@@ -152,7 +152,9 @@ def update_chart_data(chart_name, csv_filename, weeks_to_fetch=15):
         if pd.isna(latest_date):
             latest_date = None  # corrupt/empty Date column — fall back to the window below
 
-    end_date = datetime.now()
+    # Charts are dated the upcoming Saturday and published mid-week, so scan up to
+    # 6 days ahead of now; an unpublished future week scrapes 0 rows and is skipped.
+    end_date = datetime.now() + timedelta(days=6)
 
     # Calculate the window to scan. We look back ~1 year so any recently-missed week gets
     # backfilled (a transient failure would otherwise leave a permanent hole once the
