@@ -5,6 +5,8 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import os
 import re
+import threading
+import time
 import pandas as pd
 import tempfile
 from pathlib import Path
@@ -869,31 +871,78 @@ def get_song_streams_api(artist_name, song_name):
         return jsonify({'streams': None, 'last_updated': None})
     return jsonify(result)
 
+# Deezer artwork lookups: results never change for a given song/album, but every
+# chart page fires ~100 of them at once and Deezer's public quota is ~50 requests
+# per 5s per IP. Cache successes forever and retry once when the quota trips
+# (Deezer signals it with HTTP 200 + {"error": {"code": 4}}, not a 429).
+_deezer_cache = {}
+_deezer_cache_lock = threading.Lock()
+_DEEZER_CACHE_MAX = 20000
+
+def _deezer_cache_get(key):
+    with _deezer_cache_lock:
+        return _deezer_cache.get(key)
+
+def _deezer_cache_put(key, value):
+    with _deezer_cache_lock:
+        if len(_deezer_cache) >= _DEEZER_CACHE_MAX:
+            _deezer_cache.pop(next(iter(_deezer_cache)))
+        _deezer_cache[key] = value
+
+def _deezer_search_items(url):
+    """GET a Deezer search URL, retrying once if the rate-limit quota trips."""
+    import requests
+    for attempt in (1, 2):
+        response = requests.get(url, timeout=5)
+        if response.status_code != 200:
+            return []
+        data = response.json()
+        if data.get('error'):
+            if attempt == 1:
+                time.sleep(2.5)
+                continue
+            return []
+        return data.get('data', [])
+    return []
+
+def _deezer_fallback_query(title, artist_credit):
+    """Bare title + primary artist, for when the full Billboard credit string
+    ('Shakira X Burna Boy', '... (FIFA World Cup Official Song 2026)') has no
+    Deezer match."""
+    bare_title = re.sub(r'\s*\([^)]*\)', '', title).strip() or title
+    return f"{bare_title} {primary_artist(artist_credit)}"
+
 @app.route('/api/song-image/<path:artist_name>/<path:song_name>')
 @limiter.exempt
 def get_song_image(artist_name, song_name):
     """API endpoint to get song artwork from Deezer API"""
 
+    cache_key = ('track', artist_name.casefold(), song_name.casefold())
+    cached = _deezer_cache_get(cache_key)
+    if cached:
+        return jsonify(cached)
+
     try:
-        import requests
         from urllib.parse import quote
 
         query = f"{song_name} {artist_name}"
         url = f"https://api.deezer.com/search/track?q={quote(query)}&limit=3"
 
-        response = requests.get(url, timeout=5)
-
-        if response.status_code == 200:
-            data = response.json()
-            items = data.get('data', [])
-            if items:
-                cover = items[0].get('album', {}).get('cover_xl') or items[0].get('album', {}).get('cover_big', '')
-                if cover:
-                    return jsonify({
-                        'image_url': cover,
-                        'track_name': items[0].get('title', ''),
-                        'source': 'deezer'
-                    })
+        items = _deezer_search_items(url)
+        if not items:
+            simple = _deezer_fallback_query(song_name, artist_name)
+            if simple.casefold() != query.casefold():
+                items = _deezer_search_items(f"https://api.deezer.com/search/track?q={quote(simple)}&limit=3")
+        for item in items:
+            cover = item.get('album', {}).get('cover_xl') or item.get('album', {}).get('cover_big', '')
+            if cover:
+                payload = {
+                    'image_url': cover,
+                    'track_name': item.get('title', ''),
+                    'source': 'deezer'
+                }
+                _deezer_cache_put(cache_key, payload)
+                return jsonify(payload)
 
         return jsonify({'error': 'Track not found'}), 404
 
@@ -935,27 +984,33 @@ def get_song_preview(artist_name, song_name):
 def get_album_image(artist_name, album_name):
     """API endpoint to get album artwork from Deezer API"""
 
+    cache_key = ('album', artist_name.casefold(), album_name.casefold())
+    cached = _deezer_cache_get(cache_key)
+    if cached:
+        return jsonify(cached)
+
     try:
-        import requests
         from urllib.parse import quote
 
         query = f"{album_name} {artist_name}"
         url = f"https://api.deezer.com/search/album?q={quote(query)}&limit=3"
 
-        response = requests.get(url, timeout=5)
-
-        if response.status_code == 200:
-            data = response.json()
-            items = data.get('data', [])
-            if items:
-                cover = items[0].get('cover_xl') or items[0].get('cover_big', '')
-                if cover:
-                    return jsonify({
-                        'image_url': cover,
-                        'album_name': items[0].get('title', ''),
-                        'artist_name': items[0].get('artist', {}).get('name', ''),
-                        'source': 'deezer'
-                    })
+        items = _deezer_search_items(url)
+        if not items:
+            simple = _deezer_fallback_query(album_name, artist_name)
+            if simple.casefold() != query.casefold():
+                items = _deezer_search_items(f"https://api.deezer.com/search/album?q={quote(simple)}&limit=3")
+        for item in items:
+            cover = item.get('cover_xl') or item.get('cover_big', '')
+            if cover:
+                payload = {
+                    'image_url': cover,
+                    'album_name': item.get('title', ''),
+                    'artist_name': item.get('artist', {}).get('name', ''),
+                    'source': 'deezer'
+                }
+                _deezer_cache_put(cache_key, payload)
+                return jsonify(payload)
 
         return jsonify({'error': 'Album not found'}), 404
 
