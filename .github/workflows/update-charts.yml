@@ -30,7 +30,7 @@ jobs:
       - name: Commit updated data
         id: commit
         run: |
-          git add data/hot100.csv data/billboard200.csv
+          git add data/hot100.csv data/billboard200.csv data/global200.csv data/globalexus.csv
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No new chart data."

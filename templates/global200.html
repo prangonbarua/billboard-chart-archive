@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Billboard 200</title>
+    <title>Billboard Global 200</title>
     <style>
         @font-face {
             font-family: 'SF Pro Display';
@@ -19,6 +19,7 @@
             --bg: #ffffff;
             --surface: #ffffff;
             --surface-hover: #f5f5f3;
+            --surface-active: #ccffe9;
             --border: rgba(2, 255, 154,0.35);
             --border-accent: #0c492c;
             --text: #111111;
@@ -32,10 +33,18 @@
             --red-dim: rgba(248,113,113,0.12);
             --yellow: #fbbf24;
             --yellow-dim: rgba(251,191,36,0.12);
-            --orange: #111111;
-            --orange-dim: rgba(250,250,250,0.08);
             --purple: #a855f7;
             --purple-dim: rgba(168,85,247,0.12);
+            --spotify: #1DB954;
+            --spotify-dim: rgba(29,185,84,0.10);
+            --spotify-border: rgba(29,185,84,0.28);
+            --row-pad-y: 0.6875rem;
+            --row-pad-x: 1rem;
+            --row-hover-bar: var(--spotify);
+            --focus-ring: 0 0 0 2px rgba(29,185,84,0.45);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.4);
+            --shadow-md: 0 8px 32px rgba(0,0,0,0.6);
+            --shadow-lg: 0 24px 60px rgba(0,0,0,0.8);
         }
 
         body {
@@ -44,7 +53,9 @@
             color: var(--text);
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
+            font-feature-settings: 'ss01', 'cv01';
         }
+        .num { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
 
         .nav {
             display: flex;
@@ -145,7 +156,7 @@
         .hero-art img { width: 100%; height: 100%; object-fit: cover; }
         .hero-badge {
             display: inline-flex; align-items: center; gap: 0.375rem;
-            background: var(--accent); color: #fff;
+            background: var(--text); color: var(--bg);
             font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
             padding: 0.25rem 0.625rem; border-radius: 20px; margin-bottom: 0.75rem;
         }
@@ -153,7 +164,7 @@
         .hero-artist { font-size: 1.125rem; color: var(--accent); font-weight: 500; margin-bottom: 1.25rem; }
         .hero-stats { display: flex; gap: 2rem; flex-wrap: wrap; }
         .hero-stat-label { font-size: 0.6875rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.125rem; }
-        .hero-stat-value { font-size: 1.25rem; font-weight: 700; color: var(--text); }
+        .hero-stat-value { font-size: 1.25rem; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 
         .chart-card {
             background: var(--surface);
@@ -179,14 +190,18 @@
         .chart-table tbody tr {
             border-bottom: 1px solid var(--border);
             cursor: pointer;
-            transition: background 0.15s;
+            transition: background 0.15s, box-shadow 0.15s;
             animation: rowIn 0.35s ease-out both;
+            position: relative;
         }
         .chart-table tbody tr:last-child { border-bottom: none; }
-        .chart-table tbody tr:hover { background: var(--surface-hover); }
+        .chart-table tbody tr:hover { background: var(--surface-hover); box-shadow: inset 3px 0 0 var(--row-hover-bar); }
+        .chart-table tbody tr:active { background: var(--surface-active); }
+        .chart-table tbody tr:focus-visible { outline: none; background: var(--surface-hover); box-shadow: inset 3px 0 0 var(--row-hover-bar), var(--focus-ring); }
         .chart-table tbody tr.top10 { background: rgba(250,250,250,0.03); }
         .chart-table tbody tr.top10:hover { background: var(--surface-hover); }
         .chart-table tbody tr.section-row { pointer-events: none; cursor: default; animation: none; opacity: 1; }
+        .chart-table tbody tr.section-row:hover { background: transparent; box-shadow: none; }
 
         @keyframes rowIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
@@ -210,11 +225,11 @@
             border-radius: 20px;
             font-size: 0.6875rem; font-weight: 700; white-space: nowrap;
         }
-        .badge-new  { background: var(--orange-dim); color: var(--orange); }
-        .badge-re   { background: var(--purple-dim); color: var(--purple); }
-        .badge-up   { background: var(--green-dim);  color: var(--green); }
-        .badge-down { background: var(--red-dim);    color: var(--red); }
-        .badge-same { background: var(--yellow-dim); color: var(--yellow); }
+        .badge-new  { background: var(--accent-dim);  color: var(--accent); }
+        .badge-re   { background: var(--purple-dim);  color: var(--purple); }
+        .badge-up   { background: var(--green-dim);   color: var(--green); }
+        .badge-down { background: var(--red-dim);     color: var(--red); }
+        .badge-same { background: var(--yellow-dim);  color: var(--yellow); }
 
         .cell-art { padding: 0.5rem 0.75rem; }
         .art-thumb {
@@ -284,8 +299,8 @@
 <body>
     <nav class="nav">
         <a href="{{ url_for('top100') }}">The Hot 100</a>
-        <a href="{{ url_for('albums200') }}" class="active">Billboard 200</a>
-        <a href="{{ url_for('global200') }}">Global 200</a>
+        <a href="{{ url_for('albums200') }}">Billboard 200</a>
+        <a href="{{ url_for('global200') }}" class="active">Global 200</a>
         <a href="{{ url_for('globalexus') }}">Global Excl. US</a>
         <a href="{{ url_for('search') }}">Reports</a>
     </nav>
@@ -293,8 +308,8 @@
     <div class="container">
         <div class="page-header">
             <div>
-                <h1 class="page-title">Billboard 200</h1>
-                <p class="page-meta">Top albums ranked by album consumption units &middot; <span class="page-date">{{ selected_date }}</span></p>
+                <h1 class="page-title">Global 200</h1>
+                <p class="page-meta">Ranked by streaming, airplay &amp; sales &middot; <span class="page-date">{{ selected_date }}</span></p>
             </div>
             <div class="date-nav">
                 <button class="nav-btn" id="prevWeek">&#8592; Prev</button>
@@ -351,7 +366,7 @@
                         <th class="col-rank">#</th>
                         <th class="col-change">Change</th>
                         <th class="col-art"></th>
-                        <th>Album / Artist</th>
+                        <th>Song / Artist</th>
                         <th class="col-stat col-stats-hide">Last Wk</th>
                         <th class="col-stat col-stats-hide">Peak</th>
                         <th class="col-stat col-stats-hide">Weeks</th>
@@ -462,7 +477,7 @@
             const yearSelect = document.getElementById('yearSelect');
             const dateSelect = document.getElementById('dateSelect');
             const year = yearSelect.value;
-            while (dateSelect.firstChild) dateSelect.removeChild(dateSelect.firstChild);
+            dateSelect.innerHTML = '';
             allDates.filter(d => d.startsWith(year)).forEach(d => {
                 const o = document.createElement('option');
                 o.value = d;
@@ -495,9 +510,9 @@
 
         initYearSelector();
 
-        // Row stagger animations
+        // Row stagger animation via CSS delay
         document.querySelectorAll('.chart-table tbody tr:not(.section-row)').forEach((row, i) => {
-            row.style.animationDelay = `${Math.min(i * 0.02, 1.0)}s`;
+            row.style.animationDelay = `${Math.min(i * 0.025, 1.2)}s`;
         });
 
         // Artwork lazy load
@@ -507,8 +522,10 @@
                 const img = entry.target;
                 if (img.dataset.loaded) return;
                 img.dataset.loaded = '1';
+                const artist = img.dataset.artist;
+                const song = img.dataset.song;
                 const placeholder = img.src;
-                fetch('/api/album-image/' + encodeURIComponent(img.dataset.artist) + '/' + encodeURIComponent(img.dataset.song))
+                fetch('/api/song-image/' + encodeURIComponent(artist) + '/' + encodeURIComponent(song))
                     .then(r => r.ok ? r.json() : null)
                     .then(d => {
                         if (d && d.image_url) {
@@ -523,11 +540,11 @@
 
         document.querySelectorAll('.art-thumb img[data-song]').forEach(img => imgObserver.observe(img));
 
-        // Hero artwork
+        // Hero image
         const heroImg = document.querySelector('.hero-artwork-img');
         if (heroImg) {
             const heroPlaceholder = heroImg.src;
-            fetch('/api/album-image/' + encodeURIComponent(heroImg.dataset.artist) + '/' + encodeURIComponent(heroImg.dataset.song))
+            fetch('/api/song-image/' + encodeURIComponent(heroImg.dataset.artist) + '/' + encodeURIComponent(heroImg.dataset.song))
                 .then(r => r.ok ? r.json() : null)
                 .then(d => {
                     if (d && d.image_url) {
@@ -538,15 +555,15 @@
                 .catch(() => {});
         }
 
-        // Row click handlers
+        // Row click handlers (using data attributes instead of onclick to avoid injection)
         document.querySelectorAll('.chart-table tbody tr[data-artist]').forEach(row => {
             row.addEventListener('click', () => showSongHistory(row.dataset.artist, row.dataset.song));
         });
         const heroEl = document.querySelector('.hero[data-artist]');
         if (heroEl) heroEl.addEventListener('click', () => showSongHistory(heroEl.dataset.artist, heroEl.dataset.song));
 
-        // Sequence token so a slow response for a previously clicked album can't
-        // overwrite the modal after another album (or a close) superseded it
+        // Sequence token so a slow response for a previously clicked song can't
+        // overwrite the modal after another song (or a close) superseded it
         let historyReq = 0;
         function showSongHistory(artist, song) {
             const reqId = ++historyReq;
@@ -562,7 +579,7 @@
             body.appendChild(loading);
             modal.style.display = 'block';
 
-            fetch('/api/album-history?artist=' + encodeURIComponent(artist) + '&album=' + encodeURIComponent(song))
+            fetch('/api/song-history?chart=global200&artist=' + encodeURIComponent(artist) + '&song=' + encodeURIComponent(song))
                 .then(r => r.ok ? r.json() : Promise.reject(r.status))
                 .then(data => {
                     if (reqId !== historyReq) return;
@@ -575,38 +592,48 @@
                         return;
                     }
 
+                    // Stats grid
                     const grid = document.createElement('div');
                     grid.className = 'modal-stats-grid';
                     function appendStat(val, lbl) {
                         const box = document.createElement('div');
                         box.className = 'modal-stat-box';
-                        const v = document.createElement('div'); v.className = 'modal-stat-val'; v.textContent = val;
-                        const l = document.createElement('div'); l.className = 'modal-stat-lbl'; l.textContent = lbl;
-                        box.appendChild(v); box.appendChild(l);
+                        const v = document.createElement('div');
+                        v.className = 'modal-stat-val';
+                        v.textContent = val;
+                        const l = document.createElement('div');
+                        l.className = 'modal-stat-lbl';
+                        l.textContent = lbl;
+                        box.appendChild(v);
+                        box.appendChild(l);
                         grid.appendChild(box);
                         return box;
                     }
                     appendStat('#' + data.peak, 'Peak Position');
                     appendStat(data.total_weeks, 'Total Weeks');
-                    const listenersBox = appendStat('—', 'Artist Listeners');
+                    const streamBox = appendStat('—', 'Spotify Streams');
                     body.appendChild(grid);
 
-                    function fmtBig(n) {
+                    function fmtStreams(n) {
                         if (n == null) return '—';
+                        if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
                         if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
                         if (n >= 1e3) return Math.round(n / 1e3) + 'K';
                         return String(n);
                     }
-                    fetch('/api/artist-info/' + encodeURIComponent(artist))
+                    fetch('/api/song-streams/' + encodeURIComponent(artist) + '/' + encodeURIComponent(song))
                         .then(r => r.ok ? r.json() : Promise.reject())
-                        .then(ai => {
-                            if (ai.monthly_listeners == null) {
-                                listenersBox.style.display = 'none';
-                            } else {
-                                listenersBox.querySelector('.modal-stat-val').textContent = fmtBig(ai.monthly_listeners);
+                        .then(sd => {
+                            if (sd.streams == null) {
+                                streamBox.style.display = 'none';
+                                return;
+                            }
+                            streamBox.querySelector('.modal-stat-val').textContent = fmtStreams(sd.streams);
+                            if (sd.last_updated) {
+                                streamBox.querySelector('.modal-stat-lbl').textContent = 'Spotify · ' + sd.last_updated;
                             }
                         })
-                        .catch(() => { listenersBox.style.display = 'none'; });
+                        .catch(() => { streamBox.style.display = 'none'; });
 
 
                     // Song preview (Deezer 30s clip)
@@ -669,10 +696,15 @@
                         const isPeak = e.rank === data.peak;
                         const entry = document.createElement('div');
                         entry.className = 'history-entry' + (isPeak ? ' peak-entry' : '');
+
                         const date = document.createElement('div'); date.className = 'h-date'; date.textContent = e.date;
                         const rank = document.createElement('div'); rank.className = 'h-rank'; rank.textContent = '#' + e.rank;
                         const wk = document.createElement('div'); wk.className = 'h-week'; wk.textContent = 'Week ' + e.weeks;
-                        entry.appendChild(date); entry.appendChild(rank); entry.appendChild(wk);
+
+                        entry.appendChild(date);
+                        entry.appendChild(rank);
+                        entry.appendChild(wk);
+
                         if (isPeak) {
                             const badge = document.createElement('div');
                             badge.className = 'h-peak-badge';
@@ -686,15 +718,16 @@
                 .catch(() => {
                     if (reqId !== historyReq) return;
                     body.textContent = '';
-                    const err = document.createElement('p'); err.className = 'modal-error'; err.textContent = 'Error loading history';
+                    const err = document.createElement('p');
+                    err.className = 'modal-error';
+                    err.textContent = 'Error loading history';
                     body.appendChild(err);
                 });
         }
 
-        const historyModal = document.getElementById('historyModal');
-        function closeHistoryModal() { historyReq++; historyModal.style.display = 'none'; if (window.__previewAudio) { window.__previewAudio.pause(); window.__previewAudio = null; } }
+        function closeHistoryModal() { historyReq++; document.getElementById('historyModal').style.display = 'none'; if (window.__previewAudio) { window.__previewAudio.pause(); window.__previewAudio = null; } }
         document.getElementById('modalClose').addEventListener('click', closeHistoryModal);
-        window.addEventListener('click', e => { if (e.target === historyModal) closeHistoryModal(); });
+        window.addEventListener('click', e => { if (e.target === document.getElementById('historyModal')) closeHistoryModal(); });
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHistoryModal(); });
     </script>
 </body>

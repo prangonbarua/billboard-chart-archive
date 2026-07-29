@@ -242,6 +242,10 @@ def main():
     # Update Billboard 200
     success_bb200 = update_chart_data('billboard-200', 'data/billboard200.csv', weeks_to_fetch=15)
 
+    # Update global charts (exist since Sept 2020)
+    update_chart_data('billboard-global-200', 'data/global200.csv', weeks_to_fetch=15)
+    update_chart_data('billboard-global-excl-us', 'data/globalexus.csv', weeks_to_fetch=15)
+
     print("\n" + "="*60)
     if success_hot100 and success_bb200:
         print("✅ Update complete!")

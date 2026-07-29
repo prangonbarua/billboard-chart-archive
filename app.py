@@ -123,6 +123,21 @@ if BILLBOARD_200_DATA is not None:
 else:
     ALBUMS200_AVAILABLE_DATES = []
 
+# Billboard Global 200 / Global Excl. US (charts exist since Sept 2020)
+def _load_global_chart(filename):
+    path = DATA_DIR / filename
+    if not path.exists():
+        print(f"⚠️  {filename} not found. That global chart will be unavailable.")
+        return None, []
+    df = pd.read_csv(path, low_memory=False, dtype={'Artist': 'category', 'Song': 'category'})
+    parsed = pd.to_datetime(df['Date'], errors='coerce')
+    dates = [pd.Timestamp(d).strftime('%Y-%m-%d') for d in sorted(parsed.dropna().unique(), reverse=True)]
+    print(f"Loaded {len(df)} records from {filename}")
+    return df, dates
+
+GLOBAL_200_DATA, GLOBAL200_AVAILABLE_DATES = _load_global_chart('global200.csv')
+GLOBAL_XUS_DATA, GLOBALEXUS_AVAILABLE_DATES = _load_global_chart('globalexus.csv')
+
 def safe_int(val, default=None):
     if pd.isna(val):
         return default
@@ -1028,20 +1043,14 @@ def get_album_image(artist_name, album_name):
         print(f"Deezer API error for album '{album_name}' by {artist_name}: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/top100')
-@limiter.exempt
-def top100():
-    """Hot 100 Weekly Chart Viewer"""
+def _song_chart_page(source_df, available_dates, endpoint, template):
+    """Shared weekly song-chart page renderer (Hot 100 and the global charts)."""
     # Get the selected date from query params (default to latest)
     selected_date = request.args.get('date', None)
 
-    # Get unique dates from 1958-2025 (entire Billboard Hot 100 history), sorted descending
-    data = BILLBOARD_DATA.copy()
+    data = source_df.copy()
     data['Date'] = pd.to_datetime(data['Date'], errors='coerce')
     data = data.dropna(subset=['Date'])
-
-    # Available chart dates are precomputed at startup (data is static)
-    available_dates = HOT100_AVAILABLE_DATES
 
     # If no date selected, use the latest
     if not selected_date and available_dates:
@@ -1053,7 +1062,7 @@ def top100():
         selected_date_dt = pd.to_datetime(selected_date, errors='coerce')
         if pd.isna(selected_date_dt):
             flash('Invalid date', 'error')
-            return redirect(url_for('top100'))
+            return redirect(url_for(endpoint))
         selected_date = selected_date_dt.strftime('%Y-%m-%d')
         date_data = data[data['Date'] == selected_date_dt]
         if date_data.empty and available_dates:
@@ -1132,11 +1141,35 @@ def top100():
             chart_songs.append(song_info)
 
     return render_template(
-        'hot100.html',
+        template,
         available_dates=available_dates,
         selected_date=selected_date,
         chart_songs=chart_songs
     )
+
+@app.route('/top100')
+@limiter.exempt
+def top100():
+    """Hot 100 Weekly Chart Viewer"""
+    return _song_chart_page(BILLBOARD_DATA, HOT100_AVAILABLE_DATES, 'top100', 'hot100.html')
+
+@app.route('/global200')
+@limiter.exempt
+def global200():
+    """Billboard Global 200 Weekly Chart Viewer"""
+    if GLOBAL_200_DATA is None:
+        flash('Global 200 data is not available', 'error')
+        return redirect(url_for('top100'))
+    return _song_chart_page(GLOBAL_200_DATA, GLOBAL200_AVAILABLE_DATES, 'global200', 'global200.html')
+
+@app.route('/globalexus')
+@limiter.exempt
+def globalexus():
+    """Billboard Global Excl. US Weekly Chart Viewer"""
+    if GLOBAL_XUS_DATA is None:
+        flash('Global Excl. US data is not available', 'error')
+        return redirect(url_for('top100'))
+    return _song_chart_page(GLOBAL_XUS_DATA, GLOBALEXUS_AVAILABLE_DATES, 'globalexus', 'globalexus.html')
 
 @app.route('/albums200')
 @limiter.exempt
@@ -1261,7 +1294,11 @@ def get_song_history():
     if not artist or not song:
         return jsonify({'error': 'Missing artist or song parameter'}), 400
 
-    data = BILLBOARD_DATA.copy()
+    chart = request.args.get('chart', '')
+    source = {'global200': GLOBAL_200_DATA, 'globalexus': GLOBAL_XUS_DATA}.get(chart)
+    if source is None:
+        source = BILLBOARD_DATA
+    data = source.copy()
     data['Date'] = pd.to_datetime(data['Date'], errors='coerce')
     data = data.dropna(subset=['Date'])
 
