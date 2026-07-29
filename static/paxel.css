@@ -105,3 +105,9 @@ html, body, * {
     background-image: url('/static/dither-right.png');
   }
 }
+
+/* NEW badge: solid ink so it reads distinctly from the green gain badge */
+.badge-new {
+  background: #111111;
+  color: #ffffff;
+}

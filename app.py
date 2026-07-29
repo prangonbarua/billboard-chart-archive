@@ -140,6 +140,18 @@ def primary_artist(name):
     credit drift (e.g. 'Weezer' vs 'Weezer Featuring Best Coast') keys the same"""
     return re.sub(_CREDIT_MARKER_RE, '', name.strip().casefold())
 
+_CREDIT_SPLIT_RE = re.compile(r'\s+(?:featuring|feat\.?|with|x|&|\+|duet(?:\s+with)?|and)\s+|\s*,\s*')
+def artist_match_mask(artist_series, artist_name):
+    """Boolean mask: rows whose credit includes artist_name as a full artist
+    segment. 'Tyla' matches 'Tyla Featuring Zara Larsson' but NOT 'Tyla Yaweh'
+    (substring matching wrongly pulled in similarly-named artists)."""
+    query = artist_name.strip().casefold()
+    def credit_has(credit):
+        return query in (seg.strip() for seg in _CREDIT_SPLIT_RE.split(str(credit).casefold()))
+    unique = artist_series.dropna().unique()
+    matching = {a for a in unique if credit_has(a)}
+    return artist_series.isin(matching)
+
 def check_download_limit(ip_address):
     """Rate limiting disabled - always allow downloads"""
     return True, 0  # Always allowed
@@ -158,9 +170,7 @@ def process_billboard_data(artist_name):
     data['Song_Clean'] = data['Song'].str.strip().str.title()
     data['Artist_Clean'] = data['Artist'].str.strip()
 
-    filtered_data = data[
-        data['Artist_Clean'].str.lower().str.contains(artist_name.lower(), na=False, regex=False)
-    ].copy()
+    filtered_data = data[artist_match_mask(data['Artist_Clean'], artist_name)].copy()
 
     if filtered_data.empty:
         return None, f"No results found for artist: {artist_name}"
@@ -228,9 +238,7 @@ def process_album_data_excel(artist_name):
     data['Album_Clean'] = data['Song'].str.strip().str.title()
     data['Artist_Clean'] = data['Artist'].str.strip()
 
-    filtered_data = data[
-        data['Artist_Clean'].str.lower().str.contains(artist_name.lower(), na=False, regex=False)
-    ].copy()
+    filtered_data = data[artist_match_mask(data['Artist_Clean'], artist_name)].copy()
 
     if filtered_data.empty:
         return None, f"No album results found for artist: {artist_name}"
@@ -295,10 +303,9 @@ def about():
 def prepare_visualization_data(artist_name):
     """Prepare data for visualization"""
     # Filter on raw data before copying to avoid copying the full dataset
-    artist_lower = artist_name.lower()
     dates_parsed = pd.to_datetime(BILLBOARD_DATA['Date'], errors='coerce')
     mask = (
-        BILLBOARD_DATA['Artist'].str.strip().str.lower().str.contains(artist_lower, na=False, regex=False) &
+        artist_match_mask(BILLBOARD_DATA['Artist'], artist_name) &
         (dates_parsed >= '1990-01-01') &
         dates_parsed.notna()
     )
@@ -1383,8 +1390,7 @@ def download_csv(artist_name):
         artist_lower = artist_name.strip().lower()
         if not artist_lower:
             return jsonify({'error': 'Missing artist name'}), 400
-        mask = BILLBOARD_DATA['Artist'].str.strip().str.lower().str.contains(artist_lower, na=False, regex=False)
-        df = BILLBOARD_DATA[mask].copy()
+        df = BILLBOARD_DATA[artist_match_mask(BILLBOARD_DATA['Artist'], artist_name)].copy()
         if df.empty:
             return jsonify({'error': 'No data for artist'}), 404
 
