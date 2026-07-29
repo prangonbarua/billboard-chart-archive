@@ -1255,13 +1255,14 @@ def get_song_history():
     data['Date'] = pd.to_datetime(data['Date'], errors='coerce')
     data = data.dropna(subset=['Date'])
 
-    # Clean and filter
+    # Clean and filter. Artist matches on primary_artist so a mid-run credit change
+    # ("Tame Impala" -> "Tame Impala & JENNIE") still returns the full chart run.
     data['Song_Clean'] = data['Song'].str.strip().str.lower()
-    data['Artist_Clean'] = data['Artist'].str.strip().str.lower()
+    data['Artist_Clean'] = data['Artist'].map(primary_artist)
 
     song_data = data[
-        (data['Song_Clean'] == song.lower()) &
-        (data['Artist_Clean'] == artist.lower())
+        (data['Song_Clean'] == song.strip().lower()) &
+        (data['Artist_Clean'] == primary_artist(artist))
     ].copy()
 
     if song_data.empty:
