@@ -114,7 +114,9 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
 
         # A partial scrape (e.g. a Billboard markup change drops rows) must not be saved
         # as a complete week, or the incremental logic never re-fetches the missing ranks.
-        expected = 200 if chart_name == 'billboard-200' else 100
+        expected = {'billboard-200': 200, 'billboard-global-200': 200,
+                    'billboard-global-excl-us': 200, 'hot-100': 100,
+                    'artist-100': 100}.get(chart_name, 20)
         if len(entries) < expected:
             print(f"✗ Incomplete chart: {len(entries)}/{expected} rows — skipping (will retry next run)")
             time.sleep(1)
@@ -245,6 +247,12 @@ def main():
     # Update global charts (exist since Sept 2020)
     update_chart_data('billboard-global-200', 'data/global200.csv', weeks_to_fetch=15)
     update_chart_data('billboard-global-excl-us', 'data/globalexus.csv', weeks_to_fetch=15)
+
+    # Update component charts (public site shows top 25 since Sept 2023)
+    update_chart_data('radio-songs', 'data/radio.csv', weeks_to_fetch=15)
+    update_chart_data('digital-song-sales', 'data/digital_songs.csv', weeks_to_fetch=15)
+    update_chart_data('streaming-songs', 'data/streaming_songs.csv', weeks_to_fetch=15)
+    update_chart_data('artist-100', 'data/artist100.csv', weeks_to_fetch=15)
 
     print("\n" + "="*60)
     if success_hot100 and success_bb200:

@@ -137,6 +137,10 @@ def _load_global_chart(filename):
 
 GLOBAL_200_DATA, GLOBAL200_AVAILABLE_DATES = _load_global_chart('global200.csv')
 GLOBAL_XUS_DATA, GLOBALEXUS_AVAILABLE_DATES = _load_global_chart('globalexus.csv')
+RADIO_DATA, RADIO_AVAILABLE_DATES = _load_global_chart('radio.csv')
+DIGITAL_DATA, DIGITAL_AVAILABLE_DATES = _load_global_chart('digital_songs.csv')
+STREAMING_DATA, STREAMING_AVAILABLE_DATES = _load_global_chart('streaming_songs.csv')
+ARTIST100_DATA, ARTIST100_AVAILABLE_DATES = _load_global_chart('artist100.csv')
 
 def safe_int(val, default=None):
     if pd.isna(val):
@@ -1171,6 +1175,42 @@ def globalexus():
         return redirect(url_for('top100'))
     return _song_chart_page(GLOBAL_XUS_DATA, GLOBALEXUS_AVAILABLE_DATES, 'globalexus', 'globalexus.html')
 
+@app.route('/radio')
+@limiter.exempt
+def radio():
+    """Radio Songs Weekly Chart Viewer"""
+    if RADIO_DATA is None:
+        flash('Radio Songs data is not available', 'error')
+        return redirect(url_for('top100'))
+    return _song_chart_page(RADIO_DATA, RADIO_AVAILABLE_DATES, 'radio', 'radio.html')
+
+@app.route('/digital')
+@limiter.exempt
+def digital():
+    """Digital Song Sales Weekly Chart Viewer"""
+    if DIGITAL_DATA is None:
+        flash('Digital Song Sales data is not available', 'error')
+        return redirect(url_for('top100'))
+    return _song_chart_page(DIGITAL_DATA, DIGITAL_AVAILABLE_DATES, 'digital', 'digital.html')
+
+@app.route('/streaming')
+@limiter.exempt
+def streaming():
+    """Streaming Songs Weekly Chart Viewer"""
+    if STREAMING_DATA is None:
+        flash('Streaming Songs data is not available', 'error')
+        return redirect(url_for('top100'))
+    return _song_chart_page(STREAMING_DATA, STREAMING_AVAILABLE_DATES, 'streaming', 'streaming.html')
+
+@app.route('/artist100')
+@limiter.exempt
+def artist100():
+    """Artist 100 Weekly Chart Viewer"""
+    if ARTIST100_DATA is None:
+        flash('Artist 100 data is not available', 'error')
+        return redirect(url_for('top100'))
+    return _song_chart_page(ARTIST100_DATA, ARTIST100_AVAILABLE_DATES, 'artist100', 'artist100.html')
+
 @app.route('/albums200')
 @limiter.exempt
 def albums200():
@@ -1295,7 +1335,9 @@ def get_song_history():
         return jsonify({'error': 'Missing artist or song parameter'}), 400
 
     chart = request.args.get('chart', '')
-    source = {'global200': GLOBAL_200_DATA, 'globalexus': GLOBAL_XUS_DATA}.get(chart)
+    source = {'global200': GLOBAL_200_DATA, 'globalexus': GLOBAL_XUS_DATA,
+              'radio': RADIO_DATA, 'digital': DIGITAL_DATA, 'streaming': STREAMING_DATA,
+              'artist100': ARTIST100_DATA}.get(chart)
     if source is None:
         source = BILLBOARD_DATA
     data = source.copy()
