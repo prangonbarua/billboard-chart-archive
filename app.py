@@ -553,12 +553,12 @@ def _kworb_artist_record(artist_name):
     key = artist_name.lower()
     if key in lookup:
         return lookup[key]
-    clean = re.split(r'\s+(?:featuring|feat\.?|ft\.?|with|x)\s+', key, flags=re.IGNORECASE)[0].strip()
+    # Strip collab credit down to the primary artist (handles featuring/&/x/+/duet,
+    # so remix credits like "A & B" or "A Featuring B, C & D" resolve to A). No
+    # prefix fallback: it returned similarly-named artists ("Tyla" -> "Tyla Yaweh").
+    clean = primary_artist(artist_name)
     if clean != key and clean in lookup:
         return lookup[clean]
-    for kname, rec in lookup.items():
-        if kname.startswith(clean) or clean.startswith(kname):
-            return rec
     return None
 
 def get_kworb_listeners(artist_name):
@@ -617,16 +617,19 @@ def get_song_streams(artist_name, song_name):
         return None
     songs = cached['songs']
     key = song_name.lower().strip()
-    entry = songs.get(key)
-    if entry is None:
-        base_key = re.sub(r'\s*\(.*?\)\s*', '', key).strip()
-        for stitle, sentry in songs.items():
-            stitle_base = re.sub(r'\s*\(.*?\)\s*', '', stitle).strip()
-            if stitle == base_key or stitle_base == key or stitle_base == base_key:
-                entry = sentry
-                break
-    streams = entry['streams'] if entry else None
-    daily = entry.get('daily') if entry else None
+    base_key = re.sub(r'\s*[\(\[].*?[\)\]]\s*', ' ', key).strip()
+    # Sum every version of the song (original + remixes/feat edits appear as
+    # separate kworb rows like "Title", "Title (Remix)", "Title (feat. X)")
+    streams = daily = None
+    for stitle, sentry in songs.items():
+        stitle_base = re.sub(r'\s*[\(\[].*?[\)\]]\s*', ' ', stitle).strip()
+        if stitle == key or stitle_base == base_key:
+            if sentry.get('streams') is not None:
+                streams = (streams or 0) + sentry['streams']
+            if sentry.get('daily') is not None:
+                daily = (daily or 0) + sentry['daily']
+    if streams is None:
+        return None
     return {'streams': streams, 'daily': daily, 'last_updated': cached.get('last_updated')}
 
 @app.route('/api/artist-info/<path:artist_name>')
@@ -1402,20 +1405,24 @@ def download_csv(artist_name):
         df['Rank'] = pd.to_numeric(df['Rank'], errors='coerce')
 
         df['Artist'] = df['Artist'].astype(str)
-        # Key columns by (song, artist) so same-titled songs by different
-        # credits stay separate; disambiguate the header only when needed
-        pairs = df.groupby(['Song', 'Artist'], observed=True)['Date'].min().sort_values().index.tolist()
-        pivot = df.pivot_table(index='Date', columns=['Song', 'Artist'], values='Rank',
+        # Key columns by (song, primary artist) so same-titled songs by different
+        # artists stay separate, but a mid-run credit change (remix adds a feature,
+        # e.g. "Tame Impala" -> "Tame Impala & JENNIE") stays ONE column.
+        df['PrimaryArtist'] = df['Artist'].map(primary_artist)
+        pairs = df.groupby(['Song', 'PrimaryArtist'], observed=True)['Date'].min().sort_values().index.tolist()
+        pivot = df.pivot_table(index='Date', columns=['Song', 'PrimaryArtist'], values='Rank',
                                aggfunc='min', observed=True).sort_index()
 
+        # For disambiguation, show the latest (fullest) credit for each pair
+        latest_credit = df.sort_values('Date').groupby(['Song', 'PrimaryArtist'], observed=True)['Artist'].last()
         title_counts = {}
         for s, a in pairs:
             title_counts[s] = title_counts.get(s, 0) + 1
-        headers = [s if title_counts[s] == 1 else f"{s} ({a})" for s, a in pairs]
+        headers = [s if title_counts[s] == 1 else f"{s} ({latest_credit.get((s, a), a)})" for s, a in pairs]
 
         images = {}
         if 'Image URL' in df.columns:
-            for pair, grp in df.groupby(['Song', 'Artist'], observed=True):
+            for pair, grp in df.groupby(['Song', 'PrimaryArtist'], observed=True):
                 urls = grp['Image URL'].dropna()
                 urls = urls[urls.astype(str).str.startswith('http')]
                 images[pair] = str(urls.iloc[0]) if len(urls) else ''
