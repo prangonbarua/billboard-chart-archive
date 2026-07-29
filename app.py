@@ -1095,6 +1095,21 @@ def _song_chart_page(source_df, available_dates, endpoint, template):
         pair_dates = historical_data.groupby(['Song_Clean', 'Artist_Clean'])['Date'].agg(set).to_dict()
         chart_week_index = {pd.Timestamp(d): i for i, d in enumerate(available_dates)}
 
+        # Rank each week for every (song, primary-artist) so last-week/peak/change are
+        # computed from actual chart history, NOT the stored Last Week / Peak Position
+        # columns — those are corrupt in pre-2025 data (debuts stored Last Week == Rank
+        # and Peak Position == 1, wrongly showing "—" and a #1 peak).
+        historical_data['Rank_Num'] = pd.to_numeric(historical_data['Rank'], errors='coerce')
+        pair_ranks = {}
+        _rank_grp = historical_data.dropna(subset=['Rank_Num']).groupby(
+            ['Song_Clean', 'Artist_Clean', 'Date'])['Rank_Num'].min()
+        for (s, a, dt), rk in _rank_grp.items():
+            pair_ranks.setdefault((s, a), {})[pd.Timestamp(dt)] = int(rk)
+
+        idx_sel = chart_week_index.get(selected_date_dt)
+        prev_date = pd.Timestamp(available_dates[idx_sel + 1]) if (
+            idx_sel is not None and idx_sel + 1 < len(available_dates)) else None
+
         for _, row in date_data.iterrows():
             # Get song info
             song_name = row['Song'].strip() if pd.notna(row['Song']) else ''
@@ -1115,29 +1130,36 @@ def _song_chart_page(source_df, available_dates, endpoint, template):
                 cur = pd.Timestamp(available_dates[idx + 1])
             cumulative_weeks = len(song_dates) or 1
 
+            rank = safe_int(row['Rank'], 0)
+            ranks_by_date = pair_ranks.get((song_name.casefold(), primary_artist(artist_name)), {})
+            # Peak = best (lowest) rank across every week the song has charted up to now
+            all_ranks = [rk for d, rk in ranks_by_date.items() if d <= selected_date_dt]
+            peak = min(all_ranks) if all_ranks else rank
+            # Last week = rank on the immediately preceding chart week, or None if it
+            # wasn't on that week (a debut or a re-entry after a gap)
+            last_week = ranks_by_date.get(prev_date) if prev_date is not None else None
+
             song_info = {
-                'rank': safe_int(row['Rank'], 0),
+                'rank': rank,
                 'song': song_name,
                 'artist': artist_name,
-                'last_week': safe_int(row['Last Week']),
-                'peak': safe_int(row['Peak Position'], safe_int(row['Rank'], 0)),
+                'last_week': last_week,
+                'peak': peak,
                 'weeks': cumulative_weeks,
             }
 
             # Calculate position change
-            if song_info['last_week'] is None:
-                # Re-entry if it charted before the selected date, else new
-                if song_dates - {selected_date_dt}:
-                    song_info['change'] = 're-entry'
-                else:
-                    song_info['change'] = 'new'
+            if last_week is None:
+                # Re-entry if the song ever charted before this week, else a true debut
+                charted_before = any(d < selected_date_dt for d in merged_dates)
+                song_info['change'] = 're-entry' if charted_before else 'new'
                 song_info['change_amount'] = 0
-            elif song_info['rank'] < song_info['last_week']:
+            elif rank < last_week:
                 song_info['change'] = 'up'
-                song_info['change_amount'] = song_info['last_week'] - song_info['rank']
-            elif song_info['rank'] > song_info['last_week']:
+                song_info['change_amount'] = last_week - rank
+            elif rank > last_week:
                 song_info['change'] = 'down'
-                song_info['change_amount'] = song_info['rank'] - song_info['last_week']
+                song_info['change_amount'] = rank - last_week
             else:
                 song_info['change'] = 'same'
                 song_info['change_amount'] = 0
