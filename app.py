@@ -1047,6 +1047,30 @@ def get_album_image(artist_name, album_name):
         print(f"Deezer API error for album '{album_name}' by {artist_name}: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/artist-image/<path:artist_name>')
+@limiter.exempt
+def get_artist_image(artist_name):
+    """Artist photo from Deezer (for the Artist 100 chart, whose entries are artists)."""
+    cache_key = ('artist', artist_name.casefold())
+    cached = _deezer_cache_get(cache_key)
+    if cached:
+        return jsonify(cached)
+    try:
+        from urllib.parse import quote
+        # Search the primary artist so credits like "Drake & 21 Savage" still resolve
+        for query in (artist_name, primary_artist(artist_name)):
+            items = _deezer_search_items(f"https://api.deezer.com/search/artist?q={quote(query)}&limit=1")
+            if items:
+                pic = items[0].get('picture_xl') or items[0].get('picture_big', '')
+                if pic:
+                    payload = {'image_url': pic, 'artist_name': items[0].get('name', ''), 'source': 'deezer'}
+                    _deezer_cache_put(cache_key, payload)
+                    return jsonify(payload)
+        return jsonify({'error': 'Artist not found'}), 404
+    except Exception as e:
+        print(f"Deezer artist-image error for '{artist_name}': {e}")
+        return jsonify({'error': str(e)}), 500
+
 def _song_chart_page(source_df, available_dates, endpoint, template):
     """Shared weekly song-chart page renderer (Hot 100 and the global charts)."""
     # Get the selected date from query params (default to latest)

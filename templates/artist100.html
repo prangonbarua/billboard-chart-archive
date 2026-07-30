@@ -529,7 +529,7 @@
                 const artist = img.dataset.artist;
                 const song = img.dataset.song;
                 const placeholder = img.src;
-                fetch('/api/song-image/' + encodeURIComponent(artist) + '/' + encodeURIComponent(song))
+                fetch('/api/artist-image/' + encodeURIComponent(artist))
                     .then(r => r.ok ? r.json() : null)
                     .then(d => {
                         if (d && d.image_url) {
@@ -548,7 +548,7 @@
         const heroImg = document.querySelector('.hero-artwork-img');
         if (heroImg) {
             const heroPlaceholder = heroImg.src;
-            fetch('/api/song-image/' + encodeURIComponent(heroImg.dataset.artist) + '/' + encodeURIComponent(heroImg.dataset.song))
+            fetch('/api/artist-image/' + encodeURIComponent(heroImg.dataset.artist))
                 .then(r => r.ok ? r.json() : null)
                 .then(d => {
                     if (d && d.image_url) {
