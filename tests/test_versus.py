@@ -81,14 +81,17 @@ def test_top_tiers_count_distinct_songs_by_peak():
 
 def test_biggest_hit_breaks_peak_ties_by_weeks():
     # Both peak at 2, in different weeks — two songs cannot share one
-    # (Date, Rank) slot on a real chart. Longer run wins the tie.
+    # (Date, Rank) slot on a real chart. The longer run wins the tie.
+    # Names are deliberate: 'Zenith' sorts AFTER 'Alpha', so groupby's
+    # alphabetical order puts the loser first. Only the weeks tie-break
+    # can promote the winner, which is what this test exists to check.
     df = frame([
-        ('2024-01-06', 2, 'Short', 'X'),
-        ('2024-01-13', 2, 'Long', 'X'),
-        ('2024-01-20', 4, 'Long', 'X'),
-        ('2024-01-27', 6, 'Long', 'X'),
+        ('2024-01-06', 2, 'Alpha', 'X'),
+        ('2024-01-13', 2, 'Zenith', 'X'),
+        ('2024-01-20', 4, 'Zenith', 'X'),
+        ('2024-01-27', 6, 'Zenith', 'X'),
     ])
-    assert versus.compute_artist_stats(df)['biggest_hit'] == 'Long'
+    assert versus.compute_artist_stats(df)['biggest_hit'] == 'Zenith'
 
 
 def test_timeline_is_best_rank_per_week_ascending():
