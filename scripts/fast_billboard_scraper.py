@@ -117,14 +117,16 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
         expected = {'billboard-200': 200, 'billboard-global-200': 200,
                     'billboard-global-excl-us': 200, 'hot-100': 100,
                     'artist-100': 100, 'pop-songs': 40,
-                    # Airplay/format charts changed depth over their lifetimes
-                    # (Adult Contemporary was 20 rows in 1961, Alternative 30 in
-                    # 1988), so these use a floor, not their modern depth. Weeks
-                    # that are truncated rather than genuinely short are caught by
-                    # the duplicate-ranking check in backfill_chart.py instead.
-                    'country-airplay': 20, 'adult-pop-songs': 20,
-                    'rhythmic-40': 20, 'alternative-airplay': 20,
-                    'adult-contemporary': 20}.get(chart_name, 20)
+                    # Airplay/format charts changed depth over their lifetimes and
+                    # early weeks were not even a fixed length: Adult Contemporary
+                    # ran 19-20 rows in 1961-62, Alternative 30 in 1988, against
+                    # 30/40 today. A gate set to the modern depth silently rejects
+                    # every early week as incomplete, so these use a low floor.
+                    # Fabricated weeks are caught by the duplicate-ranking check in
+                    # backfill_chart.py rather than by row count.
+                    'country-airplay': 10, 'adult-pop-songs': 10,
+                    'rhythmic-40': 10, 'alternative-airplay': 10,
+                    'adult-contemporary': 10}.get(chart_name, 20)
         if len(entries) < expected:
             print(f"✗ Incomplete chart: {len(entries)}/{expected} rows — skipping (will retry next run)")
             time.sleep(1)
