@@ -53,7 +53,7 @@
     .graph .axis { stroke: var(--border); stroke-width: 1; }
     .graph .tick { fill: var(--text-muted); font-size: 11px; }
     .graph .series { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .graph .series.dim { opacity: 0.15; }
+    .graph .series.dim, .graph .dot.dim { opacity: 0.15; }
     .legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.875rem; }
     .legend span { display: inline-flex; align-items: center; gap: 0.375rem;
                    cursor: pointer; }
@@ -204,13 +204,14 @@ window.renderGraph = function (data) {
     // segment on either side — a bare path renders nothing for it. Give only
     // those isolated points a dot so a one-week run is still visible; a point
     // with a neighbour on either side already has a drawn segment.
-    const isolatedDots = (tl, color) => {
+    const isolatedDots = (tl, color, name) => {
         const startsNewSubpath = j => j === 0
             || Date.parse(tl[j].date) - Date.parse(tl[j - 1].date) > GAP_MS;
         return tl
             .filter((p, j) => startsNewSubpath(j) && (j === tl.length - 1 || startsNewSubpath(j + 1)))
-            .map(p => `<circle class="dot" r="3.5" cx="${x(Date.parse(p.date)).toFixed(1)}" `
-                + `cy="${y(p.rank).toFixed(1)}" fill="${color}"></circle>`)
+            .map(p => `<circle class="dot" data-name="${name}" r="3.5" `
+                + `cx="${x(Date.parse(p.date)).toFixed(1)}" cy="${y(p.rank).toFixed(1)}" `
+                + `fill="${color}"></circle>`)
             .join('');
     };
 
@@ -246,9 +247,10 @@ window.renderGraph = function (data) {
 
     const lines = series.map((a, i) => {
         const color = colorFor(data.artists.indexOf(a));
-        return `<path class="series" data-name="${escapeHtml(a.name)}" `
+        const name = escapeHtml(a.name);
+        return `<path class="series" data-name="${name}" `
             + `stroke="${color}" d="${pathFor(a.timeline)}"></path>`
-            + isolatedDots(a.timeline, color);
+            + isolatedDots(a.timeline, color, name);
     }).join('');
 
     host.innerHTML = `
@@ -266,8 +268,12 @@ window.renderGraph = function (data) {
         + `${escapeHtml(a.display_name)}</span>`).join('')}
       </div>`;
 
-    // Hovering a legend entry or a line isolates it and dims the rest.
-    const paths = host.querySelectorAll('.series');
+    // Hovering a legend entry or a line isolates it and dims the rest. Dots
+    // are selected alongside paths so an isolated point dims in lockstep with
+    // its own line; matching is by each element's own data-name attribute,
+    // not positional index, so interleaving circles with paths in document
+    // order cannot shift another artist's dim target.
+    const paths = host.querySelectorAll('.series, .dot');
     const isolate = name => paths.forEach(p =>
         p.classList.toggle('dim', name !== null && p.dataset.name !== name));
     host.querySelectorAll('.legend span, .series').forEach(el => {
