@@ -52,7 +52,7 @@
     .graph { display: block; }
     .graph .axis { stroke: var(--border); stroke-width: 1; }
     .graph .tick { fill: var(--text-muted); font-size: 11px; }
-    .graph .series { fill: none; stroke-width: 1.75; }
+    .graph .series { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .graph .series.dim { opacity: 0.15; }
     .legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.875rem; }
     .legend span { display: inline-flex; align-items: center; gap: 0.375rem;
@@ -199,23 +199,57 @@ window.renderGraph = function (data) {
         return d.trim();
     };
 
+    // A point that starts a new subpath (gap before it, or it's the first
+    // point) AND has a gap after it too (or is the last point) draws no line
+    // segment on either side — a bare path renders nothing for it. Give only
+    // those isolated points a dot so a one-week run is still visible; a point
+    // with a neighbour on either side already has a drawn segment.
+    const isolatedDots = (tl, color) => {
+        const startsNewSubpath = j => j === 0
+            || Date.parse(tl[j].date) - Date.parse(tl[j - 1].date) > GAP_MS;
+        return tl
+            .filter((p, j) => startsNewSubpath(j) && (j === tl.length - 1 || startsNewSubpath(j + 1)))
+            .map(p => `<circle class="dot" r="3.5" cx="${x(Date.parse(p.date)).toFixed(1)}" `
+                + `cy="${y(p.rank).toFixed(1)}" fill="${color}"></circle>`)
+            .join('');
+    };
+
     const rankTicks = [1, ...[10, 25, 50, 100, 200].filter(r => r < depth), depth];
     const yAxis = rankTicks.map(r =>
         `<text class="tick" x="${M.l - 8}" y="${y(r) + 4}" text-anchor="end">${r}</text>`
     ).join('');
 
+    // Six evenly spaced year labels read fine across a multi-year span, but a
+    // span under a year prints the same year six times over (or, when
+    // t0 === t1, spreads sub-millisecond-apart samples across the whole
+    // width, all showing one year) — de-dupe, and collapse under a year to
+    // one centered label instead of inventing month/quarter ticks.
     const yearOf = t => new Date(t).getUTCFullYear();
-    const years = [];
-    for (let s = 0; s < 6; s++) {
-        const t = t0 + (spanX * s) / 5;
-        years.push(`<text class="tick" x="${x(t).toFixed(1)}" y="${H - 8}" `
-            + `text-anchor="middle">${yearOf(t)}</text>`);
+    const spanDays = (t1 - t0) / 864e5;
+    let years;
+    if (spanDays < 365) {
+        const mid = (t0 + t1) / 2;
+        years = `<text class="tick" x="${x(mid).toFixed(1)}" y="${H - 8}" `
+            + `text-anchor="middle">${yearOf(mid)}</text>`;
+    } else {
+        const seen = new Set();
+        years = '';
+        for (let s = 0; s < 6; s++) {
+            const t = t0 + (spanX * s) / 5;
+            const yr = yearOf(t);
+            if (seen.has(yr)) continue;
+            seen.add(yr);
+            years += `<text class="tick" x="${x(t).toFixed(1)}" y="${H - 8}" `
+                + `text-anchor="middle">${yr}</text>`;
+        }
     }
 
-    const lines = series.map((a, i) =>
-        `<path class="series" data-name="${escapeHtml(a.name)}" `
-        + `stroke="${colorFor(data.artists.indexOf(a))}" d="${pathFor(a.timeline)}"></path>`
-    ).join('');
+    const lines = series.map((a, i) => {
+        const color = colorFor(data.artists.indexOf(a));
+        return `<path class="series" data-name="${escapeHtml(a.name)}" `
+            + `stroke="${color}" d="${pathFor(a.timeline)}"></path>`
+            + isolatedDots(a.timeline, color);
+    }).join('');
 
     host.innerHTML = `
       <div class="graph-wrap">
