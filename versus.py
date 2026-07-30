@@ -24,19 +24,12 @@ def primary_artist(name):
 
 
 def dedupe_weeks(rows):
-    """One row per (Date, Rank, Song). Duplicate scrape rows otherwise inflate
-    every week and entry total.
-
-    Song is part of the key, not just (Date, Rank): a chart position is
-    unique per date in real data, so a true duplicate scrape row always
-    matches on Song too. Keying on (Date, Rank) alone would silently drop
-    one of two distinct songs if they ever appeared to share a date/rank
-    (e.g. a data-quality glitch), corrupting that song's computed peak
-    instead of merely removing a redundant row.
-    """
-    r = rows.copy()
-    song_key = r['Song'].astype(str)
-    return rows.loc[~pd.concat([r['Date'], r['Rank'], song_key], axis=1).duplicated()]
+    """One row per (Date, Rank). Duplicate scrape rows otherwise inflate every
+    week and entry total. A chart position is unique per date, so (Date,
+    Rank) alone identifies one week's entry — matches the dedup key used
+    repo-wide by update_from_billboard.py, backfill_chart.py,
+    fast_billboard_scraper.py, and sync_data_from_scraper.py."""
+    return rows.drop_duplicates(subset=['Date', 'Rank'])
 
 
 EMPTY_STATS = {
