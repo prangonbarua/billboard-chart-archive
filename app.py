@@ -141,6 +141,7 @@ RADIO_DATA, RADIO_AVAILABLE_DATES = _load_global_chart('radio.csv')
 DIGITAL_DATA, DIGITAL_AVAILABLE_DATES = _load_global_chart('digital_songs.csv')
 STREAMING_DATA, STREAMING_AVAILABLE_DATES = _load_global_chart('streaming_songs.csv')
 ARTIST100_DATA, ARTIST100_AVAILABLE_DATES = _load_global_chart('artist100.csv')
+POP_AIRPLAY_DATA, POP_AIRPLAY_AVAILABLE_DATES = _load_global_chart('pop_airplay.csv')
 
 def safe_int(val, default=None):
     if pd.isna(val):
@@ -1257,6 +1258,15 @@ def artist100():
         return redirect(url_for('top100'))
     return _song_chart_page(ARTIST100_DATA, ARTIST100_AVAILABLE_DATES, 'artist100', 'artist100.html')
 
+@app.route('/pop_airplay')
+@limiter.exempt
+def pop_airplay():
+    """Billboard Pop Airplay Weekly Chart Viewer"""
+    if POP_AIRPLAY_DATA is None:
+        flash('Pop Airplay data is not available', 'error')
+        return redirect(url_for('top100'))
+    return _song_chart_page(POP_AIRPLAY_DATA, POP_AIRPLAY_AVAILABLE_DATES, 'pop_airplay', 'pop_airplay.html')
+
 @app.route('/albums200')
 @limiter.exempt
 def albums200():
@@ -1383,7 +1393,7 @@ def get_song_history():
     chart = request.args.get('chart', '')
     source = {'global200': GLOBAL_200_DATA, 'globalexus': GLOBAL_XUS_DATA,
               'radio': RADIO_DATA, 'digital': DIGITAL_DATA, 'streaming': STREAMING_DATA,
-              'artist100': ARTIST100_DATA}.get(chart)
+              'artist100': ARTIST100_DATA, 'popairplay': POP_AIRPLAY_DATA}.get(chart)
     if source is None:
         source = BILLBOARD_DATA
     data = source.copy()

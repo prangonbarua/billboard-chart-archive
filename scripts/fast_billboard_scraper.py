@@ -116,7 +116,7 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
         # as a complete week, or the incremental logic never re-fetches the missing ranks.
         expected = {'billboard-200': 200, 'billboard-global-200': 200,
                     'billboard-global-excl-us': 200, 'hot-100': 100,
-                    'artist-100': 100}.get(chart_name, 20)
+                    'artist-100': 100, 'pop-songs': 40}.get(chart_name, 20)
         if len(entries) < expected:
             print(f"✗ Incomplete chart: {len(entries)}/{expected} rows — skipping (will retry next run)")
             time.sleep(1)
@@ -253,6 +253,7 @@ def main():
     update_chart_data('digital-song-sales', 'data/digital_songs.csv', weeks_to_fetch=15)
     update_chart_data('streaming-songs', 'data/streaming_songs.csv', weeks_to_fetch=15)
     update_chart_data('artist-100', 'data/artist100.csv', weeks_to_fetch=15)
+    update_chart_data('pop-songs', 'data/pop_airplay.csv', weeks_to_fetch=15)
 
     print("\n" + "="*60)
     if success_hot100 and success_bb200:
