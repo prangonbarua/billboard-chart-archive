@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Versus &middot; {{ chart.label }}</title>
+    {% include '_head_styles.html' %}
+    <style>
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    h1 { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; }
+    .page-meta { color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; }
+
+    .picker { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
+              margin: 1.5rem 0; }
+    .picker select, .picker input {
+        font-family: inherit; font-size: 0.875rem; padding: 0.5rem 0.75rem;
+        border: 1px solid var(--border); background: var(--surface);
+        color: var(--text); border-radius: 0;
+    }
+    .picker input { min-width: 220px; }
+    .picker button {
+        font-family: inherit; font-size: 0.875rem; font-weight: 500;
+        padding: 0.5rem 1rem; border: 1px solid var(--border-accent);
+        background: var(--border-accent); color: #ffffff; cursor: pointer;
+        border-radius: 0;
+    }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .chip { display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.375rem 0.75rem; border: 1px solid var(--border);
+            font-size: 0.875rem; }
+    .chip button { border: 0; background: none; color: var(--text-muted);
+                   cursor: pointer; font-family: inherit; font-size: 1rem;
+                   line-height: 1; padding: 0; }
+    .chip .swatch { width: 10px; height: 10px; display: inline-block; }
+
+    /* Many artists scroll horizontally rather than crushing the layout. */
+    .scorecard-wrap { overflow-x: auto; }
+    table.scorecard { border-collapse: collapse; width: 100%; min-width: 480px; }
+    .scorecard th, .scorecard td {
+        text-align: right; padding: 0.6875rem 1rem; font-size: 0.9375rem;
+        border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .scorecard th:first-child, .scorecard td:first-child {
+        text-align: left; color: var(--text-muted); font-weight: 500;
+    }
+    .scorecard thead th { font-weight: 600; color: var(--text); }
+    .scorecard td.best { background: var(--surface-active); font-weight: 600; }
+    .empty { color: var(--text-muted); padding: 2rem 0; }
+    </style>
+</head>
+<body>
+{% include '_nav.html' %}
+
+<div class="wrap">
+    <h1>Versus</h1>
+    <div class="page-meta">Compare artists on {{ chart.label }}</div>
+
+    <form class="picker" id="picker" autocomplete="off">
+        <select id="chart" name="chart">
+            {% for group, items in charts.items() %}
+            <optgroup label="{{ group }}">
+                {% for c in items %}
+                <option value="{{ c.key }}" {{ 'selected' if c.key == chart_key else '' }}>{{ c.label }}</option>
+                {% endfor %}
+            </optgroup>
+            {% endfor %}
+        </select>
+        <input id="artist" list="artist-options" placeholder="Add an artist">
+        <datalist id="artist-options"></datalist>
+        <button type="submit">Add</button>
+    </form>
+
+    <div class="chips" id="chips"></div>
+    <div id="graph"></div>
+    <div class="scorecard-wrap"><div id="scorecard"></div></div>
+</div>
+
+<script>
+const CHART_KEY = {{ chart_key|tojson }};
+const INITIAL   = {{ initial_artists|tojson }};
+
+// Cycling palette. Distinct hues are required to tell series apart; the site
+// green leads so the page still reads as part of the design system.
+const PALETTE = ['#0c492c', '#c2410c', '#1d4ed8', '#a21caf', '#b45309', '#0f766e'];
+const colorFor = i => PALETTE[i % PALETTE.length];
+
+let artists = INITIAL.slice();
+
+// All state in the URL: shareable, and back/forward works.
+function syncUrl() {
+    const q = new URLSearchParams();
+    q.set('chart', document.getElementById('chart').value);
+    if (artists.length) q.set('artists', artists.join('|'));
+    history.replaceState(null, '', '/versus?' + q.toString());
+}
+
+function renderChips() {
+    document.getElementById('chips').innerHTML = artists.map((a, i) =>
+        `<span class="chip"><span class="swatch" style="background:${colorFor(i)}"></span>`
+        + `${escapeHtml(a)}<button type="button" data-i="${i}" aria-label="Remove">&times;</button></span>`
+    ).join('');
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+const ROWS = [
+    ['Entries',            a => a.entries,             'high'],
+    ['Number ones',        a => a.number_ones,         'high'],
+    ['Weeks at #1',        a => a.weeks_at_1,          'high'],
+    ['Top 10s',            a => a.top_10s,             'high'],
+    ['Top 40s',            a => a.top_40s,             'high'],
+    ['Best peak',          a => a.best_peak,           'low'],
+    ['Weeks charted',      a => a.total_weeks_charted, 'high'],
+    ['First entry',        a => a.first_entry,         null],
+    ['Last entry',         a => a.last_entry,          null],
+    ['Biggest hit',        a => a.biggest_hit,         null],
+];
+
+function renderScorecard(data) {
+    const list = data.artists;
+    if (!list.length) {
+        document.getElementById('scorecard').innerHTML =
+            '<div class="empty">Add two or more artists to compare.</div>';
+        return;
+    }
+    const head = '<tr><th></th>' + list.map(a =>
+        `<th>${escapeHtml(a.display_name)}</th>`).join('') + '</tr>';
+
+    const body = ROWS.map(([label, get, better]) => {
+        const vals = list.map(get);
+        let bestIdx = -1;
+        if (better) {
+            const nums = vals.map(v => (typeof v === 'number' ? v : null));
+            const real = nums.filter(v => v !== null);
+            if (real.length) {
+                const target = better === 'high' ? Math.max(...real) : Math.min(...real);
+                bestIdx = nums.indexOf(target);
+            }
+        }
+        const cells = vals.map((v, i) =>
+            `<td class="${i === bestIdx ? 'best' : ''}">${v === null || v === undefined ? '&mdash;' : escapeHtml(v)}</td>`
+        ).join('');
+        return `<tr><td>${label}</td>${cells}</tr>`;
+    }).join('');
+
+    document.getElementById('scorecard').innerHTML =
+        `<table class="scorecard"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+}
+
+async function load() {
+    renderChips();
+    syncUrl();
+    if (!artists.length) { renderScorecard({artists: []}); return; }
+    const chart = document.getElementById('chart').value;
+    const res = await fetch(`/api/versus?chart=${encodeURIComponent(chart)}`
+        + `&artists=${encodeURIComponent(artists.join('|'))}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    renderScorecard(data);
+    if (window.renderGraph) window.renderGraph(data);   // filled in by Task 6
+}
+
+document.getElementById('picker').addEventListener('submit', e => {
+    e.preventDefault();
+    const input = document.getElementById('artist');
+    const name = input.value.trim();
+    if (name && !artists.includes(name)) { artists.push(name); load(); }
+    input.value = '';
+});
+
+document.getElementById('chips').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-i]');
+    if (!btn) return;
+    artists.splice(Number(btn.dataset.i), 1);
+    load();
+});
+
+document.getElementById('chart').addEventListener('change', load);
+
+// Autocomplete against the selected chart's own artist pool.
+document.getElementById('artist').addEventListener('input', async e => {
+    const q = e.target.value.trim();
+    if (q.length < 2) return;
+    const chart = document.getElementById('chart').value;
+    const res = await fetch(`/api/artists?chart=${encodeURIComponent(chart)}`
+        + `&q=${encodeURIComponent(q)}`);
+    if (!res.ok) return;
+    const {artists: opts} = await res.json();
+    document.getElementById('artist-options').innerHTML =
+        opts.map(a => `<option value="${escapeHtml(a)}">`).join('');
+});
+
+load();
+</script>
+</body>
+</html>

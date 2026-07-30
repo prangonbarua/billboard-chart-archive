@@ -96,3 +96,23 @@ def test_artists_endpoint_honours_the_chart_param(application):
 def test_artists_endpoint_falls_back_on_unknown_chart(application):
     r = application.app.test_client().get('/api/artists?chart=nope&q=tay')
     assert r.status_code == 200
+
+
+def test_versus_page_renders_without_artists(application):
+    r = application.app.test_client().get('/versus')
+    assert r.status_code == 200
+    assert b'Versus' in r.data
+
+
+def test_versus_page_state_lives_in_the_url(application):
+    r = application.app.test_client().get(
+        '/versus?chart=country_airplay&artists=Luke+Combs|Morgan+Wallen')
+    assert r.status_code == 200
+    body = r.get_data(as_text=True)
+    assert 'country_airplay' in body
+    assert 'Luke Combs' in body
+
+
+def test_versus_link_is_in_the_nav(application):
+    body = application.app.test_client().get('/top100').get_data(as_text=True)
+    assert '/versus' in body

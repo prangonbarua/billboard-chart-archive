@@ -4,57 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ chart.label }}</title>
+    {% include '_head_styles.html' %}
     <style>
-        @font-face {
-            font-family: 'SF Pro Display';
-            src: url('/static/fonts/SFPRODISPLAYMEDIUM.OTF') format('opentype');
-            font-weight: 400 700;
-            font-style: normal;
-            font-display: swap;
-        }
-
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-        :root {
-            --bg: #ffffff;
-            --surface: #ffffff;
-            --surface-hover: #f5f5f3;
-            --surface-active: #ccffe9;
-            --border: rgba(2, 255, 154,0.35);
-            --border-accent: #0c492c;
-            --text: #111111;
-            --text-muted: #71717a;
-            --text-dim: #52525b;
-            --accent: #111111;
-            --accent-dim: rgba(250,250,250,0.08);
-            --green: #4ade80;
-            --green-dim: rgba(74,222,128,0.12);
-            --red: #f87171;
-            --red-dim: rgba(248,113,113,0.12);
-            --yellow: #fbbf24;
-            --yellow-dim: rgba(251,191,36,0.12);
-            --purple: #a855f7;
-            --purple-dim: rgba(168,85,247,0.12);
-            --spotify: #1DB954;
-            --spotify-dim: rgba(29,185,84,0.10);
-            --spotify-border: rgba(29,185,84,0.28);
-            --row-pad-y: 0.6875rem;
-            --row-pad-x: 1rem;
-            --row-hover-bar: var(--spotify);
-            --focus-ring: 0 0 0 2px rgba(29,185,84,0.45);
-            --shadow-sm: 0 2px 8px rgba(0,0,0,0.4);
-            --shadow-md: 0 8px 32px rgba(0,0,0,0.6);
-            --shadow-lg: 0 24px 60px rgba(0,0,0,0.8);
-        }
-
-        body {
-            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
-            font-feature-settings: 'ss01', 'cv01';
-        }
         .num { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
 
         .nav {

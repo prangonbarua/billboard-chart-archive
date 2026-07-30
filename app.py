@@ -657,6 +657,23 @@ def api_versus():
         'artists': results,
     }
 
+
+@app.route('/versus')
+@limiter.exempt
+def versus_page():
+    """Artist comparison scoped to one chart. All state is in the URL so
+    comparisons are shareable and browser back/forward works."""
+    chart_key = request.args.get('chart', 'top100')
+    if chart_key not in CHARTS:
+        chart_key = 'top100'
+    return render_template(
+        'versus.html',
+        chart_key=chart_key,
+        chart=CHARTS[chart_key],
+        charts=available_charts(),
+        initial_artists=_parse_artist_list(request.args.get('artists')),
+    )
+
 # ── Kworb cache (artist listeners + per-artist song streams) ────────────────
 # Artist data: name_lower -> {'listeners': int, 'spotify_id': str}
 _KWORB_CACHE = {'data': {}, 'ordered': [], 'fetched_at': None}
