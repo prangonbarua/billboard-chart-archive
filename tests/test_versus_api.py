@@ -79,7 +79,9 @@ def test_country_pool_holds_acts_the_hot100_pool_misses(application):
 def test_adult_contemporary_pool_reaches_before_1990(application):
     """MODERN_ARTISTS is filtered to 1990+; this chart starts in 1961."""
     pool = set(application.CHART_ARTISTS['adult_contemporary'])
-    assert 'Nat King Cole' in pool
+    assert 'ABBA' in pool
+    # and prove it discriminates:
+    assert 'ABBA' not in application.MODERN_ARTISTS
 
 
 def test_artists_endpoint_honours_the_chart_param(application):
