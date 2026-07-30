@@ -468,27 +468,7 @@
   .v3-nav-upload:hover { color: #0c492c !important; background: none !important; }
   .v3-nav-upload svg { display: block; }
     </style>
-    <nav class="nav">
-        <a href="{{ url_for('top100') }}">The Hot 100</a>
-        <a href="{{ url_for('albums200') }}">Billboard 200</a>
-        <a href="{{ url_for('artist100') }}">Artist 100</a>
-        <a href="{{ url_for('global200') }}">Global 200</a>
-        <a href="{{ url_for('globalexus') }}">Global Excl. US</a>
-        <a href="{{ url_for('radio') }}">Radio Songs</a>
-        <a href="{{ url_for('pop_airplay') }}">Pop Airplay</a>
-        <a href="{{ url_for('digital') }}">Digital Songs</a>
-        <a href="{{ url_for('streaming') }}">Streaming</a>
-        <a href="{{ url_for('search') }}" class="active">Reports</a>
-        <a href="{{ url_for('download_csv', artist_name=artist_name) }}" class="v3-nav-upload" aria-label="Download CSV">
-  [
-  <svg width="11" height="11" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-    <path d="M8 2v8M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M2 10v3a1 1 0 001 1h10a1 1 0 001-1v-3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>
-  Download CSV
-  ]
-</a>
-    </nav>
+    {% include '_nav.html' %}
 
     <div class="container">
         <div class="page-header">

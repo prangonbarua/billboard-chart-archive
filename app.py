@@ -143,6 +143,77 @@ STREAMING_DATA, STREAMING_AVAILABLE_DATES = _load_global_chart('streaming_songs.
 ARTIST100_DATA, ARTIST100_AVAILABLE_DATES = _load_global_chart('artist100.csv')
 POP_AIRPLAY_DATA, POP_AIRPLAY_AVAILABLE_DATES = _load_global_chart('pop_airplay.csv')
 
+# Genre/format airplay charts. These are still backfilling on first run; a chart
+# whose CSV is absent loads as None and is hidden from the nav rather than
+# erroring, so the app is usable while data lands.
+ADULT_CONTEMPORARY_DATA, ADULT_CONTEMPORARY_AVAILABLE_DATES = _load_global_chart('adult_contemporary.csv')
+ADULT_POP_DATA, ADULT_POP_AVAILABLE_DATES = _load_global_chart('adult_pop_airplay.csv')
+RHYTHMIC_DATA, RHYTHMIC_AVAILABLE_DATES = _load_global_chart('rhythmic_airplay.csv')
+COUNTRY_AIRPLAY_DATA, COUNTRY_AIRPLAY_AVAILABLE_DATES = _load_global_chart('country_airplay.csv')
+ALTERNATIVE_DATA, ALTERNATIVE_AVAILABLE_DATES = _load_global_chart('alternative_airplay.csv')
+
+# ── Chart registry ──────────────────────────────────────────────────────────
+# Single source of truth for chart metadata. The nav is built by looping this,
+# so adding a chart cannot leave the nav out of sync — commit cd05690 had to
+# touch 11 template files to add one chart's nav link.
+#
+# `depth` is the chart's CURRENT size, for display and y-axis scaling only. It
+# must NOT be used as a scrape completeness threshold: these charts changed
+# depth over their lifetimes (Adult Contemporary ran 19-20 rows in 1961 against
+# 30 today), so see the floor in fast_billboard_scraper.py instead.
+CHARTS = {
+    'top100':      dict(label='The Hot 100',      group='Songs',  depth=100, kind='song'),
+    'global200':   dict(label='Global 200',       group='Songs',  depth=200, kind='song'),
+    'globalexus':  dict(label='Global Excl. US',  group='Songs',  depth=200, kind='song'),
+    'radio':       dict(label='Radio Songs',      group='Songs',  depth=40,  kind='song'),
+    'digital':     dict(label='Digital Song Sales', group='Songs', depth=25, kind='song'),
+    'streaming':   dict(label='Streaming Songs',  group='Songs',  depth=50,  kind='song'),
+
+    'pop_airplay':        dict(label='Pop Airplay',         group='Airplay', depth=40, kind='song'),
+    'adult_pop':          dict(label='Adult Pop Airplay',   group='Airplay', depth=40, kind='song'),
+    'adult_contemporary': dict(label='Adult Contemporary',  group='Airplay', depth=30, kind='song'),
+    'rhythmic':           dict(label='Rhythmic Airplay',    group='Airplay', depth=40, kind='song'),
+    'country_airplay':    dict(label='Country Airplay',     group='Airplay', depth=60, kind='song'),
+    'alternative':        dict(label='Alternative Airplay', group='Airplay', depth=40, kind='song'),
+
+    'albums200':   dict(label='Billboard 200',    group='Albums & Artists', depth=200, kind='album'),
+    'artist100':   dict(label='Artist 100',       group='Albums & Artists', depth=100, kind='artist'),
+}
+
+# Frame + available dates per chart key. Keyed to the module globals above so
+# existing code paths that reference them directly keep working unchanged.
+CHART_DATA = {
+    'top100':      (BILLBOARD_DATA,             HOT100_AVAILABLE_DATES),
+    'global200':   (GLOBAL_200_DATA,            GLOBAL200_AVAILABLE_DATES),
+    'globalexus':  (GLOBAL_XUS_DATA,            GLOBALEXUS_AVAILABLE_DATES),
+    'radio':       (RADIO_DATA,                 RADIO_AVAILABLE_DATES),
+    'digital':     (DIGITAL_DATA,               DIGITAL_AVAILABLE_DATES),
+    'streaming':   (STREAMING_DATA,             STREAMING_AVAILABLE_DATES),
+    'pop_airplay': (POP_AIRPLAY_DATA,           POP_AIRPLAY_AVAILABLE_DATES),
+    'adult_pop':   (ADULT_POP_DATA,             ADULT_POP_AVAILABLE_DATES),
+    'adult_contemporary': (ADULT_CONTEMPORARY_DATA, ADULT_CONTEMPORARY_AVAILABLE_DATES),
+    'rhythmic':    (RHYTHMIC_DATA,              RHYTHMIC_AVAILABLE_DATES),
+    'country_airplay': (COUNTRY_AIRPLAY_DATA,   COUNTRY_AIRPLAY_AVAILABLE_DATES),
+    'alternative': (ALTERNATIVE_DATA,           ALTERNATIVE_AVAILABLE_DATES),
+    'albums200':   (BILLBOARD_200_DATA,         ALBUMS200_AVAILABLE_DATES),
+    'artist100':   (ARTIST100_DATA,             ARTIST100_AVAILABLE_DATES),
+}
+
+def available_charts():
+    """Registry entries that actually have data loaded, grouped for the nav."""
+    groups = {}
+    for key, meta in CHARTS.items():
+        df, _ = CHART_DATA.get(key, (None, None))
+        if df is None or not len(df):
+            continue
+        groups.setdefault(meta['group'], []).append(dict(meta, key=key))
+    return groups
+
+@app.context_processor
+def inject_nav():
+    """Every template gets the nav data, so the nav lives in one partial."""
+    return {'nav_groups': available_charts(), 'nav_charts': CHARTS}
+
 def safe_int(val, default=None):
     if pd.isna(val):
         return default
@@ -1195,7 +1266,12 @@ def _song_chart_page(source_df, available_dates, endpoint, template):
         template,
         available_dates=available_dates,
         selected_date=selected_date,
-        chart_songs=chart_songs
+        chart_songs=chart_songs,
+        # Registry entry for the page being rendered. chart.html reads these for
+        # its title, heading, and history-API chart param; the older per-chart
+        # templates ignore them.
+        chart=CHARTS.get(endpoint, {}),
+        chart_key=endpoint
     )
 
 @app.route('/top100')
@@ -1266,6 +1342,22 @@ def pop_airplay():
         flash('Pop Airplay data is not available', 'error')
         return redirect(url_for('top100'))
     return _song_chart_page(POP_AIRPLAY_DATA, POP_AIRPLAY_AVAILABLE_DATES, 'pop_airplay', 'pop_airplay.html')
+
+# ── Genre/format airplay charts ─────────────────────────────────────────────
+# Registered from the registry against the shared chart.html. The `key=key`
+# default argument is required: without it Python's late closure binding would
+# make every one of these routes serve whichever chart the loop ended on — a bug
+# that renders perfectly and is easy to miss.
+for _key in ('adult_pop', 'adult_contemporary', 'rhythmic', 'country_airplay', 'alternative'):
+    def _format_chart_page(key=_key):
+        df, dates = CHART_DATA[key]
+        if df is None:
+            flash(f"{CHARTS[key]['label']} data is not available", 'error')
+            return redirect(url_for('top100'))
+        return _song_chart_page(df, dates, key, 'chart.html')
+
+    app.add_url_rule(f'/{_key}', _key, limiter.exempt(_format_chart_page))
+del _key
 
 @app.route('/albums200')
 @limiter.exempt
@@ -1391,9 +1483,11 @@ def get_song_history():
         return jsonify({'error': 'Missing artist or song parameter'}), 400
 
     chart = request.args.get('chart', '')
-    source = {'global200': GLOBAL_200_DATA, 'globalexus': GLOBAL_XUS_DATA,
-              'radio': RADIO_DATA, 'digital': DIGITAL_DATA, 'streaming': STREAMING_DATA,
-              'artist100': ARTIST100_DATA, 'popairplay': POP_AIRPLAY_DATA}.get(chart)
+    # Registry-driven so a new chart cannot silently fall through to the Hot 100
+    # and show the wrong song's history. 'popairplay' is the pre-registry param
+    # name still emitted by templates that have not moved to chart.html.
+    chart = {'popairplay': 'pop_airplay'}.get(chart, chart)
+    source, _ = CHART_DATA.get(chart, (None, None))
     if source is None:
         source = BILLBOARD_DATA
     data = source.copy()

@@ -297,18 +297,7 @@
     <link rel="stylesheet" href="/static/paxel.css">
 </head>
 <body>
-    <nav class="nav">
-        <a href="{{ url_for('top100') }}">The Hot 100</a>
-        <a href="{{ url_for('albums200') }}">Billboard 200</a>
-        <a href="{{ url_for('artist100') }}" class="active">Artist 100</a>
-        <a href="{{ url_for('global200') }}">Global 200</a>
-        <a href="{{ url_for('globalexus') }}">Global Excl. US</a>
-        <a href="{{ url_for('radio') }}">Radio Songs</a>
-        <a href="{{ url_for('pop_airplay') }}">Pop Airplay</a>
-        <a href="{{ url_for('digital') }}">Digital Songs</a>
-        <a href="{{ url_for('streaming') }}">Streaming</a>
-        <a href="{{ url_for('search') }}">Reports</a>
-    </nav>
+    {% include '_nav.html' %}
 
     <div class="container">
         <div class="page-header">

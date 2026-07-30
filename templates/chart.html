@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Song Sales</title>
+    <title>{{ chart.label }}</title>
     <style>
         @font-face {
             font-family: 'SF Pro Display';
@@ -302,7 +302,7 @@
     <div class="container">
         <div class="page-header">
             <div>
-                <h1 class="page-title">Digital Song Sales</h1>
+                <h1 class="page-title">{{ chart.label }}</h1>
                 <p class="page-meta">Ranked by streaming, airplay &amp; sales &middot; <span class="page-date">{{ selected_date }}</span></p>
             </div>
             <div class="date-nav">
@@ -573,7 +573,7 @@
             body.appendChild(loading);
             modal.style.display = 'block';
 
-            fetch('/api/song-history?chart=digital&artist=' + encodeURIComponent(artist) + '&song=' + encodeURIComponent(song))
+            fetch('/api/song-history?chart={{ chart_key }}&artist=' + encodeURIComponent(artist) + '&song=' + encodeURIComponent(song))
                 .then(r => r.ok ? r.json() : Promise.reject(r.status))
                 .then(data => {
                     if (reqId !== historyReq) return;

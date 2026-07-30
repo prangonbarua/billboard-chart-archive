@@ -1,0 +1,113 @@
+{# Shared site nav. Included by every page so the chart list lives in exactly
+   one place — it is built by looping the CHARTS registry, which is why adding a
+   chart no longer means editing every template. #}
+<style>
+    .nav {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.75rem 1.5rem;
+        background: var(--bg);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        border-bottom: 1px solid var(--border);
+        backdrop-filter: blur(12px);
+    }
+    .nav a {
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        transition: color 0.15s, background 0.15s;
+    }
+    .nav a:hover { color: var(--text); background: var(--surface); }
+    .nav a.active { color: var(--text); background: var(--surface-hover); }
+
+    /* Chart dropdown. <details> gives open/close with no JS and works on touch. */
+    .nav-dd { position: relative; }
+    .nav-dd > summary {
+        list-style: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        color: var(--text);
+        background: var(--surface);
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        transition: background 0.15s;
+    }
+    .nav-dd > summary::-webkit-details-marker { display: none; }
+    .nav-dd > summary:hover { background: var(--surface-hover); }
+    .nav-dd > summary .chev { font-size: 0.625rem; opacity: 0.6; }
+    .nav-dd[open] > summary .chev { transform: rotate(180deg); }
+
+    .nav-dd-panel {
+        position: absolute;
+        top: calc(100% + 0.375rem);
+        left: 0;
+        min-width: 460px;
+        display: flex;
+        gap: 1.5rem;
+        padding: 1rem 1.25rem;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.10);
+        z-index: 200;
+    }
+    .nav-dd-group { display: flex; flex-direction: column; gap: 0.125rem; min-width: 130px; }
+    .nav-dd-label {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        opacity: 0.7;
+        padding: 0 0.5rem 0.375rem;
+    }
+    .nav-dd-group a { padding: 0.3125rem 0.5rem; white-space: nowrap; }
+
+    @media (max-width: 640px) {
+        .nav-dd-panel {
+            position: fixed;
+            left: 0.75rem;
+            right: 0.75rem;
+            min-width: 0;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+    }
+</style>
+
+<nav class="nav">
+    <details class="nav-dd">
+        <summary>
+            {# Show the current chart so the nav still says where you are. #}
+            {{ nav_charts[request.endpoint].label if request.endpoint in nav_charts else 'Charts' }}
+            <span class="chev">&#9660;</span>
+        </summary>
+        <div class="nav-dd-panel">
+            {% for group in ['Songs', 'Airplay', 'Albums & Artists'] %}
+                {% if nav_groups.get(group) %}
+                <div class="nav-dd-group">
+                    <div class="nav-dd-label">{{ group }}</div>
+                    {% for c in nav_groups[group] %}
+                        <a href="{{ url_for(c.key) }}"
+                           class="{{ 'active' if request.endpoint == c.key else '' }}">{{ c.label }}</a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </details>
+    <a href="{{ url_for('search') }}"
+       class="{{ 'active' if request.endpoint == 'search' else '' }}">Reports</a>
+</nav>
