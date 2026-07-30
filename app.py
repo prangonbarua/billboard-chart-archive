@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 import sys
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
+import versus
 
 # Load environment variables from .env file
 load_dotenv()
@@ -581,6 +582,61 @@ def get_artists():
 
     # Limit to 50 results (MODERN_ARTISTS is already sorted, so slicing preserves order)
     return {'artists': list(artists[:50])}
+
+# ── Artist versus ───────────────────────────────────────────────────────────
+
+def _versus_artist_rows(chart_key, artist_name):
+    """That artist's rows on one chart, with Date already parsed.
+
+    Uses artist_match_mask, not substring matching: 'Tyla' must match
+    'Tyla Featuring Zara Larsson' but not 'Tyla Yaweh' (commit 127a996).
+    """
+    df, _dates = CHART_DATA.get(chart_key, (None, None))
+    if df is None or not len(df):
+        return pd.DataFrame(columns=['Date', 'Rank', 'Song', 'Artist'])
+    mask = artist_match_mask(df['Artist'], artist_name)
+    rows = df.loc[mask, ['Rank', 'Song', 'Artist']].copy()
+    rows['Date'] = CHART_DT[chart_key].loc[rows.index]
+    return rows
+
+
+def _parse_artist_list(raw):
+    """Pipe-separated artists, blanks dropped, original order and case kept."""
+    return [a.strip() for a in (raw or '').split('|') if a.strip()]
+
+
+@app.route('/api/versus')
+@limiter.exempt
+def api_versus():
+    chart_key = request.args.get('chart', 'top100')
+    meta = CHARTS.get(chart_key)
+    if meta is None:
+        return {'error': 'Unknown chart'}, 400
+    df, _dates = CHART_DATA.get(chart_key, (None, None))
+    if df is None or not len(df):
+        return {'error': 'Chart data is not available'}, 400
+
+    results = []
+    for name in _parse_artist_list(request.args.get('artists')):
+        rows = _versus_artist_rows(chart_key, name)
+        stats = versus.compute_artist_stats(rows, kind=meta['kind'])
+        # A typo in a four-artist comparison must not blank the page, so an
+        # unmatched artist comes back with null stats rather than an error.
+        results.append({
+            'name': name,
+            'display_name': versus.display_name(rows, name),
+            **stats,
+        })
+
+    return {
+        'chart': {
+            'key': chart_key,
+            'label': meta['label'],
+            'depth': meta['depth'],
+            'kind': meta['kind'],
+        },
+        'artists': results,
+    }
 
 # ── Kworb cache (artist listeners + per-artist song streams) ────────────────
 # Artist data: name_lower -> {'listeners': int, 'spotify_id': str}
