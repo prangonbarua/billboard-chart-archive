@@ -94,13 +94,22 @@ Nav becomes a loop over `CHARTS` grouped by `nav`, with the active class derived
 
 ### Nav grouping
 
-14 charts plus Versus and Reports will not fit one row. Structure:
+The current nav is already at its limit: at 9 items the labels wrap to two lines
+and reach the right edge of the viewport. Adding five more inline is not
+possible, and grouping them inline does not help enough.
 
-- **Songs** — Hot 100, Global 200, Global Excl. US, Radio Songs, Digital Songs, Streaming
-- **Airplay** (dropdown) — Pop, Adult Pop, Adult Contemporary, Rhythmic, Country, Alternative
-- **Albums & Artists** — Billboard 200, Artist 100
+So the whole chart list moves into **one dropdown**. The bar becomes three items:
+
+- **Charts ▾** — a single trigger opening a panel with all 14 charts in labeled
+  sections: *Songs* (Hot 100, Global 200, Global Excl. US, Radio, Digital,
+  Streaming) · *Airplay* (Pop, Adult Pop, Adult Contemporary, Rhythmic, Country,
+  Alternative) · *Albums & Artists* (Billboard 200, Artist 100)
 - **Versus** — top-level
 - **Reports** — top-level
+
+The trigger shows the current chart's name when one is active, so the nav still
+says where you are. The panel is built by looping the registry grouped by `nav`,
+so it cannot drift.
 
 ### Landing page note
 
@@ -126,19 +135,72 @@ Five detached background processes in parallel, reusing the Pop Airplay backfill
 
 One change from the Pop run: it hardcoded `len(entries) >= 30` as its validity test. That is too lax for Country Airplay's 60 rows and exactly borderline for Adult Contemporary's 30. Use per-chart `min_entries = int(depth * 0.75)`.
 
-Approximate volume at the observed ~18 weeks/min:
+### The clamping hazard
 
-| Chart | Start | ~Weeks |
-|---|---|---|
-| Adult Contemporary | 1961 | 3,400 |
-| Alternative Airplay | 1988 | 1,980 |
-| Country Airplay | 1990 | 1,880 |
-| Rhythmic Airplay | 1992 | 1,770 |
-| Adult Pop Airplay | 1996 | 1,560 |
+This was the most important finding of the design phase, and it invalidates the
+obvious approach.
 
-~10,600 weeks total; roughly 3 hours wall clock in parallel, bounded by Adult Contemporary.
+Billboard serves **any** out-of-range date — before a chart launched, or after its
+newest week — by returning the boundary week's rankings under whatever date was
+requested. There is no redirect (the final URL equals the requested date) and no
+date anywhere in the page: `c-tagline`, which `fast_billboard_scraper.py:45`
+inspects, holds the chart's *description*, not its date. Lines 50 and 52 of that
+file are identical, so the located element is never used and rows are always
+labelled with the requested date.
 
-Start dates are approximate. Set them conservatively early and let the scrape's fail list reveal each chart's true first week, then update the registry.
+Consequence: a single response cannot reveal that a week is fabricated. Guessing
+start dates and letting failures reveal the boundary does not work, because
+out-of-range dates do not fail — they return a full, valid-looking chart.
+
+Two mitigations, both implemented:
+
+1. **`scripts/find_chart_start.py`** binary-searches each chart's true first week
+   as the latest date whose full ranking still matches a known pre-launch date.
+   Verified: all dates from 1950 through 1990-01-20 return one identical
+   `country-airplay` ranking, so the clamped region is contiguous and the search
+   is sound.
+2. **`scripts/backfill_chart.py`** drops any week whose full
+   `(rank, song, artist)` ordering matches the adjacent accepted week. Real
+   consecutive weeks always differ. This guards the future end too, where dates
+   past the newest chart clamp to it.
+
+Note the guard's limit: it compares against the *previous accepted* week, so the
+very first week of a run is accepted unconditionally. Starting at a wrong date
+would still write one bad week — which is why step 1 is not optional.
+
+A matching #1 is **not** evidence of a clamped week; a song can hold #1 for many
+weeks. Only the full ranking signature settles it.
+
+### Verified launch weeks
+
+Determined empirically, not from published chart histories:
+
+| Chart | True first week | Rows at launch | Weeks to fetch |
+|---|---|---|---|
+| Adult Contemporary | 1961-07-15 | 20 | 3,395 |
+| Alternative Airplay | 1988-09-10 | 30 | 1,978 |
+| Country Airplay | 1990-01-20 | 60 | 1,907 |
+| Rhythmic Airplay | 1992-10-03 | 40 | 1,766 |
+| Adult Pop Airplay | 1995-10-07 | 40 | 1,609 |
+
+10,655 weeks total; roughly 3 hours wall clock in parallel, bounded by Adult
+Contemporary.
+
+Adult Pop Airplay begins **1995-10-07**, not March 1996 as commonly published.
+Trusting the published date would have written 22 weeks of clamped duplicates.
+
+### Chart depths changed over time
+
+Adult Contemporary was a 20-position chart in 1961; Alternative Airplay was 30 in
+1988. Both are deeper today. So the completeness gate at
+`fast_billboard_scraper.py:117` uses a **floor of 20** for these five charts
+rather than their modern depth — setting it to the modern depth silently rejects
+every early week as "incomplete". Truncated-but-not-short weeks are caught by the
+duplicate-ranking check instead.
+
+The registry's `depth` field therefore describes the chart's *current* depth, for
+y-axis scaling and display, and must not be reused as a scrape validity
+threshold.
 
 ### Weekly updates
 
@@ -208,7 +270,7 @@ Each artist costs one `artist_match_mask` scan plus two groupbys over a frame up
 
 No test suite exists, so verification is explicit:
 
-1. **`scripts/verify_charts.py`** — per chart, assert: no duplicate `(Date, Rank)`; no missing weeks in the date sequence; row count per week within tolerance of `depth`; dates parse and are monotonic. Run against all 14 charts.
+1. **`scripts/verify_charts.py`** — per chart, assert: no duplicate `(Date, Rank)`; no missing weeks in the date sequence; dates parse and are monotonic; and **no two consecutive weeks share an identical full ranking**, which is the post-hoc check for clamped weeks that slipped past the backfill guard. Row counts are checked for plausibility only, not against `depth`, since depths changed over time. Run against all 14 charts.
 2. **Landing-page diff** — rendered HTML of `/top100` before vs after the template collapse; only the nav restructure may differ.
 3. **Every route loads** — walk all 14 endpoints plus `/versus` and assert HTTP 200, guarding against the closure late-binding bug.
 4. **Versus numbers hand-checked** — pick two well-documented artists and reconcile `number_ones`, `weeks_at_1`, and `entries` against Billboard's published totals. Silently-wrong stats are this feature's main risk.
