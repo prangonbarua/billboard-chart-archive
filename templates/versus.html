@@ -87,12 +87,16 @@ const colorFor = i => PALETTE[i % PALETTE.length];
 
 let artists = INITIAL.slice();
 
-// All state in the URL: shareable, and back/forward works.
-function syncUrl() {
+// All state in the URL: shareable, and back/forward works. User-driven
+// changes push a new history entry; restoring from the URL (initial load,
+// popstate) replaces instead, so Back doesn't fight itself.
+function syncUrl(push) {
     const q = new URLSearchParams();
     q.set('chart', document.getElementById('chart').value);
     if (artists.length) q.set('artists', artists.join('|'));
-    history.replaceState(null, '', '/versus?' + q.toString());
+    const url = '/versus?' + q.toString();
+    if (push) history.pushState(null, '', url);
+    else history.replaceState(null, '', url);
 }
 
 function renderChips() {
@@ -132,17 +136,17 @@ function renderScorecard(data) {
 
     const body = ROWS.map(([label, get, better]) => {
         const vals = list.map(get);
-        let bestIdx = -1;
+        const best = new Set();
         if (better) {
             const nums = vals.map(v => (typeof v === 'number' ? v : null));
             const real = nums.filter(v => v !== null);
             if (real.length) {
                 const target = better === 'high' ? Math.max(...real) : Math.min(...real);
-                bestIdx = nums.indexOf(target);
+                nums.forEach((v, i) => { if (v === target) best.add(i); });
             }
         }
         const cells = vals.map((v, i) =>
-            `<td class="${i === bestIdx ? 'best' : ''}">${v === null || v === undefined ? '&mdash;' : escapeHtml(v)}</td>`
+            `<td class="${best.has(i) ? 'best' : ''}">${v === null || v === undefined ? '&mdash;' : escapeHtml(v)}</td>`
         ).join('');
         return `<tr><td>${label}</td>${cells}</tr>`;
     }).join('');
@@ -151,9 +155,11 @@ function renderScorecard(data) {
         `<table class="scorecard"><thead>${head}</thead><tbody>${body}</tbody></table>`;
 }
 
-async function load() {
+// push: whether this render should add a history entry (a user-driven
+// change) or replace the current one (initial load, popstate restore).
+async function load(push) {
     renderChips();
-    syncUrl();
+    syncUrl(push);
     if (!artists.length) { renderScorecard({artists: []}); return; }
     const chart = document.getElementById('chart').value;
     const res = await fetch(`/api/versus?chart=${encodeURIComponent(chart)}`
@@ -168,7 +174,7 @@ document.getElementById('picker').addEventListener('submit', e => {
     e.preventDefault();
     const input = document.getElementById('artist');
     const name = input.value.trim();
-    if (name && !artists.includes(name)) { artists.push(name); load(); }
+    if (name && !artists.includes(name)) { artists.push(name); load(true); }
     input.value = '';
 });
 
@@ -176,10 +182,19 @@ document.getElementById('chips').addEventListener('click', e => {
     const btn = e.target.closest('button[data-i]');
     if (!btn) return;
     artists.splice(Number(btn.dataset.i), 1);
-    load();
+    load(true);
 });
 
-document.getElementById('chart').addEventListener('change', load);
+document.getElementById('chart').addEventListener('change', () => load(true));
+
+// Back/forward: restore chart + artists from the URL and re-render (chips
+// included) without pushing another entry, or Back would fight itself.
+window.addEventListener('popstate', () => {
+    const p = new URLSearchParams(location.search);
+    document.getElementById('chart').value = p.get('chart') || CHART_KEY;
+    artists = (p.get('artists') || '').split('|').filter(Boolean);
+    load(false);
+});
 
 // Autocomplete against the selected chart's own artist pool.
 document.getElementById('artist').addEventListener('input', async e => {
@@ -194,7 +209,7 @@ document.getElementById('artist').addEventListener('input', async e => {
         opts.map(a => `<option value="${escapeHtml(a)}">`).join('');
 });
 
-load();
+load(false);   // initial render from the URL we arrived on; don't push
 </script>
 </body>
 </html>
