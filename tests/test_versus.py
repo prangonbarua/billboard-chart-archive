@@ -80,11 +80,13 @@ def test_top_tiers_count_distinct_songs_by_peak():
 
 
 def test_biggest_hit_breaks_peak_ties_by_weeks():
+    # Both peak at 2, in different weeks — two songs cannot share one
+    # (Date, Rank) slot on a real chart. Longer run wins the tie.
     df = frame([
         ('2024-01-06', 2, 'Short', 'X'),
-        ('2024-01-06', 2, 'Long', 'X'),
-        ('2024-01-13', 4, 'Long', 'X'),
-        ('2024-01-20', 6, 'Long', 'X'),
+        ('2024-01-13', 2, 'Long', 'X'),
+        ('2024-01-20', 4, 'Long', 'X'),
+        ('2024-01-27', 6, 'Long', 'X'),
     ])
     assert versus.compute_artist_stats(df)['biggest_hit'] == 'Long'
 
