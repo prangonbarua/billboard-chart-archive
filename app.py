@@ -210,6 +210,20 @@ for _k, (_df, _d) in CHART_DATA.items():
         CHART_DT[_k] = pd.to_datetime(_df['Date'], errors='coerce')
 del _k, _df, _d
 
+# Autocomplete pool per chart. MODERN_ARTISTS is Hot 100 rows from 1990+, which
+# would never surface a country act who did not cross over, and would hide the
+# pre-1990 half of Adult Contemporary. Precomputed once, like MODERN_ARTISTS.
+CHART_ARTISTS = {}
+for _k, (_df, _d) in CHART_DATA.items():
+    if _df is None or not len(_df):
+        continue
+    _names = _df['Artist'].dropna().astype(str).str.strip().unique()
+    CHART_ARTISTS[_k] = sorted(
+        a for a in _names
+        if a and not any(m in a.lower() for m in _collab_markers)
+    )
+del _k, _df, _d, _names
+
 def available_charts():
     """Registry entries that actually have data loaded, grouped for the nav."""
     groups = {}
@@ -571,16 +585,21 @@ def analyze():
 @app.route('/api/artists')
 @limiter.exempt
 def get_artists():
-    """API endpoint for artist autocomplete"""
+    """API endpoint for artist autocomplete.
+
+    With ?chart=<key> the pool is that chart's own artists — required by the
+    versus page, where the Hot 100 pool would miss format-chart acts entirely.
+    Without it, behaviour is unchanged for search.html.
+    """
     query = request.args.get('q', '').lower()
+    pool = CHART_ARTISTS.get(request.args.get('chart', ''), MODERN_ARTISTS)
 
-    # Modern artists (1990+) are precomputed and pre-sorted at startup (static data)
     if query:
-        artists = [a for a in MODERN_ARTISTS if a.lower().startswith(query)]
+        artists = [a for a in pool if a.lower().startswith(query)]
     else:
-        artists = MODERN_ARTISTS
+        artists = pool
 
-    # Limit to 50 results (MODERN_ARTISTS is already sorted, so slicing preserves order)
+    # Pools are pre-sorted, so slicing preserves order.
     return {'artists': list(artists[:50])}
 
 # ── Artist versus ───────────────────────────────────────────────────────────
