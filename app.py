@@ -199,6 +199,16 @@ CHART_DATA = {
     'artist100':   (ARTIST100_DATA,             ARTIST100_AVAILABLE_DATES),
 }
 
+# Dates parsed once at startup. Every request previously re-parsed the whole
+# Date column (123k rows on Adult Contemporary); the versus feature would have
+# multiplied that per artist compared. Index-aligned to each frame so callers
+# can mask with it directly.
+CHART_DT = {}
+for _k, (_df, _d) in CHART_DATA.items():
+    if _df is not None and len(_df):
+        CHART_DT[_k] = pd.to_datetime(_df['Date'], errors='coerce')
+del _k, _df, _d
+
 def available_charts():
     """Registry entries that actually have data loaded, grouped for the nav."""
     groups = {}
