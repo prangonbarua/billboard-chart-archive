@@ -23,7 +23,7 @@ The app is a single Flask file (`app.py`, 1623 lines) serving nine chart pages f
 
 The eight song-chart templates differ from each other by 20 diff lines out of ~900 — `<title>`, which nav anchor carries `class="active"`, the `<h1>`, and a `chart=` query param. `artist100.html` differs by 36 lines: the same four, plus it omits the `.song-artist` subtitle div and calls `/api/artist-image/` instead of `/api/song-image/`.
 
-Nav is a flat 10-item list, hardcoded identically in every template.
+Nav is a flat 10-item list, hardcoded identically in every template. The cost of this is measurable: commit `cd05690`, which added the single Pop Airplay chart, had to touch **11 template files** to do it — one line in each, purely to add the nav link.
 
 There is no graph rendering in the app. `results.html:643` assigns `chartData` from `prepare_visualization_data()` and never reads it; the `.chart-wrap canvas` rule at `results.html:222` is vestigial. No external script tags exist anywhere in the project.
 
@@ -225,9 +225,8 @@ No test suite exists, so verification is explicit:
 
 ## Sequencing
 
-1. Commit the finished Pop Airplay data (1,766 weeks, 1992-10-03 → 2026-08-01) — already complete, currently uncommitted.
-2. Launch the five scrapes in the background.
-3. Build the registry and collapse the templates while scraping runs.
-4. Add the five registry entries and nav grouping.
-5. Build `/api/versus`, then the versus page.
-6. Run all four verifications.
+1. Launch the five scrapes in the background. (Pop Airplay is done and already committed in `cd05690` — 1,766 weeks, 1992-10-03 → 2026-08-01, working tree clean.)
+2. Build the registry and collapse the templates while scraping runs.
+3. Add the five registry entries and nav grouping.
+4. Build `/api/versus`, then the versus page.
+5. Run all four verifications.
