@@ -265,6 +265,15 @@ def main():
     update_chart_data('artist-100', 'data/artist100.csv', weeks_to_fetch=15)
     update_chart_data('pop-songs', 'data/pop_airplay.csv', weeks_to_fetch=15)
 
+    # Genre/format airplay charts. Full histories were backfilled separately;
+    # these keep them current. The completeness floor for these slugs is 10
+    # rows, not their modern depth — they ran shallower in early decades.
+    update_chart_data('adult-contemporary', 'data/adult_contemporary.csv', weeks_to_fetch=15)
+    update_chart_data('adult-pop-songs', 'data/adult_pop_airplay.csv', weeks_to_fetch=15)
+    update_chart_data('rhythmic-40', 'data/rhythmic_airplay.csv', weeks_to_fetch=15)
+    update_chart_data('country-airplay', 'data/country_airplay.csv', weeks_to_fetch=15)
+    update_chart_data('alternative-airplay', 'data/alternative_airplay.csv', weeks_to_fetch=15)
+
     print("\n" + "="*60)
     if success_hot100 and success_bb200:
         print("✅ Update complete!")
