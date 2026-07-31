@@ -37,8 +37,6 @@ def check_chart(key, df):
         hard.append(f'{int(dupes)} duplicate (Date, Rank) rows')
 
     weeks = sorted(d['_dt'].unique())
-    if weeks != sorted(set(weeks)):
-        hard.append('week list is not unique')
 
     # Gaps. Reported, not fatal: several charts have genuine publication gaps
     # and a hand-filled seam week, and those are known rather than corrupt.
