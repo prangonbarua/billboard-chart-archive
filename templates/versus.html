@@ -177,10 +177,25 @@ window.renderGraph = function (data) {
     if (!series.length) { host.innerHTML = ''; return; }
 
     const W = 1040, H = 420, M = {t: 16, r: 16, b: 28, l: 40};
-    const depth = data.chart.depth;
 
-    const times = series.flatMap(a => a.timeline.map(p => Date.parse(p.date)));
-    const t0 = Math.min(...times), t1 = Math.max(...times);
+    // Long careers run 600-950+ charted weeks; across many artists (this page
+    // supports unlimited artists) the combined timeline can be tens of
+    // thousands of points, well past the ~65,536-argument ceiling for
+    // Math.min/max(...spread) — a loop avoids that RangeError entirely.
+    // The same loop finds the deepest rank actually present in the data:
+    // three charts (adult_contemporary, digital, radio) carry historical
+    // ranks deeper than their registry `depth` (the MODERN depth), so
+    // scaling to `depth` alone would clip real points off the bottom of
+    // the graph with no visual indication anything was cut.
+    let t0 = Infinity, t1 = -Infinity, depth = data.chart.depth;
+    for (const a of series) {
+        for (const p of a.timeline) {
+            const t = Date.parse(p.date);
+            if (t < t0) t0 = t;
+            if (t > t1) t1 = t;
+            if (p.rank > depth) depth = p.rank;
+        }
+    }
     const spanX = (t1 - t0) || 1;
 
     const x = t => M.l + ((t - t0) / spanX) * (W - M.l - M.r);
@@ -287,7 +302,11 @@ window.renderGraph = function (data) {
 async function load(push) {
     renderChips();
     syncUrl(push);
-    if (!artists.length) { renderScorecard({artists: []}); return; }
+    if (!artists.length) {
+        renderScorecard({artists: []});
+        document.getElementById('graph').innerHTML = '';
+        return;
+    }
     const chart = document.getElementById('chart').value;
     const res = await fetch(`/api/versus?chart=${encodeURIComponent(chart)}`
         + `&artists=${encodeURIComponent(artists.join('|'))}`);
@@ -301,7 +320,12 @@ document.getElementById('picker').addEventListener('submit', e => {
     e.preventDefault();
     const input = document.getElementById('artist');
     const name = input.value.trim();
-    if (name && !artists.includes(name)) { artists.push(name); load(true); }
+    // Case-insensitive, consistent with the server's dedupe in
+    // _parse_artist_list: typing 'drake' then 'Drake' is the same comparison
+    // twice, not two artists, and would otherwise draw two overlapping chips,
+    // scorecard columns, and lines for the same person.
+    const isDuplicate = name && artists.some(a => a.toLowerCase() === name.toLowerCase());
+    if (name && !isDuplicate) { artists.push(name); load(true); }
     input.value = '';
 });
 
