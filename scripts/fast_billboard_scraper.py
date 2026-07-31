@@ -117,16 +117,28 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
         expected = {'billboard-200': 200, 'billboard-global-200': 200,
                     'billboard-global-excl-us': 200, 'hot-100': 100,
                     'artist-100': 100, 'pop-songs': 40,
-                    # Airplay/format charts changed depth over their lifetimes and
-                    # early weeks were not even a fixed length: Adult Contemporary
-                    # ran 19-20 rows in 1961-62, Alternative 30 in 1988, against
-                    # 30/40 today. A gate set to the modern depth silently rejects
-                    # every early week as incomplete, so these use a low floor.
-                    # Fabricated weeks are caught by the duplicate-ranking check in
-                    # backfill_chart.py rather than by row count.
-                    'country-airplay': 10, 'adult-pop-songs': 10,
-                    'rhythmic-40': 10, 'alternative-airplay': 10,
-                    'adult-contemporary': 10}.get(chart_name, 20)
+                    # These five ran shallower decades ago (Adult Contemporary
+                    # was 19-20 rows in 1961-62, Alternative was 30 in 1988),
+                    # but that only matters to backfill_chart.py, which walks
+                    # those old weeks. This function is also the ONLY gate on
+                    # update_chart_data's weekly path, which never looks back
+                    # more than 52 weeks — over 2024+ all five run at a fixed
+                    # modern depth every single week (verified against the
+                    # CSVs: 135/135 weeks at exactly this row count each). A
+                    # floor of 10 let a Billboard markup change that drops
+                    # rows produce e.g. a 12-row week that still passed the
+                    # gate, got written as complete, landed in existing_dates,
+                    # and was never re-fetched — a permanent partial week,
+                    # the exact failure this gate exists to prevent. Floors
+                    # are set to the modern depth instead. A pre-2024 backfill
+                    # run of these five will now (correctly, per this file's
+                    # sole purpose of guarding the live weekly path) reject
+                    # shallow historical weeks below modern depth; fabricated
+                    # weeks are still separately caught by the duplicate-
+                    # ranking check in backfill_chart.py, not by row count.
+                    'country-airplay': 60, 'adult-pop-songs': 40,
+                    'rhythmic-40': 40, 'alternative-airplay': 40,
+                    'adult-contemporary': 30}.get(chart_name, 20)
         if len(entries) < expected:
             print(f"✗ Incomplete chart: {len(entries)}/{expected} rows — skipping (will retry next run)")
             time.sleep(1)
