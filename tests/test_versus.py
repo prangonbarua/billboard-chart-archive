@@ -135,6 +135,35 @@ def test_artist_kind_has_no_song_level_stats():
     assert stats['total_weeks_charted'] == 2
 
 
+def test_artist_kind_nulls_distinct_song_counts():
+    """top_10s, top_40s, and number_ones are all built by counting or
+    filtering the per-song grouping. On an artist chart, Song == Artist for
+    this artist's own filtered rows, so that grouping collapses to exactly
+    one group every time — under kind='song' these are genuine counts, but
+    under kind='artist' they would just be a boolean (0 or 1) dressed as a
+    number, and must be nulled instead of displayed as if they counted
+    distinct songs."""
+    df = frame([
+        ('2024-01-06', 1, 'X', 'X'),
+        ('2024-01-13', 5, 'X', 'X'),
+    ])
+
+    # Sanity check: under kind='song' (the normal case) these are real counts.
+    song_stats = versus.compute_artist_stats(df, kind='song')
+    assert song_stats['top_10s'] == 1
+    assert song_stats['top_40s'] == 1
+    assert song_stats['number_ones'] == 1
+
+    artist_stats = versus.compute_artist_stats(df, kind='artist')
+    assert artist_stats['top_10s'] is None
+    assert artist_stats['top_40s'] is None
+    assert artist_stats['number_ones'] is None
+    # Stats that remain meaningful for an artist chart must stay real numbers.
+    assert artist_stats['weeks_at_1'] == 1
+    assert artist_stats['best_peak'] == 1
+    assert artist_stats['total_weeks_charted'] == 2
+
+
 def test_display_name_uses_modal_capitalization():
     df = frame([
         ('2024-01-06', 5, 'Hit', 'The Kid LAROI'),

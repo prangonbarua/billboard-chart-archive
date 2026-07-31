@@ -102,9 +102,21 @@ def compute_artist_stats(rows, kind='song'):
     }
 
     if kind == 'artist':
+        # On an artist chart, Song == Artist for the overwhelming majority of
+        # rows, so grouping by (song, primary_artist) collapses this artist's
+        # own filtered rows into exactly one group every time. Any stat built
+        # by counting or filtering that per-song grouping is therefore not a
+        # real count — it is a boolean in disguise (0 or 1, never more) and
+        # must be nulled rather than shown as a number. number_ones has the
+        # same defect: it was already special-cased away from per_song, but
+        # int((r['Rank'] == 1).any()) is still only ever 0 or 1, and it adds
+        # no information over best_peak (which is not nulled) — so it is
+        # nulled too rather than displayed as if it counted distinct #1 songs.
         stats['entries'] = None
         stats['biggest_hit'] = None
-        stats['number_ones'] = int((r['Rank'] == 1).any())
+        stats['number_ones'] = None
+        stats['top_10s'] = None
+        stats['top_40s'] = None
 
     return stats
 
