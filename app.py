@@ -620,8 +620,25 @@ def _versus_artist_rows(chart_key, artist_name):
 
 
 def _parse_artist_list(raw):
-    """Pipe-separated artists, blanks dropped, original order and case kept."""
-    return [a.strip() for a in (raw or '').split('|') if a.strip()]
+    """Pipe-separated artists, blanks dropped, original order and case kept.
+
+    Deduplicated case-insensitively, keeping the first-seen spelling: a
+    repeated name (whether an exact repeat or just a different casing of the
+    same query) is never a legitimate distinct comparison, and without this
+    each repeat re-runs a full artist_match_mask pass over the chart.
+    """
+    seen = set()
+    out = []
+    for a in (raw or '').split('|'):
+        a = a.strip()
+        if not a:
+            continue
+        key = a.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(a)
+    return out
 
 
 @app.route('/api/versus')
