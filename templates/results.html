@@ -468,6 +468,21 @@
             .col-hide { display: none; }
             .artist-profile { flex-direction: column; text-align: center; }
         }
+        .coverage-head { display:flex; align-items:baseline; justify-content:space-between; gap:1rem; margin:2rem 0 0.75rem; }
+        .coverage-title { font-size:1rem; font-weight:700; color:var(--text); }
+        .coverage-count { font-size:0.75rem; color:var(--text-muted); }
+        .coverage-scroll { overflow-x:auto; }
+        .coverage-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+        .coverage-table th { text-align:left; font-size:0.68rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); padding:0.5rem 0.75rem; border-bottom:1px solid var(--border); }
+        .coverage-table td { padding:0.6rem 0.75rem; border-bottom:1px solid var(--border); white-space:nowrap; }
+        .coverage-row { cursor:pointer; }
+        .coverage-row.is-selected { background:var(--surface-hover); font-weight:700; }
+        .coverage-label { white-space:nowrap; }
+        .coverage-note { font-size:0.75rem; color:var(--text-muted); margin:0.5rem 0 0; }
+        .detail-head { display:flex; align-items:baseline; justify-content:space-between; gap:1rem; margin:2rem 0 0.5rem; }
+        .detail-title { font-size:1rem; font-weight:700; color:var(--text); }
+        .detail-download { font-size:0.75rem; color:var(--text-muted); }
+        .detail-subtitle { font-size:0.8rem; color:var(--text-muted); margin:0 0 0.5rem; }
     </style>
     <link rel="stylesheet" href="/static/paxel.css">
 </head>
@@ -484,111 +499,65 @@
                 </div>
                 <a class="dl-csv" href="{{ url_for('download_csv', artist_name=artist_name) }}">Download CSV</a>
             </div>
-            <div class="stats-row">
-                <div class="stat-pill">
-                    <span class="stat-pill-value">{{ total_songs }}</span>
-                    <span class="stat-pill-label">Songs Charted</span>
-                </div>
-                <div class="stat-pill">
-                    <span class="stat-pill-value">{{ top_10_hits }}</span>
-                    <span class="stat-pill-label">Top 10 Hits</span>
-                </div>
-                <div class="stat-pill">
-                    <span class="stat-pill-value">{{ number_ones }}</span>
-                    <span class="stat-pill-label">#1 Songs</span>
-                </div>
-                {% if albums and albums|length > 0 %}
-                <div class="stat-pill">
-                    <span class="stat-pill-value">{{ total_albums }}</span>
-                    <span class="stat-pill-label">Albums Charted</span>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Songs / Albums Table -->
-        <div class="card">
-            <div class="tabs-nav">
-                <button class="tab-btn active" id="songsTab" onclick="switchTab('songs')">Songs ({{ total_songs }})</button>
-                {% if albums and albums|length > 0 %}
-                <button class="tab-btn" id="albumsTab" onclick="switchTab('albums')">Albums ({{ total_albums }})</button>
-                {% endif %}
+            <div class="coverage-head">
+                <h2 class="coverage-title">Chart coverage</h2>
+                <span class="coverage-count">charted on {{ coverage|length }} of {{ coverage|length + hidden_count }}</span>
             </div>
 
-            <div id="songsContent">
-                <table class="chart-table">
-                    <thead>
-                        <tr>
-                            <th>Peak</th>
-                            <th class="cell-art"></th>
-                            <th>Song</th>
-                            <th class="col-hide">Weeks</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for song in songs %}
-                        <tr class="{% if song.is_number_one %}row-number-one{% endif %}"
-                            data-song="{{ song.name|e }}"
-                            data-song-only="{{ song.song_only|e }}"
-                            data-artist-only="{{ song.artist_only|e }}">
-                            <td>
-                                <div class="peak-badge-cell {% if song.peak == 1 %}peak-1{% elif song.peak <= 10 %}peak-top10{% endif %}">#{{ song.peak }}</div>
-                            </td>
-                            <td class="cell-art">
-                                <div class="art-thumb">
-                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Crect fill='%23f5f5f3' width='44' height='44'/%3E%3C/svg%3E"
-                                         alt="" loading="lazy">
-                                </div>
-                            </td>
-                            <td>
-                                <div class="song-title">{{ song.song_only }}</div>
-                                
-                            </td>
-                            <td class="col-hide"><div class="stat-val">{{ song.weeks }}</div></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="coverage-scroll">
+            <table class="coverage-table" data-selected-chart="{{ selected_key|e }}">
+                <thead>
+                    <tr>
+                        <th>Chart</th><th>Peak</th><th>Entries</th>
+                        <th>#1s</th><th>Weeks</th><th>Span</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in coverage %}
+                    <tr class="coverage-row{% if c.key == selected_key %} is-selected{% endif %}"
+                        data-chart="{{ c.key|e }}">
+                        <td class="coverage-label">{{ c.label }}</td>
+                        <td>{% if c.best_peak %}#{{ c.best_peak }}{% else %}&mdash;{% endif %}</td>
+                        <td>{% if c.entries is none %}&mdash;{% else %}{{ c.entries }}{% endif %}</td>
+                        <td>{% if c.number_ones is none %}&mdash;{% else %}{{ c.number_ones }}{% endif %}</td>
+                        <td>{{ c.total_weeks_charted }}</td>
+                        <td>{{ c.first_entry[:4] }}&ndash;{{ c.last_entry[:4] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
             </div>
-
-            {% if albums and albums|length > 0 %}
-            <div id="albumsContent" style="display:none;">
-                <table class="chart-table">
-                    <thead>
-                        <tr>
-                            <th>Peak</th>
-                            <th class="cell-art"></th>
-                            <th>Album</th>
-                            <th class="col-hide">Weeks</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for album in albums %}
-                        <tr class="{% if album.is_number_one %}row-number-one{% endif %}"
-                            data-album="{{ album.name|e }}"
-                            data-album-only="{{ album.album_only|e }}"
-                            data-artist-only="{{ album.artist_only|e }}">
-                            <td>
-                                <div class="peak-badge-cell {% if album.peak == 1 %}peak-1{% elif album.peak <= 10 %}peak-top10{% endif %}">#{{ album.peak }}</div>
-                            </td>
-                            <td class="cell-art">
-                                <div class="art-thumb">
-                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Crect fill='%23f5f5f3' width='44' height='44'/%3E%3C/svg%3E"
-                                         alt="" loading="lazy">
-                                </div>
-                            </td>
-                            <td>
-                                <div class="song-title">{{ album.name }}</div>
-                                
-                            </td>
-                            <td class="col-hide"><div class="stat-val">{{ album.weeks }}</div></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            {% if hidden_count %}
+            <p class="coverage-note">{{ hidden_count }} chart{{ 's' if hidden_count != 1 }} with no entries {{ 'are' if hidden_count != 1 else 'is' }} hidden.</p>
             {% endif %}
-        </div>
+
+            <div class="detail-head">
+                <h2 class="detail-title" id="detailTitle">{{ detail.chart.label }}</h2>
+                <a class="detail-download" id="detailDownload"
+                   href="/download-csv/{{ artist_name|urlencode }}?chart={{ selected_key|e }}">Download CSV</a>
+            </div>
+
+            <div id="detailTable">
+                <h3 class="detail-subtitle" id="detailCount">
+                    {{ 'Albums' if detail.chart.kind == 'album' else 'Songs' }} ({{ detail['items']|length }})
+                </h3>
+                <table class="song-table">
+                    <thead>
+                        <tr><th>#</th><th>Title</th><th>Peak</th><th class="col-hide">Weeks</th><th class="col-hide">Debut</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for item in detail['items'] %}
+                        <tr data-song="{{ item.name|e }}">
+                            <td>{{ loop.index }}</td>
+                            <td>{{ item.name }}</td>
+                            <td>{% if item.is_number_one %}<strong>#1</strong>{% else %}#{{ item.peak }}{% endif %}</td>
+                            <td class="col-hide"><div class="stat-val">{{ item.weeks }}</div></td>
+                            <td class="col-hide"><div class="stat-val">{{ item.first_date }}</div></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
 
         <!-- Weekly Detail Modal -->
         <div id="songModal" class="modal">
@@ -630,7 +599,7 @@
     </div>
 
     <script>
-        const chartData = {{ chart_data|tojson }};
+        const chartData = {{ chart_data|default({})|tojson }};
         const artistName = {{ artist_name|tojson }};
 
         // ── Lazy load artwork ─────────────────────────────────────────

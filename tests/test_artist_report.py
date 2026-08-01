@@ -135,3 +135,36 @@ def test_autocomplete_chart_scoped_pool_unchanged(application):
     c = application.app.test_client()
     got = c.get('/api/artists?chart=country_airplay&q=aaron').get_json()['artists']
     assert set(got) <= set(application.CHART_ARTISTS['country_airplay'])
+
+
+def test_analyze_renders_a_format_chart_row(application):
+    c = application.app.test_client()
+    r = c.post('/analyze', data={'artist_name': 'Taylor Swift'})
+    assert r.status_code == 200
+    assert 'Country Airplay' in r.get_data(as_text=True)
+
+
+def test_analyze_works_for_a_pre_1990_artist(application):
+    """This 302'd to /search with 'No results found' before this change."""
+    c = application.app.test_client()
+    r = c.post('/analyze', data={'artist_name': 'The Supremes'})
+    assert r.status_code == 200
+
+
+def test_analyze_works_for_a_country_only_artist(application):
+    c = application.app.test_client()
+    r = c.post('/analyze', data={'artist_name': 'Aaron Watson'})
+    assert r.status_code == 200
+    assert 'Country Airplay' in r.get_data(as_text=True)
+
+
+def test_analyze_defaults_to_the_most_charted_chart(application):
+    c = application.app.test_client()
+    body = c.post('/analyze', data={'artist_name': 'Aaron Watson'}).get_data(as_text=True)
+    assert 'data-selected-chart="country_airplay"' in body
+
+
+def test_analyze_still_redirects_for_an_unknown_artist(application):
+    c = application.app.test_client()
+    r = c.post('/analyze', data={'artist_name': 'Zzzz Not A Real Artist'})
+    assert r.status_code == 302

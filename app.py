@@ -514,38 +514,32 @@ def artist_chart_detail(artist_name, chart_key):
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
-    # Check if artist name is provided
     artist_name = request.form.get('artist_name', '').strip()
     if not artist_name:
         flash('Please enter an artist name', 'error')
         return redirect(url_for('search'))
 
     try:
-        # Prepare visualization data for songs
-        viz_data = prepare_visualization_data(artist_name)
-
-        if viz_data is None:
+        summary = artist_chart_summaries(artist_name)
+        if summary is None:
             flash(f'No results found for artist: {artist_name}', 'error')
             return redirect(url_for('search'))
 
-        # Prepare album data
-        album_data = prepare_album_data(artist_name)
+        # Default to where they charted most, not always the Hot 100 — a
+        # country act should not open on a chart they barely touched. entries
+        # is None on artist charts, hence the `or 0`.
+        selected = max(summary['charts'], key=lambda c: (c['entries'] or 0,
+                                                         c['total_weeks_charted']))
+        detail = artist_chart_detail(artist_name, selected['key'])
 
-        # Render results page with visualization
         return render_template(
             'results.html',
             artist_name=artist_name.title(),
-            chart_data=viz_data['chart_data'],
-            songs=viz_data['songs'],
-            total_songs=viz_data['stats']['total_songs'],
-            top_10_hits=viz_data['stats']['top_10_hits'],
-            number_ones=viz_data['stats']['number_ones'],
-            albums=album_data['albums'] if album_data else [],
-            total_albums=album_data['total_albums'] if album_data else 0,
-            top_10_albums=album_data['top_10_albums'] if album_data else 0,
-            number_one_albums=album_data['number_one_albums'] if album_data else 0
+            coverage=summary['charts'],
+            hidden_count=summary['hidden'],
+            selected_key=selected['key'],
+            detail=detail,
         )
-
     except Exception as e:
         flash(f'An error occurred: {str(e)}', 'error')
         return redirect(url_for('search'))
