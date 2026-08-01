@@ -37,3 +37,31 @@ def test_every_chart_renders_its_own_heading(client, charts):
 def test_support_routes_load(client):
     for path in ('/', '/versus', '/search', '/about'):
         assert client.get(path).status_code in (200, 302), path
+
+
+def test_song_history_never_500s_on_a_missing_song(client, charts, monkeypatch):
+    """Adult Contemporary has 20 rows with a blank Artist (1984 'Ghostbusters',
+    1989 'Hearts On Fire'). Artist is a category column, and pandas'
+    Categorical.map calls the mapper with np.nan when the column has NAs — so a
+    primary_artist that assumes a string took out song history for every song on
+    that chart, not just those rows. The crash happens while normalizing the
+    column, before any matching, so an unknown song is enough to catch it.
+
+    primary_artist is stubbed strict on purpose: the live outage was a build
+    whose primary_artist did name.strip() directly, and coercion inside
+    versus.primary_credit is not what this endpoint should be relying on.
+    """
+    import app
+
+    def strict_primary_artist(name):
+        return name.strip().casefold()
+
+    monkeypatch.setattr(app, 'primary_artist', strict_primary_artist)
+
+    bad = {}
+    for key in charts:
+        resp = client.get('/api/song-history', query_string={
+            'chart': key, 'artist': 'Nobody At All', 'song': 'No Such Song'})
+        if resp.status_code >= 500:
+            bad[key] = resp.status_code
+    assert bad == {}

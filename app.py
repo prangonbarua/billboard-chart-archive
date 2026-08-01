@@ -1676,7 +1676,12 @@ def get_song_history():
     # Clean and filter. Artist matches on primary_artist so a mid-run credit change
     # ("Tame Impala" -> "Tame Impala & JENNIE") still returns the full chart run.
     data['Song_Clean'] = data['Song'].str.strip().str.lower()
-    data['Artist_Clean'] = data['Artist'].map(primary_artist)
+    # na_action='ignore' is load-bearing, not tidiness: Artist is a category
+    # column, and pandas' Categorical.map calls the mapper with np.nan whenever
+    # the column has NAs. Adult Contemporary has 20 blank-artist rows, so
+    # without this a primary_artist that assumes a string 500s every song
+    # history request for the whole chart.
+    data['Artist_Clean'] = data['Artist'].map(primary_artist, na_action='ignore')
 
     song_data = data[
         (data['Song_Clean'] == song.strip().lower()) &
