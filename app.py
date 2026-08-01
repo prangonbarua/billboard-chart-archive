@@ -412,6 +412,37 @@ def search():
 def about():
     return render_template('about.html')
 
+def artist_chart_summaries(artist_name):
+    """One artist's scorecard on every chart they appear on.
+
+    Built on the versus primitives rather than new stat logic: the report and
+    the versus scorecard must never be able to disagree about the same peak.
+
+    `total_weeks_charted` is the "did they chart here" test, not `entries` —
+    entries is nulled on artist charts, so it cannot distinguish "no rows"
+    from "not a meaningful count here".
+    """
+    charts = []
+    hidden = 0
+    for key, meta in CHARTS.items():
+        rows = _versus_artist_rows(key, artist_name)
+        stats = versus.compute_artist_stats(rows, kind=meta['kind'])
+        if not stats['total_weeks_charted']:
+            hidden += 1
+            continue
+        stats.pop('timeline', None)
+        charts.append({
+            'key': key,
+            'label': meta['label'],
+            'group': meta['group'],
+            'depth': meta['depth'],
+            'kind': meta['kind'],
+            **stats,
+        })
+    if not charts:
+        return None
+    return {'charts': charts, 'hidden': hidden}
+
 def prepare_visualization_data(artist_name):
     """Prepare data for visualization"""
     # Filter on raw data before copying to avoid copying the full dataset
