@@ -82,8 +82,27 @@
             border-bottom: 1px solid var(--border);
             margin-bottom: 1.5rem;
         }
+        .page-header-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
         .page-title { font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; }
         .page-subtitle { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.25rem; }
+        .dl-csv {
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text) !important;
+            text-decoration: none;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            padding: 0.5rem 0.875rem;
+            white-space: nowrap;
+            margin-top: 0.25rem;
+        }
+        .dl-csv:hover { background: var(--surface-hover); }
 
         .stats-row {
             display: flex;
@@ -454,26 +473,17 @@
 </head>
 <body>
 
-    <style>
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&display=swap');
-  .nav { align-items: center; }
-  .v3-nav-upload {
-    margin-left: auto;
-    display: inline-flex; align-items: center; gap: 5px;
-    font-family: 'JetBrains Mono', monospace !important; font-size: 12px !important;
-    font-weight: 700; letter-spacing: -0.01em;
-    color: #111111 !important; text-decoration: none; white-space: nowrap;
-    padding: 0.375rem 0.25rem;
-  }
-  .v3-nav-upload:hover { color: #0c492c !important; background: none !important; }
-  .v3-nav-upload svg { display: block; }
-    </style>
     {% include '_nav.html' %}
 
     <div class="container">
         <div class="page-header">
-            <div class="page-title">{{ artist_name }}</div>
-            <div class="page-subtitle">U.S. Top Charts 100 — Chart History</div>
+            <div class="page-header-top">
+                <div>
+                    <div class="page-title">{{ artist_name }}</div>
+                    <div class="page-subtitle">U.S. Top Charts 100 — Chart History</div>
+                </div>
+                <a class="dl-csv" href="{{ url_for('download_csv', artist_name=artist_name) }}">Download CSV</a>
+            </div>
             <div class="stats-row">
                 <div class="stat-pill">
                     <span class="stat-pill-value">{{ total_songs }}</span>
