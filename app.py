@@ -443,132 +443,68 @@ def artist_chart_summaries(artist_name):
         return None
     return {'charts': charts, 'hidden': hidden}
 
-def prepare_visualization_data(artist_name):
-    """Prepare data for visualization"""
-    # Filter on raw data before copying to avoid copying the full dataset
-    dates_parsed = pd.to_datetime(BILLBOARD_DATA['Date'], errors='coerce')
-    mask = (
-        artist_match_mask(BILLBOARD_DATA['Artist'], artist_name) &
-        (dates_parsed >= '1990-01-01') &
-        dates_parsed.notna()
-    )
-    filtered_data = BILLBOARD_DATA[mask].copy()
+def artist_chart_detail(artist_name, chart_key):
+    """Per-entry rank history for one artist on one chart.
 
-    if filtered_data.empty:
+    The frame comes from CHART_DATA and there is no date floor — the version
+    this replaced hardcoded the Hot 100 and cut everything before 1990, which
+    silently truncated 46% of that chart's history.
+    """
+    meta = CHARTS.get(chart_key)
+    df, _dates = CHART_DATA.get(chart_key, (None, None))
+    if meta is None or df is None or not len(df):
         return None
 
-    # Reuse the datetimes already parsed for the mask instead of re-parsing the subset
-    filtered_data['Date'] = dates_parsed[mask].values
-    filtered_data['Song_Clean'] = filtered_data['Song'].str.strip()
-    filtered_data['Artist_Clean'] = filtered_data['Artist'].str.strip()
-    filtered_data['Song_Lower'] = filtered_data['Song_Clean'].str.lower()
+    rows = df[artist_match_mask(df['Artist'], artist_name)].copy()
+    if rows.empty:
+        return None
+    rows['Date'] = CHART_DT[chart_key].loc[rows.index]
+    rows['Rank'] = pd.to_numeric(rows['Rank'], errors='coerce')
+    rows = rows.dropna(subset=['Date', 'Rank'])
+    if rows.empty:
+        return None
 
-    # Get most common capitalization per song using groupby (one pass)
-    song_names = (
-        filtered_data.groupby('Song_Lower')['Song_Clean']
+    # Casing drifts week to week in the scraped data ("The Kid LAROI" vs
+    # "The Kid Laroi"), so group case-insensitively and display the spelling
+    # that appears most often.
+    rows['Title_Clean'] = rows['Song'].astype(str).str.strip()
+    rows['Title_Lower'] = rows['Title_Clean'].str.lower()
+    titles = (
+        rows.groupby('Title_Lower')['Title_Clean']
         .agg(lambda x: x.mode().iloc[0] if not x.mode().empty else x.iloc[0])
     )
-    artist_proper = filtered_data['Artist_Clean'].mode().iloc[0] if not filtered_data['Artist_Clean'].mode().empty else filtered_data['Artist_Clean'].iloc[0]
+    rows['Title'] = rows['Title_Lower'].map(titles)
 
-    filtered_data['Song_Artist'] = filtered_data['Song_Lower'].map(song_names) + f" ({artist_proper})"
-
-    # Build chart_data in one groupby pass (no iterrows on all rows)
-    valid = filtered_data.dropna(subset=['Rank']).sort_values('Date')
-    chart_data = {
-        song: [{'date': d.strftime('%Y-%m-%d'), 'rank': int(r)} for d, r in zip(grp['Date'], grp['Rank'])]
-        for song, grp in valid.groupby('Song_Artist')
+    ordered = rows.sort_values('Date')
+    series = {
+        title: [{'date': d.strftime('%Y-%m-%d'), 'rank': int(r)}
+                for d, r in zip(grp['Date'], grp['Rank'])]
+        for title, grp in ordered.groupby('Title')
     }
 
-    # Calculate per-song stats in one groupby pass
-    rank_numeric = pd.to_numeric(filtered_data['Rank'], errors='coerce')
-    filtered_data['Rank_num'] = rank_numeric
-    agg = filtered_data.groupby('Song_Artist').agg(
+    agg = rows.groupby('Title').agg(
         first_date=('Date', 'min'),
-        weeks=('Date', 'count'),
-        peak=('Rank_num', lambda x: int(x.dropna().min()) if not x.dropna().empty else 0)
+        weeks=('Date', 'nunique'),
+        peak=('Rank', 'min'),
     )
-
-    songs_list = [
+    items = [
         {
-            'name': song,
-            'song_only': song.split(' (')[0] if ' (' in song else song,
-            'artist_only': artist_proper,
+            'name': title,
             'peak': int(row['peak']),
             'weeks': int(row['weeks']),
             'first_date': row['first_date'].strftime('%b %Y'),
-            'first_date_sort': row['first_date'],
-            'is_number_one': int(row['peak']) == 1
+            'first_date_sort': row['first_date'].strftime('%Y-%m-%d'),
+            'is_number_one': int(row['peak']) == 1,
         }
-        for song, row in agg.iterrows()
+        for title, row in agg.iterrows()
     ]
-    songs_list.sort(key=lambda x: (-x['weeks'], x['peak']))
-
-    top_10_hits = int((agg['peak'] <= 10).sum())
-    number_ones = int((agg['peak'] == 1).sum())
+    items.sort(key=lambda x: (-x['weeks'], x['peak']))
 
     return {
-        'chart_data': chart_data,
-        'songs': songs_list,
-        'stats': {
-            'total_songs': len(agg),
-            'top_10_hits': top_10_hits,
-            'number_ones': number_ones
-        }
-    }
-
-def prepare_album_data(artist_name):
-    """Prepare album chart data for an artist from Billboard 200"""
-    if BILLBOARD_200_DATA is None:
-        return None
-
-    artist_lower = artist_name.lower()
-    mask = BILLBOARD_200_DATA['Artist'].str.strip().str.lower() == artist_lower
-    filtered_data = BILLBOARD_200_DATA[mask].copy()
-
-    if filtered_data.empty:
-        return None
-
-    filtered_data['Date'] = pd.to_datetime(filtered_data['Date'], errors='coerce')
-    filtered_data = filtered_data.dropna(subset=['Date'])
-    filtered_data['Album_Clean'] = filtered_data['Song'].str.strip()
-    filtered_data['Album_Lower'] = filtered_data['Album_Clean'].str.lower()
-    filtered_data['Artist_Clean'] = filtered_data['Artist'].str.strip()
-
-    album_names = (
-        filtered_data.groupby('Album_Lower')['Album_Clean']
-        .agg(lambda x: x.mode().iloc[0] if not x.mode().empty else x.iloc[0])
-    )
-    artist_proper = filtered_data['Artist_Clean'].mode().iloc[0] if not filtered_data['Artist_Clean'].mode().empty else filtered_data['Artist_Clean'].iloc[0]
-    filtered_data['Album_Title'] = filtered_data['Album_Lower'].map(album_names)
-
-    rank_numeric = pd.to_numeric(filtered_data['Rank'], errors='coerce')
-    filtered_data['Rank_num'] = rank_numeric
-    agg = filtered_data.groupby('Album_Title').agg(
-        first_date=('Date', 'min'),
-        weeks=('Date', 'count'),
-        peak=('Rank_num', lambda x: int(x.dropna().min()) if not x.dropna().empty else 0)
-    )
-
-    albums_list = [
-        {
-            'name': album,
-            'album_only': album,
-            'artist_only': artist_proper,
-            'peak': int(row['peak']),
-            'weeks': int(row['weeks']),
-            'first_date': row['first_date'].strftime('%b %Y'),
-            'first_date_sort': row['first_date'],
-            'is_number_one': int(row['peak']) == 1
-        }
-        for album, row in agg.iterrows()
-    ]
-    albums_list.sort(key=lambda x: (-x['weeks'], x['peak']))
-
-    return {
-        'albums': albums_list,
-        'total_albums': len(albums_list),
-        'top_10_albums': int((agg['peak'] <= 10).sum()),
-        'number_one_albums': int((agg['peak'] == 1).sum())
+        'chart': {'key': chart_key, 'label': meta['label'],
+                  'kind': meta['kind'], 'depth': meta['depth']},
+        'series': series,
+        'items': items,
     }
 
 @app.route('/analyze', methods=['POST'])

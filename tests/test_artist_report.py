@@ -49,3 +49,34 @@ def test_summaries_omit_timeline(application):
 
 def test_summaries_none_for_unknown_artist(application):
     assert application.artist_chart_summaries('Zzzz Not A Real Artist') is None
+
+
+def test_detail_includes_pre_1990_history(application):
+    """The 1990 cutoff dropped 163,861 Hot 100 rows — 46% of that chart."""
+    detail = application.artist_chart_detail('The Supremes', 'top100')
+    assert detail is not None, 'a pre-1990 artist must have a Hot 100 report'
+    earliest = min(p['date'] for s in detail['series'].values() for p in s)
+    assert earliest < '1990-01-01'
+
+
+def test_detail_reads_the_requested_chart_not_hot100(application):
+    detail = application.artist_chart_detail('Aaron Watson', 'country_airplay')
+    assert detail is not None
+    assert detail['chart']['key'] == 'country_airplay'
+    assert detail['items']
+
+
+def test_detail_items_sorted_by_weeks_then_peak(application):
+    detail = application.artist_chart_detail('Taylor Swift', 'top100')
+    keys = [(-i['weeks'], i['peak']) for i in detail['items']]
+    assert keys == sorted(keys)
+
+
+def test_detail_serves_albums_for_albums200(application):
+    detail = application.artist_chart_detail('Taylor Swift', 'albums200')
+    assert detail['chart']['kind'] == 'album'
+    assert detail['items']
+
+
+def test_detail_none_when_artist_absent_from_chart(application):
+    assert application.artist_chart_detail('Aaron Watson', 'globalexus') is None
