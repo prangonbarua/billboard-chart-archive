@@ -53,7 +53,7 @@ def test_versus_unknown_artist_returns_null_stats_not_an_error(application):
 def test_versus_does_not_substring_match_artists(application):
     """artist_match_mask must be used: 'Tyla' must not absorb 'Tyla Yaweh'."""
     r = application.app.test_client().get('/api/versus?chart=top100&artists=Tyla')
-    rows = application._versus_artist_rows('top100', 'Tyla')
+    rows = application._artist_rows('top100', 'Tyla')
     credits = set(rows['Artist'].astype(str))
     assert not any('yaweh' in c.casefold() for c in credits)
     assert r.status_code == 200
@@ -65,11 +65,11 @@ def test_versus_empty_artists_param_returns_empty_list(application):
     assert r.get_json()['artists'] == []
 
 
-def test_artists_endpoint_without_chart_is_unchanged(application):
+def test_artists_endpoint_without_chart_serves_every_charting_artist(application):
     r = application.app.test_client().get('/api/artists?q=tay')
     assert r.status_code == 200
     names = r.get_json()['artists']
-    assert names == [a for a in application.MODERN_ARTISTS
+    assert names == [a for a in application.ALL_ARTISTS
                      if a.lower().startswith('tay')][:50]
 
 
@@ -80,12 +80,21 @@ def test_country_pool_holds_acts_the_hot100_pool_misses(application):
     assert any('Rhett Akins' == a for a in pool)
 
 
+def _hot100_modern_pool(application):
+    """The autocomplete pool as it was before the all-charts report: Hot 100
+    credits from 1990 on. Rebuilt here rather than kept in app.py, so nothing
+    in the app still depends on the narrow pool."""
+    df = application.BILLBOARD_DATA
+    modern = df.loc[application.CHART_DT['top100'] >= '1990-01-01', 'Artist']
+    return {str(a).strip() for a in modern.dropna().unique()}
+
+
 def test_adult_contemporary_pool_reaches_before_1990(application):
-    """MODERN_ARTISTS is filtered to 1990+; this chart starts in 1961."""
+    """The old pool was filtered to 1990+; this chart starts in 1961."""
     pool = set(application.CHART_ARTISTS['adult_contemporary'])
     assert 'ABBA' in pool
     # and prove it discriminates:
-    assert 'ABBA' not in application.MODERN_ARTISTS
+    assert 'ABBA' not in _hot100_modern_pool(application)
 
 
 def test_artists_endpoint_honours_the_chart_param(application):
@@ -196,7 +205,7 @@ def test_artist_csv_can_be_scoped_to_another_chart(application):
     titles = set(rows[0][1:])
     assert titles
     # Scoped, not the Hot 100 slice: this is the country chart's own frame.
-    country = application._versus_artist_rows('country_airplay', 'Luke Combs')
+    country = application._artist_rows('country_airplay', 'Luke Combs')
     assert titles <= set(country['Song'].astype(str))
 
 

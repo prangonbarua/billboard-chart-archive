@@ -110,8 +110,13 @@ _ARTIST_KIND_NULLS = ('entries', 'biggest_hit', 'number_ones',
                       'top_10s', 'top_40s')
 
 
-def _clean(rows):
-    """Drop rows that cannot be ranked or dated, then dedupe."""
+def clean_rows(rows):
+    """Drop rows that cannot be ranked or dated, then dedupe.
+
+    Public because the artist report's per-song table has to be built from
+    exactly the rows the scorecard counted. Cleaning it separately is how the
+    table would come to show 13 songs beside a summary reading 12 entries.
+    """
     if rows is None or rows.empty:
         return None
     r = rows.copy()
@@ -129,7 +134,7 @@ def compute_artist_stats(rows, kind='song'):
     artists rather than songs, so song-level counts are meaningless and are
     returned as None instead of a misleading number.
     """
-    r = _clean(rows)
+    r = clean_rows(rows)
     if r is None:
         empty = dict(EMPTY_STATS)
         if kind == 'artist':

@@ -109,12 +109,9 @@ else:
 # Precompute request-invariant lookups once at startup (data is loaded once and never
 # mutated in-process, so these are constant for the process lifetime).
 _hot100_dates_parsed = pd.to_datetime(BILLBOARD_DATA['Date'], errors='coerce')
-# Sorted, stripped, unique modern (1990+) artists for the autocomplete endpoint
-_modern_raw = BILLBOARD_DATA.loc[_hot100_dates_parsed >= '1990-01-01', 'Artist'].str.strip().unique()
 # Exclude combined collab credits ("X Featuring Y", "X & Y Duet With Z") — the
 # base artist search already matches those rows, so they are noise in autocomplete.
 _collab_markers = (' featuring ', ' feat. ', ' feat ', ' with ', ' x ', ' & ', ' + ', ' duet ', ' / ')
-MODERN_ARTISTS = sorted(a for a in _modern_raw if not any(m in a.lower() for m in _collab_markers))
 # Available Hot 100 chart dates (newest first) as display strings
 HOT100_AVAILABLE_DATES = [pd.Timestamp(d).strftime('%Y-%m-%d') for d in sorted(_hot100_dates_parsed[_hot100_dates_parsed.dt.year >= 1958].dropna().unique(), reverse=True)]
 
@@ -216,9 +213,9 @@ for _k, (_df, _d) in CHART_DATA.items():
         CHART_DT[_k] = pd.to_datetime(_df['Date'], errors='coerce')
 del _k, _df, _d
 
-# Autocomplete pool per chart. MODERN_ARTISTS is Hot 100 rows from 1990+, which
-# would never surface a country act who did not cross over, and would hide the
-# pre-1990 half of Adult Contemporary. Precomputed once, like MODERN_ARTISTS.
+# Autocomplete pool per chart. The pool this replaced was Hot 100 rows from
+# 1990+, which would never surface a country act who did not cross over, and
+# hid the pre-1990 half of Adult Contemporary. Precomputed once at startup.
 CHART_ARTISTS = {}
 for _k, (_df, _d) in CHART_DATA.items():
     if _df is None or not len(_df):
@@ -229,6 +226,12 @@ for _k, (_df, _d) in CHART_DATA.items():
         if a and not any(m in a.lower() for m in _collab_markers)
     )
 del _k, _df, _d, _names
+
+# Search autocomplete pool: every charting artist, not just the Hot 100's
+# 1990+ names. The report now covers all 16 charts, and 12,209 artists gained
+# one who were absent from the old pool — a page with no way to reach it. Same
+# collab-credit filtering as the per-chart pools, since it is built from them.
+ALL_ARTISTS = sorted({a for pool in CHART_ARTISTS.values() for a in pool})
 
 def available_charts():
     """Registry entries that actually have data loaded, grouped for the nav."""
@@ -412,133 +415,148 @@ def search():
 def about():
     return render_template('about.html')
 
-def prepare_visualization_data(artist_name):
-    """Prepare data for visualization"""
-    # Filter on raw data before copying to avoid copying the full dataset
-    dates_parsed = pd.to_datetime(BILLBOARD_DATA['Date'], errors='coerce')
-    mask = (
-        artist_match_mask(BILLBOARD_DATA['Artist'], artist_name) &
-        (dates_parsed >= '1990-01-01') &
-        dates_parsed.notna()
-    )
-    filtered_data = BILLBOARD_DATA[mask].copy()
+# ── Artist report ───────────────────────────────────────────────────────────
+# The report used to read two frames: the Hot 100 filtered to 1990+, and the
+# Billboard 200. That hid 14 of the 16 registered charts and 46% of Hot 100
+# history, so a country act's report said nothing about country radio and a
+# 1960s act's read as though their career started in 1990.
 
-    if filtered_data.empty:
+def _artist_rows(chart_key, artist_name):
+    """That artist's rows on one chart, with Date already parsed.
+
+    Shared by the report and the versus page — both have to agree about which
+    rows are this artist's. Uses artist_match_mask, not substring matching:
+    'Tyla' must match 'Tyla Featuring Zara Larsson' but not 'Tyla Yaweh'
+    (commit 127a996).
+    """
+    df, _dates = CHART_DATA.get(chart_key, (None, None))
+    if df is None or not len(df):
+        return pd.DataFrame(columns=['Date', 'Rank', 'Song', 'Artist'])
+    mask = artist_match_mask(df['Artist'], artist_name)
+    rows = df.loc[mask, ['Rank', 'Song', 'Artist']].copy()
+    rows['Date'] = CHART_DT[chart_key].loc[rows.index]
+    return rows
+
+
+def artist_chart_summaries(artist_name):
+    """One coverage row per chart this artist actually charted on.
+
+    Sweeps the whole registry rather than reimplementing stat math:
+    versus.compute_artist_stats already returns every number in the coverage
+    table and is unit-tested without loading 1.5M rows. The full 16-chart sweep
+    measures at ~0.25s, which is why it runs inline on the POST while per-song
+    detail (519 KB across all 16 for a long career) is fetched per chart.
+
+    Returns None when the artist charted nowhere, so /analyze's existing "no
+    results" flash path is unchanged.
+    """
+    rows_out = []
+    hidden = 0
+    display_name = artist_name
+    widest = -1
+
+    for key, meta in CHARTS.items():
+        df, _dates = CHART_DATA.get(key, (None, None))
+        if df is None or not len(df):
+            continue
+        rows = _artist_rows(key, artist_name)
+        stats = versus.compute_artist_stats(rows, kind=meta['kind'])
+        # total_weeks_charted is the presence test that works for every kind:
+        # `entries` is None on an artist chart, so it cannot be the test.
+        if not stats['total_weeks_charted']:
+            hidden += 1
+            continue
+        # Name the artist from whichever chart holds most of their history —
+        # the mode of a thin chart's handful of rows is a worse spelling.
+        if len(rows) > widest:
+            widest = len(rows)
+            display_name = versus.display_name(rows, artist_name)
+        # timeline is dropped here and served per chart by /api/artist-chart:
+        # 16 charts of weekly points would put hundreds of KB in the HTML for
+        # a graph that only ever draws one chart at a time.
+        stats.pop('timeline', None)
+        rows_out.append(dict(stats, key=key, label=meta['label'],
+                             group=meta['group'], kind=meta['kind'],
+                             depth=meta['depth']))
+
+    if not rows_out:
         return None
 
-    # Reuse the datetimes already parsed for the mask instead of re-parsing the subset
-    filtered_data['Date'] = dates_parsed[mask].values
-    filtered_data['Song_Clean'] = filtered_data['Song'].str.strip()
-    filtered_data['Artist_Clean'] = filtered_data['Artist'].str.strip()
-    filtered_data['Song_Lower'] = filtered_data['Song_Clean'].str.lower()
-
-    # Get most common capitalization per song using groupby (one pass)
-    song_names = (
-        filtered_data.groupby('Song_Lower')['Song_Clean']
-        .agg(lambda x: x.mode().iloc[0] if not x.mode().empty else x.iloc[0])
-    )
-    artist_proper = filtered_data['Artist_Clean'].mode().iloc[0] if not filtered_data['Artist_Clean'].mode().empty else filtered_data['Artist_Clean'].iloc[0]
-
-    filtered_data['Song_Artist'] = filtered_data['Song_Lower'].map(song_names) + f" ({artist_proper})"
-
-    # Build chart_data in one groupby pass (no iterrows on all rows)
-    valid = filtered_data.dropna(subset=['Rank']).sort_values('Date')
-    chart_data = {
-        song: [{'date': d.strftime('%Y-%m-%d'), 'rank': int(r)} for d, r in zip(grp['Date'], grp['Rank'])]
-        for song, grp in valid.groupby('Song_Artist')
+    # Registry order for display (it reads like the nav), but the chart opened
+    # by default is the one the artist actually lived on — landing a country
+    # act on the Hot 100 view they barely reached is the whole point of this
+    # change. entries is None on an artist chart, so it falls back to weeks.
+    default = max(rows_out, key=lambda r: ((r['entries'] or 0),
+                                           r['total_weeks_charted']))
+    return {
+        'display_name': display_name,
+        'charts': rows_out,
+        'hidden': hidden,
+        'default_chart': default['key'],
     }
 
-    # Calculate per-song stats in one groupby pass
-    rank_numeric = pd.to_numeric(filtered_data['Rank'], errors='coerce')
-    filtered_data['Rank_num'] = rank_numeric
-    agg = filtered_data.groupby('Song_Artist').agg(
-        first_date=('Date', 'min'),
-        weeks=('Date', 'count'),
-        peak=('Rank_num', lambda x: int(x.dropna().min()) if not x.dropna().empty else 0)
+
+def artist_chart_detail(artist_name, chart_key):
+    """Per-song series and song table for one artist on one chart.
+
+    Built from versus.clean_rows, the same rows the coverage summary counted,
+    so the table's row count cannot disagree with the summary's entry count.
+    Songs are keyed by (title, primary artist) for the same reason: that is
+    compute_artist_stats' grouping, and a different one here would count
+    differently. Returns None when the artist has nothing on this chart.
+    """
+    meta = CHARTS.get(chart_key)
+    if meta is None:
+        return None
+
+    r = versus.clean_rows(_artist_rows(chart_key, artist_name))
+    if r is None:
+        return None
+
+    r = r.assign(
+        _title=r['Song'].astype(str).str.strip(),
+        _credit=r['Artist'].astype(str).str.strip(),
     )
+    r['_primary'] = r['_credit'].map(primary_artist)
+    r['_key'] = list(zip(r['_title'].str.casefold(), r['_primary']))
 
-    songs_list = [
-        {
-            'name': song,
-            'song_only': song.split(' (')[0] if ' (' in song else song,
-            'artist_only': artist_proper,
-            'peak': int(row['peak']),
-            'weeks': int(row['weeks']),
-            'first_date': row['first_date'].strftime('%b %Y'),
-            'first_date_sort': row['first_date'],
-            'is_number_one': int(row['peak']) == 1
-        }
-        for song, row in agg.iterrows()
-    ]
-    songs_list.sort(key=lambda x: (-x['weeks'], x['peak']))
+    songs, series = [], {}
+    for _key, grp in r.groupby('_key', sort=False):
+        grp = grp.sort_values('Date')
+        titles = grp['_title'].mode()
+        songs.append({
+            'title': str(titles.iloc[0] if len(titles) else grp['_title'].iloc[0]),
+            # Fullest credit last: a song that picked up a feature mid-run
+            # should name the feature in the table.
+            'credit': str(grp['_credit'].iloc[-1]),
+            'peak': int(grp['Rank'].min()),
+            'weeks': int(grp['Date'].nunique()),
+            'first_date': grp['Date'].min().strftime('%b %Y'),
+            'points': [{'date': d.strftime('%Y-%m-%d'), 'rank': int(v)}
+                       for d, v in zip(grp['Date'], grp['Rank'])],
+        })
 
-    top_10_hits = int((agg['peak'] <= 10).sum())
-    number_ones = int((agg['peak'] == 1).sum())
+    songs.sort(key=lambda s: (-s['weeks'], s['peak']))
+    # Ids are assigned after sorting and are positional, so nothing has to be
+    # unique but the position — two same-titled songs by different credits
+    # stay separately addressable in the modal without inventing a label.
+    for i, song in enumerate(songs):
+        song['id'] = str(i)
+        song['is_number_one'] = song['peak'] == 1
+        series[song['id']] = song.pop('points')
 
     return {
-        'chart_data': chart_data,
-        'songs': songs_list,
-        'stats': {
-            'total_songs': len(agg),
-            'top_10_hits': top_10_hits,
-            'number_ones': number_ones
-        }
+        'chart': {'key': chart_key, 'label': meta['label'],
+                  'kind': meta['kind'], 'depth': meta['depth']},
+        # An artist chart's entries are the artist, so there is no song table
+        # to draw — one pseudo-entry repeated every week. The rank timeline is
+        # the whole of that chart's detail view.
+        'songs': [] if meta['kind'] == 'artist' else songs,
+        'series': {} if meta['kind'] == 'artist' else series,
+        'timeline': [{'date': d.strftime('%Y-%m-%d'), 'rank': int(v)}
+                     for d, v in r.groupby('Date')['Rank'].min().sort_index().items()],
     }
 
-def prepare_album_data(artist_name):
-    """Prepare album chart data for an artist from Billboard 200"""
-    if BILLBOARD_200_DATA is None:
-        return None
-
-    artist_lower = artist_name.lower()
-    mask = BILLBOARD_200_DATA['Artist'].str.strip().str.lower() == artist_lower
-    filtered_data = BILLBOARD_200_DATA[mask].copy()
-
-    if filtered_data.empty:
-        return None
-
-    filtered_data['Date'] = pd.to_datetime(filtered_data['Date'], errors='coerce')
-    filtered_data = filtered_data.dropna(subset=['Date'])
-    filtered_data['Album_Clean'] = filtered_data['Song'].str.strip()
-    filtered_data['Album_Lower'] = filtered_data['Album_Clean'].str.lower()
-    filtered_data['Artist_Clean'] = filtered_data['Artist'].str.strip()
-
-    album_names = (
-        filtered_data.groupby('Album_Lower')['Album_Clean']
-        .agg(lambda x: x.mode().iloc[0] if not x.mode().empty else x.iloc[0])
-    )
-    artist_proper = filtered_data['Artist_Clean'].mode().iloc[0] if not filtered_data['Artist_Clean'].mode().empty else filtered_data['Artist_Clean'].iloc[0]
-    filtered_data['Album_Title'] = filtered_data['Album_Lower'].map(album_names)
-
-    rank_numeric = pd.to_numeric(filtered_data['Rank'], errors='coerce')
-    filtered_data['Rank_num'] = rank_numeric
-    agg = filtered_data.groupby('Album_Title').agg(
-        first_date=('Date', 'min'),
-        weeks=('Date', 'count'),
-        peak=('Rank_num', lambda x: int(x.dropna().min()) if not x.dropna().empty else 0)
-    )
-
-    albums_list = [
-        {
-            'name': album,
-            'album_only': album,
-            'artist_only': artist_proper,
-            'peak': int(row['peak']),
-            'weeks': int(row['weeks']),
-            'first_date': row['first_date'].strftime('%b %Y'),
-            'first_date_sort': row['first_date'],
-            'is_number_one': int(row['peak']) == 1
-        }
-        for album, row in agg.iterrows()
-    ]
-    albums_list.sort(key=lambda x: (-x['weeks'], x['peak']))
-
-    return {
-        'albums': albums_list,
-        'total_albums': len(albums_list),
-        'top_10_albums': int((agg['peak'] <= 10).sum()),
-        'number_one_albums': int((agg['peak'] == 1).sum())
-    }
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
@@ -549,34 +567,45 @@ def analyze():
         return redirect(url_for('search'))
 
     try:
-        # Prepare visualization data for songs
-        viz_data = prepare_visualization_data(artist_name)
+        report = artist_chart_summaries(artist_name)
 
-        if viz_data is None:
+        if report is None:
             flash(f'No results found for artist: {artist_name}', 'error')
             return redirect(url_for('search'))
 
-        # Prepare album data
-        album_data = prepare_album_data(artist_name)
-
-        # Render results page with visualization
+        # The default chart's detail is rendered with the page so the report
+        # is complete on arrival; every other chart is fetched on click.
+        selected = report['default_chart']
         return render_template(
             'results.html',
-            artist_name=artist_name.title(),
-            chart_data=viz_data['chart_data'],
-            songs=viz_data['songs'],
-            total_songs=viz_data['stats']['total_songs'],
-            top_10_hits=viz_data['stats']['top_10_hits'],
-            number_ones=viz_data['stats']['number_ones'],
-            albums=album_data['albums'] if album_data else [],
-            total_albums=album_data['total_albums'] if album_data else 0,
-            top_10_albums=album_data['top_10_albums'] if album_data else 0,
-            number_one_albums=album_data['number_one_albums'] if album_data else 0
+            artist_name=report['display_name'],
+            artist_query=artist_name,
+            charts=report['charts'],
+            hidden_charts=report['hidden'],
+            selected_chart=selected,
+            detail=artist_chart_detail(artist_name, selected),
         )
 
     except Exception as e:
         flash(f'An error occurred: {str(e)}', 'error')
         return redirect(url_for('search'))
+
+
+@app.route('/api/artist-chart')
+@limiter.exempt
+def api_artist_chart():
+    """One chart's detail for the report's chart picker."""
+    artist = request.args.get('artist', '').strip()
+    chart_key = request.args.get('chart', '')
+    if chart_key not in CHARTS:
+        return {'error': 'Unknown chart'}, 400
+    if not artist:
+        return {'error': 'Missing artist'}, 400
+    detail = artist_chart_detail(artist, chart_key)
+    if detail is None:
+        return {'error': 'No data for that artist on this chart'}, 404
+    return detail
+
 
 @app.route('/api/artists')
 @limiter.exempt
@@ -585,10 +614,12 @@ def get_artists():
 
     With ?chart=<key> the pool is that chart's own artists — required by the
     versus page, where the Hot 100 pool would miss format-chart acts entirely.
-    Without it, behaviour is unchanged for search.html.
+    Without it the pool is every charting artist, because that is exactly the
+    set the report can now render; the old Hot 100 1990+ pool left 12,209
+    artists with a report and no way to reach it.
     """
     query = request.args.get('q', '').lower()
-    pool = CHART_ARTISTS.get(request.args.get('chart', ''), MODERN_ARTISTS)
+    pool = CHART_ARTISTS.get(request.args.get('chart', ''), ALL_ARTISTS)
 
     if query:
         artists = [a for a in pool if a.lower().startswith(query)]
@@ -599,21 +630,6 @@ def get_artists():
     return {'artists': list(artists[:50])}
 
 # ── Artist versus ───────────────────────────────────────────────────────────
-
-def _versus_artist_rows(chart_key, artist_name):
-    """That artist's rows on one chart, with Date already parsed.
-
-    Uses artist_match_mask, not substring matching: 'Tyla' must match
-    'Tyla Featuring Zara Larsson' but not 'Tyla Yaweh' (commit 127a996).
-    """
-    df, _dates = CHART_DATA.get(chart_key, (None, None))
-    if df is None or not len(df):
-        return pd.DataFrame(columns=['Date', 'Rank', 'Song', 'Artist'])
-    mask = artist_match_mask(df['Artist'], artist_name)
-    rows = df.loc[mask, ['Rank', 'Song', 'Artist']].copy()
-    rows['Date'] = CHART_DT[chart_key].loc[rows.index]
-    return rows
-
 
 def _parse_artist_list(raw):
     """Pipe-separated artists, blanks dropped, original order and case kept.
@@ -650,7 +666,7 @@ def api_versus():
 
     results = []
     for name in _parse_artist_list(request.args.get('artists')):
-        rows = _versus_artist_rows(chart_key, name)
+        rows = _artist_rows(chart_key, name)
         stats = versus.compute_artist_stats(rows, kind=meta['kind'])
         # A typo in a four-artist comparison must not blank the page, so an
         # unmatched artist comes back with null stats rather than an error.
@@ -707,7 +723,7 @@ def download_versus_csv():
 
     entries = []
     for name in names:
-        rows = _versus_artist_rows(chart_key, name)
+        rows = _artist_rows(chart_key, name)
         entries.append((versus.display_name(rows, name),
                         versus.compute_artist_stats(rows, kind=meta['kind'])))
     labels = [d for d, _ in entries]
