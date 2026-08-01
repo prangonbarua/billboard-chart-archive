@@ -117,6 +117,23 @@ def test_versus_page_state_lives_in_the_url(application):
     assert 'Luke Combs' in body
 
 
+def test_app_shares_versus_credit_parsing_rather_than_copying_it(application):
+    """Song keying and artist selection must not drift apart; a second copy of
+    either regex in app.py is exactly how they would."""
+    import versus as versus_mod
+    assert application.primary_artist is versus_mod.primary_artist
+    assert application.artist_match_mask is versus_mod.artist_match_mask
+    assert application._CREDIT_MARKER_RE is versus_mod._CREDIT_MARKER_RE
+    assert not hasattr(application, '_CREDIT_SPLIT_RE')
+
+
+def test_slash_and_parenthetical_credits_reach_the_versus_totals(application):
+    """Elton John's slash-credited and backing-band #1s were being dropped."""
+    r = application.app.test_client().get('/api/versus?chart=top100&artists=Elton+John')
+    assert r.status_code == 200
+    assert r.get_json()['artists'][0]['number_ones'] >= 9
+
+
 def _versus_csv(application, query):
     r = application.app.test_client().get('/download-versus-csv?' + query)
     return r, r.get_data(as_text=True)

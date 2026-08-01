@@ -5,9 +5,11 @@ one artist's rows and returns plain data. That is deliberate — silently wrong
 stats are this feature's main risk, and this is the only part of the codebase
 that can be unit-tested without loading 1.5M CSV rows.
 
-Callers are responsible for selecting the artist's rows with
-app.artist_match_mask(); substring matching pulls 'Tyla Yaweh' into a search
-for 'Tyla'.
+Credit parsing lives here too — primary_artist() keys songs and
+artist_match_mask() selects an artist's rows, and the two must agree, so each
+has exactly one definition in the codebase. app.py aliases both. Selection is
+by whole credit segment, never substring: 'Tyla' must not pull in
+'Tyla Yaweh'.
 """
 import re
 
@@ -16,11 +18,57 @@ import pandas as pd
 # A credit's primary artist is everything before the first collaboration marker.
 _CREDIT_MARKER_RE = r'\s+(?:featuring|feat\.?|with|x|&|\+|duet)\s+.*$'
 
+# What separates one artist from the next inside a credit: a word marker, a
+# slash, a comma, or a parenthetical aside. Billboard mixes them freely
+# ('Dionne & Friends Featuring Elton John, Gladys Knight And Stevie Wonder').
+_CREDIT_DELIM = (r'(?:\s+(?:featuring|feat\.?|with|x|&|\+|duet|and)\s+'
+                 r'|\s*[/(),]\s*)')
+
+# Billboard credits a leader's backing group as its own act ('The Elton John
+# Band', whose 'Lucy In The Sky With Diamonds' is an Elton John #1). Anchored
+# at both ends so this cannot degrade into prefix matching.
+_BACKING_BAND_RE = re.compile(r'^the\s+(.+?)\s+band$')
+
 
 def primary_artist(name):
     """Normalize an artist credit to its primary artist so week-to-week credit
     drift ('Weezer' vs 'Weezer Featuring Best Coast') keys the same."""
     return re.sub(_CREDIT_MARKER_RE, '', str(name).strip().casefold())
+
+
+def credit_query(artist_name):
+    """Pattern matching a credit that names this artist.
+
+    The name has to sit between credit delimiters — the start or end of the
+    credit, or a marker — rather than merely appear in it. Splitting the
+    credit instead cannot be made exact, because ' x ' is both a collaboration
+    marker and part of 'Lil Nas X'; asking about boundaries lets both
+    'Lil Nas X' and 'Elton John' match 'Lil Nas X Featuring Elton John'.
+    """
+    q = re.escape(str(artist_name).strip().casefold())
+    return re.compile(f'(?:^|{_CREDIT_DELIM}){q}(?:{_CREDIT_DELIM}|$)')
+
+
+def credit_names(credit, pattern):
+    """Whether one credit names the artist `pattern` was built for."""
+    text = str(credit).casefold().strip()
+    if pattern.search(text):
+        return True
+    band = _BACKING_BAND_RE.match(text)
+    return bool(band and pattern.search(band.group(1)))
+
+
+def artist_match_mask(artist_series, artist_name):
+    """Boolean mask: rows whose credit names artist_name as a whole artist.
+    'Tyla' matches 'Tyla Featuring Zara Larsson' but NOT 'Tyla Yaweh'
+    (substring matching wrongly pulled in similarly-named artists)."""
+    if not str(artist_name).strip():
+        return pd.Series(False, index=artist_series.index)
+    pattern = credit_query(artist_name)
+    # Tested per unique credit, not per row: 1.5M rows, ~30k credits.
+    matching = {a for a in artist_series.dropna().unique()
+                if credit_names(a, pattern)}
+    return artist_series.isin(matching)
 
 
 def dedupe_weeks(rows):
@@ -46,6 +94,12 @@ EMPTY_STATS = {
     'timeline': [],
 }
 
+# Stats that are not real counts on an artist chart — see the note in
+# compute_artist_stats. Nulled whether or not the artist matched any rows, so
+# an unmatched artist's column cannot read 0 beside a matched artist's dash.
+_ARTIST_KIND_NULLS = ('entries', 'biggest_hit', 'number_ones',
+                      'top_10s', 'top_40s')
+
 
 def _clean(rows):
     """Drop rows that cannot be ranked or dated, then dedupe."""
@@ -68,7 +122,10 @@ def compute_artist_stats(rows, kind='song'):
     """
     r = _clean(rows)
     if r is None:
-        return dict(EMPTY_STATS)
+        empty = dict(EMPTY_STATS)
+        if kind == 'artist':
+            empty.update(dict.fromkeys(_ARTIST_KIND_NULLS))
+        return empty
 
     # Peak always from the Rank history — the stored Peak Position column is
     # corrupt across this repo's pre-2025 data.
@@ -112,11 +169,7 @@ def compute_artist_stats(rows, kind='song'):
         # int((r['Rank'] == 1).any()) is still only ever 0 or 1, and it adds
         # no information over best_peak (which is not nulled) — so it is
         # nulled too rather than displayed as if it counted distinct #1 songs.
-        stats['entries'] = None
-        stats['biggest_hit'] = None
-        stats['number_ones'] = None
-        stats['top_10s'] = None
-        stats['top_40s'] = None
+        stats.update(dict.fromkeys(_ARTIST_KIND_NULLS))
 
     return stats
 

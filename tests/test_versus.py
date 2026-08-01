@@ -19,6 +19,49 @@ def test_primary_artist_strips_featured_credits():
     assert versus.primary_artist('Future & Metro Boomin') == 'future'
 
 
+def matches(credit, query):
+    return versus.artist_match_mask(pd.Series([credit]), query).iloc[0]
+
+
+def test_match_still_refuses_substrings():
+    """The reason segment matching exists at all — never regress this."""
+    assert not matches('Tyla Yaweh', 'Tyla')
+    assert matches('Tyla Featuring Zara Larsson', 'Tyla')
+    assert not matches('Lil Nas X', 'Nas')
+
+
+def test_match_splits_slash_credits():
+    # 'Don't Let The Sun Go Down On Me' is an Elton John #1 and was missing
+    # from his totals entirely.
+    assert matches('George Michael/Elton John', 'Elton John')
+    assert matches('George Michael/Elton John', 'George Michael')
+
+
+def test_match_splits_parenthetical_credits():
+    assert matches('Jennifer Rush (Duet With Elton John)', 'Elton John')
+    assert matches('Jennifer Rush (Duet With Elton John)', 'Jennifer Rush')
+
+
+def test_match_survives_two_markers_in_a_row():
+    """' X ' is both a collaboration marker and part of 'Lil Nas X', so the
+    split leaves the tail as 'featuring elton john'."""
+    assert matches('Lil Nas X Featuring Elton John', 'Elton John')
+    assert matches('Lil Nas X Featuring Elton John', 'Lil Nas X')
+
+
+def test_marker_stripping_does_not_cost_a_real_name():
+    """Stripping a leading 'x ' must not lose the act it belongs to."""
+    assert matches('Machine Gun Kelly & X Ambassadors', 'X Ambassadors')
+
+
+def test_match_reaches_a_leader_backing_band():
+    # 'Lucy In The Sky With Diamonds' is credited to The Elton John Band.
+    assert matches('The Elton John Band', 'Elton John')
+    assert matches('The Elton John Band', 'The Elton John Band')
+    # Anchored at both ends: this must not become prefix matching.
+    assert not matches('The Elton John Band Reunion Tour', 'Elton John')
+
+
 def test_peak_comes_from_rank_history_not_a_column():
     # The stored Peak Position column is corrupt repo-wide; a frame carrying a
     # lying column must not influence the result.
@@ -162,6 +205,19 @@ def test_artist_kind_nulls_distinct_song_counts():
     assert artist_stats['weeks_at_1'] == 1
     assert artist_stats['best_peak'] == 1
     assert artist_stats['total_weeks_charted'] == 2
+
+
+def test_unmatched_artist_on_an_artist_chart_nulls_the_same_stats():
+    """An artist with no rows must not show 0 in a column where a matched
+    artist shows a dash — the two are read side by side."""
+    empty = versus.compute_artist_stats(frame([]), kind='artist')
+    matched = versus.compute_artist_stats(
+        frame([('2024-01-06', 3, 'X', 'X')]), kind='artist')
+    nulled = [k for k, v in matched.items() if v is None]
+    for key in nulled:
+        assert empty[key] is None, key
+    # And the song-chart empty case is untouched: still zeros, not dashes.
+    assert versus.compute_artist_stats(frame([]))['entries'] == 0
 
 
 def test_display_name_uses_modal_capitalization():

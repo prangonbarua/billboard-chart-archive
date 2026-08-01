@@ -250,23 +250,13 @@ def safe_int(val, default=None):
     except (ValueError, TypeError):
         return default
 
-_CREDIT_MARKER_RE = r'\s+(?:featuring|feat\.?|with|x|&|\+|duet)\s+.*$'
-def primary_artist(name):
-    """Normalize an artist credit to its primary artist so week-to-week
-    credit drift (e.g. 'Weezer' vs 'Weezer Featuring Best Coast') keys the same"""
-    return re.sub(_CREDIT_MARKER_RE, '', name.strip().casefold())
-
-_CREDIT_SPLIT_RE = re.compile(r'\s+(?:featuring|feat\.?|with|x|&|\+|duet(?:\s+with)?|and)\s+|\s*,\s*')
-def artist_match_mask(artist_series, artist_name):
-    """Boolean mask: rows whose credit includes artist_name as a full artist
-    segment. 'Tyla' matches 'Tyla Featuring Zara Larsson' but NOT 'Tyla Yaweh'
-    (substring matching wrongly pulled in similarly-named artists)."""
-    query = artist_name.strip().casefold()
-    def credit_has(credit):
-        return query in (seg.strip() for seg in _CREDIT_SPLIT_RE.split(str(credit).casefold()))
-    unique = artist_series.dropna().unique()
-    matching = {a for a in unique if credit_has(a)}
-    return artist_series.isin(matching)
+# Credit parsing lives in versus.py — the one module that can be unit-tested
+# without loading 1.5M rows. Song keying and artist selection have to agree
+# about where one artist's name ends, so each has a single definition and
+# these are aliases, not copies.
+primary_artist = versus.primary_artist
+artist_match_mask = versus.artist_match_mask
+_CREDIT_MARKER_RE = versus._CREDIT_MARKER_RE   # vectorized in _song_chart_page
 
 def check_download_limit(ip_address):
     """Rate limiting disabled - always allow downloads"""
