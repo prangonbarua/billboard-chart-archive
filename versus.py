@@ -150,6 +150,11 @@ def compute_artist_stats(rows, kind='song'):
 
     best = per_song.sort_values(['peak', 'weeks'], ascending=[True, False])
 
+    # One row per chart week: the entry that reached this artist's best rank
+    # that week. Ties break on whichever row idxmin returns first, which is
+    # stable for a given frame and only matters when two songs share a rank.
+    _best = r.loc[r.groupby('Date')['Rank'].idxmin()].sort_values('Date')
+
     stats = {
         'entries': int(len(per_song)),
         'number_ones': int((per_song['peak'] == 1).sum()),
@@ -161,9 +166,14 @@ def compute_artist_stats(rows, kind='song'):
         'first_entry': r['Date'].min().strftime('%Y-%m-%d'),
         'last_entry': r['Date'].max().strftime('%Y-%m-%d'),
         'biggest_hit': str(best.iloc[0]['title']).strip(),
+        # idxmin, not min: the timeline carries the song that produced each
+        # week's best rank. Aggregating with min() threw the title away, which
+        # left the CSV export with a column of bare numbers and no way to tell
+        # which song charted.
         'timeline': [
-            {'date': d.strftime('%Y-%m-%d'), 'rank': int(v)}
-            for d, v in r.groupby('Date')['Rank'].min().sort_index().items()
+            {'date': d.strftime('%Y-%m-%d'), 'rank': int(rank),
+             'song': str(song).strip()}
+            for d, rank, song in zip(_best['Date'], _best['Rank'], _best['Song'])
         ],
     }
 

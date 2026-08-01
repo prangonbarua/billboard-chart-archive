@@ -143,9 +143,11 @@ def test_timeline_is_best_rank_per_week_ascending():
         ('2024-01-13', 4, 'Hit B', 'X'),
         ('2024-01-06', 9, 'Hit A', 'X'),
     ])
+    # Each point names the song that reached that week's best rank: on
+    # 2024-01-13 that is Hit B at 4, not Hit A at 20.
     assert versus.compute_artist_stats(df)['timeline'] == [
-        {'date': '2024-01-06', 'rank': 9},
-        {'date': '2024-01-13', 'rank': 4},
+        {'date': '2024-01-06', 'rank': 9, 'song': 'Hit A'},
+        {'date': '2024-01-13', 'rank': 4, 'song': 'Hit B'},
     ]
 
 
