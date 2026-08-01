@@ -1793,63 +1793,87 @@ def get_current_number_one():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+def _artist_history_csv(df):
+    """One artist's rows as a song-by-song pivot: songs across the top, an
+    image row, then one row per chart week with each song's rank that week
+    (blank when it was not on the chart). `df` must already be filtered to the
+    artist, with Date parsed."""
+    import io, csv as csvmod
+    df = df.dropna(subset=['Date'])
+    df['Song'] = df['Song'].astype(str)
+    df['Rank'] = pd.to_numeric(df['Rank'], errors='coerce')
+
+    df['Artist'] = df['Artist'].astype(str)
+    # Key columns by (song, primary artist) so same-titled songs by different
+    # artists stay separate, but a mid-run credit change (remix adds a feature,
+    # e.g. "Tame Impala" -> "Tame Impala & JENNIE") stays ONE column.
+    df['PrimaryArtist'] = df['Artist'].map(primary_artist)
+    pairs = df.groupby(['Song', 'PrimaryArtist'], observed=True)['Date'].min().sort_values().index.tolist()
+    pivot = df.pivot_table(index='Date', columns=['Song', 'PrimaryArtist'], values='Rank',
+                           aggfunc='min', observed=True).sort_index()
+
+    # For disambiguation, show the latest (fullest) credit for each pair
+    latest_credit = df.sort_values('Date').groupby(['Song', 'PrimaryArtist'], observed=True)['Artist'].last()
+    title_counts = {}
+    for s, a in pairs:
+        title_counts[s] = title_counts.get(s, 0) + 1
+    headers = [s if title_counts[s] == 1 else f"{s} ({latest_credit.get((s, a), a)})" for s, a in pairs]
+
+    images = {}
+    if 'Image URL' in df.columns:
+        for pair, grp in df.groupby(['Song', 'PrimaryArtist'], observed=True):
+            urls = grp['Image URL'].dropna()
+            urls = urls[urls.astype(str).str.startswith('http')]
+            images[pair] = str(urls.iloc[0]) if len(urls) else ''
+
+    buf = io.StringIO()
+    writer = csvmod.writer(buf)
+    writer.writerow(['Song'] + headers)
+    writer.writerow(['Image'] + [images.get(p, '') for p in pairs])
+    for date, row in pivot.iterrows():
+        date_str = f"{date.month}/{date.day}/{date.year}"
+        writer.writerow([date_str] + [
+            (int(row[p]) if pd.notna(row.get(p)) else '') for p in pairs
+        ])
+    return buf.getvalue()
+
+
 @app.route('/download-csv/<path:artist_name>')
 def download_csv(artist_name):
-    """Download the artist's full Hot 100 chart history as CSV"""
+    """One artist's chart history as CSV.
+
+    Defaults to the Hot 100, which is what the artist report page links to and
+    all this route used to serve. ?chart= scopes it to any chart in the
+    registry, which is what the versus page's per-artist links use — comparing
+    artists on Country Airplay and then being handed their Hot 100 runs would
+    not be the same data the page is showing.
+    """
     try:
-        import io, csv as csvmod
-        artist_lower = artist_name.strip().lower()
-        if not artist_lower:
+        if not artist_name.strip():
             return jsonify({'error': 'Missing artist name'}), 400
-        df = BILLBOARD_DATA[artist_match_mask(BILLBOARD_DATA['Artist'], artist_name)].copy()
-        if df.empty:
+        chart_key = request.args.get('chart', 'top100')
+        if chart_key not in CHARTS:
+            return jsonify({'error': 'Unknown chart'}), 400
+        df, _dates = CHART_DATA.get(chart_key, (None, None))
+        if df is None or not len(df):
+            return jsonify({'error': 'Chart data is not available'}), 400
+
+        rows = df[artist_match_mask(df['Artist'], artist_name)].copy()
+        if rows.empty:
             return jsonify({'error': 'No data for artist'}), 404
-
-        # Pivot layout: songs as columns, Image row, then one row per chart
-        # week with each song's rank that week (blank when not charting)
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-        df = df.dropna(subset=['Date'])
-        df['Song'] = df['Song'].astype(str)
-        df['Rank'] = pd.to_numeric(df['Rank'], errors='coerce')
-
-        df['Artist'] = df['Artist'].astype(str)
-        # Key columns by (song, primary artist) so same-titled songs by different
-        # artists stay separate, but a mid-run credit change (remix adds a feature,
-        # e.g. "Tame Impala" -> "Tame Impala & JENNIE") stays ONE column.
-        df['PrimaryArtist'] = df['Artist'].map(primary_artist)
-        pairs = df.groupby(['Song', 'PrimaryArtist'], observed=True)['Date'].min().sort_values().index.tolist()
-        pivot = df.pivot_table(index='Date', columns=['Song', 'PrimaryArtist'], values='Rank',
-                               aggfunc='min', observed=True).sort_index()
-
-        # For disambiguation, show the latest (fullest) credit for each pair
-        latest_credit = df.sort_values('Date').groupby(['Song', 'PrimaryArtist'], observed=True)['Artist'].last()
-        title_counts = {}
-        for s, a in pairs:
-            title_counts[s] = title_counts.get(s, 0) + 1
-        headers = [s if title_counts[s] == 1 else f"{s} ({latest_credit.get((s, a), a)})" for s, a in pairs]
-
-        images = {}
-        if 'Image URL' in df.columns:
-            for pair, grp in df.groupby(['Song', 'PrimaryArtist'], observed=True):
-                urls = grp['Image URL'].dropna()
-                urls = urls[urls.astype(str).str.startswith('http')]
-                images[pair] = str(urls.iloc[0]) if len(urls) else ''
-
-        buf = io.StringIO()
-        writer = csvmod.writer(buf)
-        writer.writerow(['Song'] + headers)
-        writer.writerow(['Image'] + [images.get(p, '') for p in pairs])
-        for date, row in pivot.iterrows():
-            date_str = f"{date.month}/{date.day}/{date.year}"
-            writer.writerow([date_str] + [
-                (int(row[p]) if pd.notna(row.get(p)) else '') for p in pairs
-            ])
+        # Dates were parsed once at startup; re-parsing the subset here cost
+        # more than building the pivot does.
+        rows['Date'] = CHART_DT[chart_key].loc[rows.index]
 
         safe_name = re.sub(r'[^\w\s-]', '', artist_name).strip().replace(' ', '_')
+        # The Hot 100 filename is left as it was, so existing links and any
+        # saved files keep their names.
+        suffix = '' if chart_key == 'top100' else f'_{chart_key}'
         return Response(
-            buf.getvalue(),
+            _artist_history_csv(rows),
             mimetype='text/csv',
-            headers={'Content-Disposition': f'attachment; filename="{safe_name}_Chart_History.csv"'}
+            headers={'Content-Disposition':
+                     f'attachment; filename="{safe_name}{suffix}_Chart_History.csv"'}
         )
     except Exception as e:
         return jsonify({'error': str(e)}), 500

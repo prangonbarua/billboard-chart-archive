@@ -175,6 +175,48 @@ def test_versus_csv_rejects_bad_input(application):
     assert _versus_csv(application, 'chart=top100&artists=')[0].status_code == 400
 
 
+def test_artist_csv_defaults_to_the_hot_100_unchanged(application):
+    """The artist report page links here with no query string; its filename
+    and contents must not move."""
+    r = application.app.test_client().get('/download-csv/Drake')
+    assert r.status_code == 200
+    assert 'Drake_Chart_History.csv' in r.headers['Content-Disposition']
+    rows = list(csv.reader(io.StringIO(r.get_data(as_text=True))))
+    assert rows[0][0] == 'Song' and len(rows[0]) > 100
+    assert rows[1][0] == 'Image'
+
+
+def test_artist_csv_can_be_scoped_to_another_chart(application):
+    r = application.app.test_client().get(
+        '/download-csv/Luke Combs?chart=country_airplay')
+    assert r.status_code == 200
+    assert 'Luke_Combs_country_airplay_Chart_History.csv' in \
+        r.headers['Content-Disposition']
+    rows = list(csv.reader(io.StringIO(r.get_data(as_text=True))))
+    titles = set(rows[0][1:])
+    assert titles
+    # Scoped, not the Hot 100 slice: this is the country chart's own frame.
+    country = application._versus_artist_rows('country_airplay', 'Luke Combs')
+    assert titles <= set(country['Song'].astype(str))
+
+
+def test_artist_csv_rejects_an_unknown_chart(application):
+    r = application.app.test_client().get('/download-csv/Drake?chart=nope')
+    assert r.status_code == 400
+
+
+def test_artist_csv_404s_for_an_artist_absent_from_that_chart(application):
+    r = application.app.test_client().get(
+        '/download-csv/Zzzznotanartist?chart=country_airplay')
+    assert r.status_code == 404
+
+
+def test_versus_chips_link_each_artists_own_csv(application):
+    body = application.app.test_client().get('/versus').get_data(as_text=True)
+    assert '/download-csv/' in body
+    assert 'chip-csv' in body
+
+
 def test_versus_page_offers_the_csv_download(application):
     body = application.app.test_client().get(
         '/versus?chart=top100&artists=Drake').get_data(as_text=True)

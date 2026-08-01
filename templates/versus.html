@@ -44,6 +44,12 @@
                    cursor: pointer; font-family: inherit; font-size: 1rem;
                    line-height: 1; padding: 0; }
     .chip .swatch { width: 10px; height: 10px; display: inline-block; }
+    .chip .chip-csv {
+        font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.02em;
+        color: var(--text-muted); text-decoration: none;
+        border-left: 1px solid var(--border); padding-left: 0.5rem;
+    }
+    .chip .chip-csv:hover { color: var(--text); }
 
     /* Many artists scroll horizontally rather than crushing the layout. */
     .scorecard-wrap { overflow-x: auto; }
@@ -144,10 +150,23 @@ function syncCsvLink() {
     link.hidden = false;
 }
 
+// Each chip carries its own export: that artist's run on the selected chart,
+// song by song. The page-level download is the comparison; this is one
+// artist's underlying history, which the comparison flattens to a best rank
+// per week.
+function artistCsvHref(name) {
+    const chart = document.getElementById('chart').value;
+    return `/download-csv/${encodeURIComponent(name)}`
+        + `?chart=${encodeURIComponent(chart)}`;
+}
+
 function renderChips() {
     document.getElementById('chips').innerHTML = artists.map((a, i) =>
         `<span class="chip"><span class="swatch" style="background:${colorFor(i)}"></span>`
-        + `${escapeHtml(a)}<button type="button" data-i="${i}" aria-label="Remove">&times;</button></span>`
+        + `${escapeHtml(a)}`
+        + `<a class="chip-csv" href="${escapeHtml(artistCsvHref(a))}"`
+        + ` title="Download ${escapeHtml(a)}'s chart run as CSV">CSV</a>`
+        + `<button type="button" data-i="${i}" aria-label="Remove">&times;</button></span>`
     ).join('');
 }
 
