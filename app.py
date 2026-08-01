@@ -675,6 +675,76 @@ def api_versus():
     }
 
 
+# Scorecard rows in the same order and with the same labels as the versus
+# page's table, so a download matches what was on screen when it was clicked.
+_VERSUS_CSV_ROWS = [
+    ('Entries',       'entries'),
+    ('Number ones',   'number_ones'),
+    ('Weeks at #1',   'weeks_at_1'),
+    ('Top 10s',       'top_10s'),
+    ('Top 40s',       'top_40s'),
+    ('Best peak',     'best_peak'),
+    ('Weeks charted', 'total_weeks_charted'),
+    ('First entry',   'first_entry'),
+    ('Last entry',    'last_entry'),
+    ('Biggest hit',   'biggest_hit'),
+]
+
+
+@app.route('/download-versus-csv')
+@limiter.exempt
+def download_versus_csv():
+    """The on-screen comparison as CSV: the scorecard, then one row per chart
+    week with each artist's best rank that week (blank when not charting).
+
+    Same inputs as /api/versus, so the link is just the current URL's query
+    string — a download always matches the comparison that produced it.
+    """
+    import io, csv as csvmod
+    chart_key = request.args.get('chart', 'top100')
+    meta = CHARTS.get(chart_key)
+    if meta is None:
+        return jsonify({'error': 'Unknown chart'}), 400
+    names = _parse_artist_list(request.args.get('artists'))
+    if not names:
+        return jsonify({'error': 'No artists to compare'}), 400
+
+    entries = []
+    for name in names:
+        rows = _versus_artist_rows(chart_key, name)
+        entries.append((versus.display_name(rows, name),
+                        versus.compute_artist_stats(rows, kind=meta['kind'])))
+    labels = [d for d, _ in entries]
+
+    buf = io.StringIO()
+    w = csvmod.writer(buf)
+    w.writerow([f"{meta['label']} — Versus"])
+    w.writerow([])
+    w.writerow(['Stat'] + labels)
+    for label, key in _VERSUS_CSV_ROWS:
+        # A stat nulled for this chart kind writes blank, not 0 — the same
+        # distinction the scorecard draws with an em dash.
+        w.writerow([label] + [
+            ('' if s.get(key) is None else s[key]) for _, s in entries
+        ])
+
+    # Weekly best rank over the union of every week any of them charted, so
+    # the columns line up on shared dates and gaps stay visible as blanks.
+    w.writerow([])
+    w.writerow(['Weekly best rank'])
+    w.writerow(['Date'] + labels)
+    weeks = [{p['date']: p['rank'] for p in s['timeline']} for _, s in entries]
+    for d in sorted({d for m in weeks for d in m}):
+        y, mth, day = d.split('-')
+        w.writerow([f'{int(mth)}/{int(day)}/{y}'] + [m.get(d, '') for m in weeks])
+
+    stem = '_vs_'.join(
+        re.sub(r'[^\w\s-]', '', d).strip().replace(' ', '_') for d in labels[:3]
+    ) or 'versus'
+    return Response(buf.getvalue(), mimetype='text/csv', headers={
+        'Content-Disposition': f'attachment; filename="{stem}_{chart_key}.csv"'})
+
+
 @app.route('/versus')
 @limiter.exempt
 def versus_page():

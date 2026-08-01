@@ -1,5 +1,9 @@
 """Wiring tests. These import app, which loads every CSV — slow by design.
 Keep the fast unit tests in test_versus.py, which must never import app."""
+import csv
+import io
+import re
+
 import pandas as pd
 import pytest
 
@@ -111,6 +115,53 @@ def test_versus_page_state_lives_in_the_url(application):
     body = r.get_data(as_text=True)
     assert 'country_airplay' in body
     assert 'Luke Combs' in body
+
+
+def _versus_csv(application, query):
+    r = application.app.test_client().get('/download-versus-csv?' + query)
+    return r, r.get_data(as_text=True)
+
+
+def test_versus_csv_carries_the_scorecard_and_the_weekly_ranks(application):
+    r, body = _versus_csv(application, 'chart=top100&artists=Taylor+Swift|Drake')
+    assert r.status_code == 200
+    assert r.mimetype == 'text/csv'
+    rows = list(csv.reader(io.StringIO(body)))
+    header = next(r for r in rows if r and r[0] == 'Stat')
+    assert header[1:] == ['Taylor Swift', 'Drake']
+    labels = [r[0] for r in rows if r]
+    for expected, _key in application._VERSUS_CSV_ROWS:
+        assert expected in labels
+    # Weekly section: a date row with a rank for at least one artist.
+    dates = [r for r in rows if r and re.fullmatch(r'\d{1,2}/\d{1,2}/\d{4}', r[0])]
+    assert len(dates) > 100
+    assert all(len(r) == 3 for r in dates)
+    assert any(r[1] and r[2] for r in dates)
+
+
+def test_versus_csv_blanks_stats_nulled_by_chart_kind(application):
+    """Artist 100 nulls the song-level counts; blank, never a misleading 0."""
+    _r, body = _versus_csv(application, 'chart=artist100&artists=Drake')
+    rows = {r[0]: r[1:] for r in csv.reader(io.StringIO(body)) if r}
+    assert rows['Entries'] == ['']
+    assert rows['Number ones'] == ['']
+    assert rows['Best peak'] != ['']
+
+
+def test_versus_csv_filename_names_the_artists_and_chart(application):
+    r, _body = _versus_csv(application, 'chart=country_airplay&artists=Luke+Combs')
+    assert 'Luke_Combs_country_airplay.csv' in r.headers['Content-Disposition']
+
+
+def test_versus_csv_rejects_bad_input(application):
+    assert _versus_csv(application, 'chart=nope&artists=Drake')[0].status_code == 400
+    assert _versus_csv(application, 'chart=top100&artists=')[0].status_code == 400
+
+
+def test_versus_page_offers_the_csv_download(application):
+    body = application.app.test_client().get(
+        '/versus?chart=top100&artists=Drake').get_data(as_text=True)
+    assert '/download-versus-csv' in body
 
 
 def test_versus_link_is_in_the_nav(application):

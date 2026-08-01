@@ -10,6 +10,17 @@
     h1 { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; }
     .page-meta { color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; }
 
+    .page-head { display: flex; align-items: flex-start; justify-content: space-between;
+                 gap: 1rem; flex-wrap: wrap; }
+    .dl-csv {
+        border: 1px solid var(--border); background: var(--surface);
+        color: var(--text) !important; text-decoration: none;
+        font-size: 0.8125rem; font-weight: 600; padding: 0.5rem 0.875rem;
+        white-space: nowrap; margin-top: 0.25rem;
+    }
+    .dl-csv:hover { background: var(--surface-hover); }
+    .dl-csv[hidden] { display: none; }
+
     .picker { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
               margin: 1.5rem 0; }
     .picker select, .picker input {
@@ -65,8 +76,13 @@
 {% include '_nav.html' %}
 
 <div class="wrap">
-    <h1>Versus</h1>
-    <div class="page-meta">Compare artists on {{ chart.label }}</div>
+    <div class="page-head">
+        <div>
+            <h1>Versus</h1>
+            <div class="page-meta">Compare artists on {{ chart.label }}</div>
+        </div>
+        <a class="dl-csv" id="dl-csv" href="/download-versus-csv" hidden>Download CSV</a>
+    </div>
 
     <form class="picker" id="picker" autocomplete="off">
         <select id="chart" name="chart">
@@ -110,6 +126,19 @@ function syncUrl(push) {
     const url = '/versus?' + q.toString();
     if (push) history.pushState(null, '', url);
     else history.replaceState(null, '', url);
+}
+
+// The download takes the same query the API does, so it always exports the
+// comparison currently on screen. Hidden outright when there is nothing to
+// export rather than linking to a 400.
+function syncCsvLink() {
+    const link = document.getElementById('dl-csv');
+    if (!artists.length) { link.hidden = true; return; }
+    const q = new URLSearchParams();
+    q.set('chart', document.getElementById('chart').value);
+    q.set('artists', artists.join('|'));
+    link.href = '/download-versus-csv?' + q.toString();
+    link.hidden = false;
 }
 
 function renderChips() {
@@ -302,6 +331,7 @@ window.renderGraph = function (data) {
 // change) or replace the current one (initial load, popstate restore).
 async function load(push) {
     renderChips();
+    syncCsvLink();
     syncUrl(push);
     if (!artists.length) {
         renderScorecard({artists: []});
