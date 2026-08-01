@@ -276,7 +276,13 @@
             .hero-inner { flex-direction: column; text-align: center; }
             .hero-stats { justify-content: center; }
             .hero-title { font-size: 1.5rem; }
-            .song-title, .song-artist { max-width: 160px; }
+            /* Long titles were clipped to an ellipsis at 160px, which hid
+               most of the name. Let them run their natural width and swipe the
+               table sideways instead. chart-card is overflow:hidden for its
+               rounded corners, so the x axis has to be turned back on here. */
+            .chart-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .chart-table { min-width: 560px; }
+            .song-title, .song-artist { max-width: none; }
         }
     </style>
     <link rel="stylesheet" href="/static/paxel.css">
