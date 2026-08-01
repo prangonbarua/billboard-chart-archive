@@ -27,6 +27,17 @@ jobs:
       - name: Scrape latest charts
         run: python3 scripts/fast_billboard_scraper.py
 
+      # Billboard serves an out-of-range date by re-sending the boundary
+      # week's rankings under the requested date, so a fabricated week looks
+      # valid on its own and only shows up against its neighbour. Running the
+      # scraper by hand has produced exactly that. Weeks already triaged are
+      # in scripts/known_clamped_weeks.json; this fails only on new ones, and
+      # fails before the commit step so bad rows are never pushed.
+      - name: Verify scraped data
+        run: |
+          pip install -r requirements.txt
+          python3 scripts/verify_charts.py
+
       - name: Commit updated data
         id: commit
         run: |
