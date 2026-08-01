@@ -138,7 +138,21 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # ranking check in backfill_chart.py, not by row count.
                     'country-airplay': 60, 'adult-pop-songs': 40,
                     'rhythmic-40': 40, 'alternative-airplay': 40,
-                    'adult-contemporary': 30}.get(chart_name, 20)
+                    'adult-contemporary': 30,
+                    # Mainstream R&B/Hip-Hop launched 1993-09-18 at 40 and has
+                    # been 40 every week since 1998. The only exceptions are 21
+                    # weeks scattered through 1995-1997 that Billboard serves
+                    # 34-39 deep; they are already in the CSV, and the weekly
+                    # path never looks back that far, so 40 is the right guard.
+                    'mainstream-r-and-b-hip-hop': 40,
+                    # Dance Airplay is the shallow-era case, same as the five
+                    # above. It launched 2003-08-16 at 40, dropped to 25 by
+                    # 2003-10-04, held 25 until at least 2014-09-06, and was
+                    # back to 40 by 2014-12-06. 40 is the modern depth and so
+                    # the right guard for the weekly path; a backfill of the
+                    # 25-row era has to run before this floor applies, which is
+                    # how data/dance_airplay.csv was populated.
+                    'hot-dance-airplay': 40}.get(chart_name, 20)
         if len(entries) < expected:
             print(f"✗ Incomplete chart: {len(entries)}/{expected} rows — skipping (will retry next run)")
             time.sleep(1)
@@ -285,6 +299,8 @@ def main():
     update_chart_data('rhythmic-40', 'data/rhythmic_airplay.csv', weeks_to_fetch=15)
     update_chart_data('country-airplay', 'data/country_airplay.csv', weeks_to_fetch=15)
     update_chart_data('alternative-airplay', 'data/alternative_airplay.csv', weeks_to_fetch=15)
+    update_chart_data('mainstream-r-and-b-hip-hop', 'data/rnb_hiphop_airplay.csv', weeks_to_fetch=15)
+    update_chart_data('hot-dance-airplay', 'data/dance_airplay.csv', weeks_to_fetch=15)
 
     print("\n" + "="*60)
     if success_hot100 and success_bb200:
