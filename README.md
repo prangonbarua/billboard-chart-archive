@@ -19,7 +19,18 @@ python app.py
 
 Then open http://localhost:5001.
 
+Use Python 3.12, matching the Dockerfile and the weekly workflow — the pinned
+pandas and numpy publish no wheels for 3.13.
+
 Configuration lives in `.env` (see `.env.example`). The app runs without API keys; they only enrich metadata.
+
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+python3 -m pytest
+python3 scripts/verify_charts.py    # data integrity across every chart
+```
 
 ## Docker
 

@@ -21,8 +21,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install scraper dependencies
-        run: pip install requests beautifulsoup4 pandas
+      # From requirements.txt, not a floating `pip install pandas`: the
+      # scraper's output depends on pandas behaviour, and this run's pandas
+      # should be the one production actually serves the data with.
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
       - name: Scrape latest charts
         run: python3 scripts/fast_billboard_scraper.py
@@ -34,9 +37,7 @@ jobs:
       # in scripts/known_clamped_weeks.json; this fails only on new ones, and
       # fails before the commit step so bad rows are never pushed.
       - name: Verify scraped data
-        run: |
-          pip install -r requirements.txt
-          python3 scripts/verify_charts.py
+        run: python3 scripts/verify_charts.py
 
       - name: Commit updated data
         id: commit

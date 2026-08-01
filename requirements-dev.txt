@@ -1,0 +1,12 @@
+# Development and test dependencies. Install on top of the runtime pins:
+#
+#     python3.12 -m venv .venv && . .venv/bin/activate
+#     pip install -r requirements.txt -r requirements-dev.txt
+#     python3 -m pytest
+#
+# Python 3.12, matching the Dockerfile and the weekly workflow. pandas 2.1.4
+# and numpy 1.26.4 publish no wheels for 3.13, so a 3.13 interpreter silently
+# forces a different pandas than the one production runs.
+-r requirements.txt
+
+pytest==8.3.4
