@@ -105,3 +105,33 @@ def test_artist_chart_endpoint_404s_when_artist_absent(application):
     c = application.app.test_client()
     r = c.get('/api/artist-chart?artist=Aaron+Watson&chart=globalexus')
     assert r.status_code == 404
+
+
+def test_all_artists_pool_covers_every_chart(application):
+    union = set()
+    for names in application.CHART_ARTISTS.values():
+        union |= set(names)
+    assert set(application.ALL_ARTISTS) == union
+    assert application.ALL_ARTISTS == sorted(application.ALL_ARTISTS)
+
+
+def test_autocomplete_finds_a_pre_1990_artist(application):
+    """The Supremes are reportable but absent from MODERN_ARTISTS."""
+    assert 'The Supremes' not in application.MODERN_ARTISTS
+    c = application.app.test_client()
+    got = c.get('/api/artists?q=the+supremes').get_json()['artists']
+    assert 'The Supremes' in got
+
+
+def test_autocomplete_finds_a_country_only_artist(application):
+    assert 'Aaron Watson' not in application.MODERN_ARTISTS
+    c = application.app.test_client()
+    got = c.get('/api/artists?q=aaron+watson').get_json()['artists']
+    assert 'Aaron Watson' in got
+
+
+def test_autocomplete_chart_scoped_pool_unchanged(application):
+    """The versus page passes ?chart= and must keep its own pool."""
+    c = application.app.test_client()
+    got = c.get('/api/artists?chart=country_airplay&q=aaron').get_json()['artists']
+    assert set(got) <= set(application.CHART_ARTISTS['country_airplay'])

@@ -230,6 +230,11 @@ for _k, (_df, _d) in CHART_DATA.items():
     )
 del _k, _df, _d, _names
 
+# Every artist on any chart, for the report search box. MODERN_ARTISTS is Hot
+# 100 1990+ (2,943 names) — against 15,152 here, it made 12,209 artists
+# unreachable from a search box that can now report on all of them.
+ALL_ARTISTS = sorted({a for names in CHART_ARTISTS.values() for a in names})
+
 def available_charts():
     """Registry entries that actually have data loaded, grouped for the nav."""
     groups = {}
@@ -555,7 +560,7 @@ def get_artists():
     Without it, behaviour is unchanged for search.html.
     """
     query = request.args.get('q', '').lower()
-    pool = CHART_ARTISTS.get(request.args.get('chart', ''), MODERN_ARTISTS)
+    pool = CHART_ARTISTS.get(request.args.get('chart', ''), ALL_ARTISTS)
 
     if query:
         artists = [a for a in pool if a.lower().startswith(query)]
