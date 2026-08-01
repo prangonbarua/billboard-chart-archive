@@ -80,3 +80,28 @@ def test_detail_serves_albums_for_albums200(application):
 
 def test_detail_none_when_artist_absent_from_chart(application):
     assert application.artist_chart_detail('Aaron Watson', 'globalexus') is None
+
+
+def test_artist_chart_endpoint_returns_detail(application):
+    c = application.app.test_client()
+    r = c.get('/api/artist-chart?artist=Taylor+Swift&chart=country_airplay')
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body['chart']['key'] == 'country_airplay'
+    assert body['items']
+
+
+def test_artist_chart_endpoint_rejects_unknown_chart(application):
+    c = application.app.test_client()
+    assert c.get('/api/artist-chart?artist=Drake&chart=nope').status_code == 400
+
+
+def test_artist_chart_endpoint_rejects_blank_artist(application):
+    c = application.app.test_client()
+    assert c.get('/api/artist-chart?artist=&chart=top100').status_code == 400
+
+
+def test_artist_chart_endpoint_404s_when_artist_absent(application):
+    c = application.app.test_client()
+    r = c.get('/api/artist-chart?artist=Aaron+Watson&chart=globalexus')
+    assert r.status_code == 404

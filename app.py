@@ -638,6 +638,26 @@ def api_versus():
     }
 
 
+@app.route('/api/artist-chart')
+@limiter.exempt
+def api_artist_chart():
+    """One artist's detail on one chart, for the report's chart picker.
+
+    The report lazy-loads this instead of inlining every chart: all 16 charts'
+    detail is 519 KB on a heavy artist, against ~3 KB for the coverage table.
+    """
+    artist_name = (request.args.get('artist') or '').strip()
+    if not artist_name:
+        return {'error': 'Missing artist'}, 400
+    chart_key = request.args.get('chart', 'top100')
+    if chart_key not in CHARTS:
+        return {'error': 'Unknown chart'}, 400
+    detail = artist_chart_detail(artist_name, chart_key)
+    if detail is None:
+        return {'error': 'No data for artist on this chart'}, 404
+    return detail
+
+
 # Scorecard rows in the same order and with the same labels as the versus
 # page's table, so a download matches what was on screen when it was clicked.
 _VERSUS_CSV_ROWS = [
