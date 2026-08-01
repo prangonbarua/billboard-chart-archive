@@ -65,9 +65,12 @@
     .graph .tick { fill: var(--text-muted); font-size: 11px; }
     .graph .series { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .graph .series.dim, .graph .dot.dim { opacity: 0.15; }
+    /* Invisible fat stroke under each line: a 2px path is not a hit target. */
+    .graph .hit { fill: none; stroke: transparent; stroke-width: 14; cursor: pointer; }
     .legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.875rem; }
     .legend span { display: inline-flex; align-items: center; gap: 0.375rem;
                    cursor: pointer; }
+    .legend span.pinned { font-weight: 600; text-decoration: underline; }
     .legend i { width: 14px; height: 3px; display: inline-block; }
     </style>
     <link rel="stylesheet" href="/static/paxel.css">
@@ -169,8 +172,8 @@ const ROWS = [
 function renderScorecard(data) {
     const list = data.artists;
     if (!list.length) {
-        document.getElementById('scorecard').innerHTML =
-            '<div class="empty">Add two or more artists to compare.</div>';
+        // One artist renders a full scorecard, so this must not ask for two.
+        showMessage('Add an artist to see their record, or several to compare.');
         return;
     }
     const head = '<tr><th></th>' + list.map(a =>
@@ -290,7 +293,14 @@ window.renderGraph = function (data) {
         }
     }
 
-    const lines = series.map((a, i) => {
+    // Hit paths first so every one of them sits under every visible line;
+    // otherwise a later series' invisible stroke would swallow hovers meant
+    // for an earlier series' painted one.
+    const hits = series.map(a =>
+        `<path class="hit" data-name="${escapeHtml(a.name)}" `
+        + `d="${pathFor(a.timeline)}"></path>`).join('');
+
+    const lines = series.map(a => {
         const color = colorFor(data.artists.indexOf(a));
         const name = escapeHtml(a.name);
         return `<path class="series" data-name="${name}" `
@@ -304,7 +314,7 @@ window.renderGraph = function (data) {
              role="img" aria-label="Chart rank over time">
           <line class="axis" x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${H - M.b}"></line>
           <line class="axis" x1="${M.l}" y1="${H - M.b}" x2="${W - M.r}" y2="${H - M.b}"></line>
-          ${yAxis}${years}${lines}
+          ${yAxis}${years}${hits}${lines}
         </svg>
       </div>
       <div class="legend">${series.map(a =>
@@ -319,17 +329,42 @@ window.renderGraph = function (data) {
     // not positional index, so interleaving circles with paths in document
     // order cannot shift another artist's dim target.
     const paths = host.querySelectorAll('.series, .dot');
+    const legend = host.querySelectorAll('.legend span');
     const isolate = name => paths.forEach(p =>
         p.classList.toggle('dim', name !== null && p.dataset.name !== name));
-    host.querySelectorAll('.legend span, .series').forEach(el => {
-        el.addEventListener('mouseenter', () => isolate(el.dataset.name));
-        el.addEventListener('mouseleave', () => isolate(null));
+
+    // Hover alone would make this desktop-only, while the legend's pointer
+    // cursor advertises it everywhere. Clicking or tapping pins the isolation
+    // instead, and a pin outranks hover until it is cleared.
+    let pinned = null;
+    const pin = name => {
+        pinned = pinned === name ? null : name;
+        legend.forEach(s => s.classList.toggle('pinned', s.dataset.name === pinned));
+        isolate(pinned);
+    };
+    host.querySelectorAll('.legend span, .hit').forEach(el => {
+        el.addEventListener('mouseenter', () => { if (!pinned) isolate(el.dataset.name); });
+        el.addEventListener('mouseleave', () => { if (!pinned) isolate(null); });
+        el.addEventListener('click', () => pin(el.dataset.name));
     });
 };
+
+function showMessage(text) {
+    document.getElementById('scorecard').innerHTML =
+        `<div class="empty">${escapeHtml(text)}</div>`;
+    document.getElementById('graph').innerHTML = '';
+}
+
+// Every load takes a token. The chips and the URL update synchronously while
+// the fetch is in flight, so without this a slow response landing after a
+// faster later one would repaint the scorecard and graph for an artist set
+// the chips no longer show — reachable with rapid Back-Back.
+let loadToken = 0;
 
 // push: whether this render should add a history entry (a user-driven
 // change) or replace the current one (initial load, popstate restore).
 async function load(push) {
+    const token = ++loadToken;
     renderChips();
     syncCsvLink();
     syncUrl(push);
@@ -339,12 +374,21 @@ async function load(push) {
         return;
     }
     const chart = document.getElementById('chart').value;
-    const res = await fetch(`/api/versus?chart=${encodeURIComponent(chart)}`
-        + `&artists=${encodeURIComponent(artists.join('|'))}`);
-    if (!res.ok) return;
-    const data = await res.json();
+    let data;
+    try {
+        const res = await fetch(`/api/versus?chart=${encodeURIComponent(chart)}`
+            + `&artists=${encodeURIComponent(artists.join('|'))}`);
+        if (!res.ok) throw new Error(res.status);
+        data = await res.json();
+    } catch (err) {
+        // Returning silently would leave the previous comparison on screen
+        // under the new chips, reading as if it were the requested one.
+        if (token === loadToken) showMessage('Could not load this comparison.');
+        return;
+    }
+    if (token !== loadToken) return;
     renderScorecard(data);
-    if (window.renderGraph) window.renderGraph(data);   // filled in by Task 6
+    if (window.renderGraph) window.renderGraph(data);
 }
 
 document.getElementById('picker').addEventListener('submit', e => {
@@ -378,17 +422,34 @@ window.addEventListener('popstate', () => {
     load(false);
 });
 
-// Autocomplete against the selected chart's own artist pool.
-document.getElementById('artist').addEventListener('input', async e => {
-    const q = e.target.value.trim();
-    if (q.length < 2) return;
+// Autocomplete against the selected chart's own artist pool. Debounced so
+// typing a name is one request rather than one per keystroke, and tokened so
+// a slow early response cannot overwrite the suggestions for what is in the
+// box now.
+let suggestTimer = null;
+let suggestToken = 0;
+
+async function suggest(q) {
+    const token = ++suggestToken;
     const chart = document.getElementById('chart').value;
-    const res = await fetch(`/api/artists?chart=${encodeURIComponent(chart)}`
-        + `&q=${encodeURIComponent(q)}`);
-    if (!res.ok) return;
-    const {artists: opts} = await res.json();
-    document.getElementById('artist-options').innerHTML =
-        opts.map(a => `<option value="${escapeHtml(a)}">`).join('');
+    try {
+        const res = await fetch(`/api/artists?chart=${encodeURIComponent(chart)}`
+            + `&q=${encodeURIComponent(q)}`);
+        if (!res.ok) return;
+        const {artists: opts} = await res.json();
+        if (token !== suggestToken) return;
+        document.getElementById('artist-options').innerHTML =
+            opts.map(a => `<option value="${escapeHtml(a)}">`).join('');
+    } catch (err) {
+        /* suggestions are optional; typing the name still works */
+    }
+}
+
+document.getElementById('artist').addEventListener('input', e => {
+    const q = e.target.value.trim();
+    clearTimeout(suggestTimer);
+    if (q.length < 2) return;
+    suggestTimer = setTimeout(() => suggest(q), 150);
 });
 
 load(false);   // initial render from the URL we arrived on; don't push
