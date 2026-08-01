@@ -30,10 +30,19 @@ _CREDIT_DELIM = (r'(?:\s+(?:featuring|feat\.?|with|x|&|\+|duet|and)\s+'
 _BACKING_BAND_RE = re.compile(r'^the\s+(.+?)\s+band$')
 
 
+_PRIMARY_CREDIT_RE = re.compile(_CREDIT_MARKER_RE, re.I)
+
+
+def primary_credit(name):
+    """The credit's leading artist, keeping the scraped capitalization:
+    'David Guetta & Bebe Rexha' -> 'David Guetta'."""
+    return _PRIMARY_CREDIT_RE.sub('', str(name).strip()).strip()
+
+
 def primary_artist(name):
     """Normalize an artist credit to its primary artist so week-to-week credit
     drift ('Weezer' vs 'Weezer Featuring Best Coast') keys the same."""
-    return re.sub(_CREDIT_MARKER_RE, '', str(name).strip().casefold())
+    return primary_credit(name).casefold()
 
 
 def credit_query(artist_name):
@@ -176,12 +185,19 @@ def compute_artist_stats(rows, kind='song'):
 
 def display_name(rows, query):
     """The artist's modal capitalization in the data. Scraped casing drifts
-    week to week ('The Kid LAROI' vs 'The Kid Laroi'); show the common one."""
+    week to week ('The Kid LAROI' vs 'The Kid Laroi'); show the common one.
+
+    The mode is taken over the leading artist of each credit, not the whole
+    credit. Whole credits would label anyone whose longest-running hit is a
+    collaboration with their collaborator's name too — David Guetta spent more
+    weeks as 'David Guetta & Bebe Rexha' than under any other credit, and
+    that string is not his name.
+    """
     if rows is None or rows.empty:
         return query
     target = primary_artist(query)
     credits = rows['Artist'].astype(str)
-    exact = credits[credits.map(primary_artist) == target]
-    if exact.empty:
+    leads = credits[credits.map(primary_artist) == target].map(primary_credit)
+    if leads.empty:
         return query
-    return str(exact.mode().iloc[0]).strip()
+    return str(leads.mode().iloc[0]).strip()

@@ -229,5 +229,28 @@ def test_display_name_uses_modal_capitalization():
     assert versus.display_name(df, 'the kid laroi') == 'The Kid LAROI'
 
 
+def test_display_name_never_shows_a_collaborators_name():
+    """David Guetta charted more weeks as 'David Guetta & Bebe Rexha' than
+    under any other credit. Taking the mode of the whole credit labelled him
+    with Bebe Rexha's name in the chips, the scorecard and the legend."""
+    df = frame([
+        ('2024-01-06', 5, 'Hit A', 'David Guetta & Bebe Rexha'),
+        ('2024-01-13', 5, 'Hit A', 'David Guetta & Bebe Rexha'),
+        ('2024-01-20', 5, 'Hit A', 'David Guetta & Bebe Rexha'),
+        ('2024-02-03', 9, 'Hit B', 'David Guetta Featuring Sia'),
+        ('2024-02-10', 9, 'Hit C', 'David Guetta'),
+    ])
+    assert versus.display_name(df, 'David Guetta') == 'David Guetta'
+
+
+def test_display_name_keeps_scraped_capitalization_of_the_lead():
+    df = frame([
+        ('2024-01-06', 5, 'Hit', 'The Kid LAROI & Justin Bieber'),
+        ('2024-01-13', 5, 'Hit', 'The Kid LAROI & Justin Bieber'),
+        ('2024-01-20', 5, 'Hit', 'The Kid Laroi'),
+    ])
+    assert versus.display_name(df, 'the kid laroi') == 'The Kid LAROI'
+
+
 def test_display_name_falls_back_to_the_query():
     assert versus.display_name(frame([]), 'nobody') == 'nobody'
