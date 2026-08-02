@@ -484,6 +484,32 @@
         .detail-download { font-size:0.75rem; color:var(--text-muted); }
         .detail-subtitle { font-size:0.8rem; color:var(--text-muted); margin:0 0 0.5rem; }
         .chart-wrap { border:1px solid var(--border); border-radius:12px; background:var(--surface); margin:0 0 1.5rem; }
+
+        /* Song/album list for the selected chart. Same header rhythm and row
+           rule as .coverage-table so the two tables read as one block. Fixed
+           layout keeps the numeric columns in place no matter how long a title
+           runs — long titles ellipsize instead of shoving Peak off its column. */
+        .song-table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:0.875rem; }
+        .song-table th {
+            text-align:left; font-size:0.68rem; font-weight:600; letter-spacing:0.08em;
+            text-transform:uppercase; color:var(--text-muted);
+            padding:0.5rem 0.75rem; border-bottom:1px solid var(--border);
+        }
+        .song-table td { padding:0.6rem 0.75rem; border-bottom:1px solid var(--border); }
+        .song-table tbody tr { cursor:pointer; }
+        .song-table tbody tr:hover { background:var(--surface-hover); }
+        .song-table tbody tr:last-child td { border-bottom:none; }
+
+        .song-table .col-rank { width:3.25rem; text-align:right; padding-right:1rem;
+                                color:var(--text-muted); font-variant-numeric:tabular-nums; }
+        .song-table .col-title { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .song-table td.col-title { font-weight:600; }
+        .song-table .col-peak,
+        .song-table .col-weeks { width:4.75rem; text-align:right; font-variant-numeric:tabular-nums; }
+        .song-table td.col-weeks { color:var(--text-muted); }
+        .song-table .col-debut { width:7rem; text-align:right; white-space:nowrap; }
+        .song-table td.col-debut { color:var(--text-muted); }
+        .song-table .peak-one { font-weight:700; color:var(--border-accent); }
     </style>
     <link rel="stylesheet" href="/static/paxel.css">
 </head>
@@ -547,16 +573,22 @@
                 </h3>
                 <table class="song-table">
                     <thead>
-                        <tr><th>#</th><th>Title</th><th>Peak</th><th class="col-hide">Weeks</th><th class="col-hide">Debut</th></tr>
+                        <tr>
+                            <th class="col-rank">#</th>
+                            <th class="col-title">Title</th>
+                            <th class="col-peak">Peak</th>
+                            <th class="col-weeks col-hide">Weeks</th>
+                            <th class="col-debut col-hide">Debut</th>
+                        </tr>
                     </thead>
                     <tbody>
                         {% for item in detail['items'] %}
                         <tr data-song="{{ item.name|e }}">
-                            <td>{{ loop.index }}</td>
-                            <td>{{ item.name }}</td>
-                            <td>{% if item.is_number_one %}<strong>#1</strong>{% else %}#{{ item.peak }}{% endif %}</td>
-                            <td class="col-hide"><div class="stat-val">{{ item.weeks }}</div></td>
-                            <td class="col-hide"><div class="stat-val">{{ item.first_date }}</div></td>
+                            <td class="col-rank">{{ loop.index }}</td>
+                            <td class="col-title" title="{{ item.name }}">{{ item.name }}</td>
+                            <td class="col-peak{{ ' peak-one' if item.is_number_one }}">#{{ 1 if item.is_number_one else item.peak }}</td>
+                            <td class="col-weeks col-hide">{{ item.weeks }}</td>
+                            <td class="col-debut col-hide">{{ item.first_date }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -651,37 +683,29 @@
                 // fields are untrusted and this table is rebuilt from JSON on
                 // every chart switch, so no cell may go through innerHTML.
                 const index = document.createElement('td');
+                index.className = 'col-rank';
                 index.textContent = i + 1;
                 tr.appendChild(index);
 
                 const title = document.createElement('td');
+                title.className = 'col-title';
                 title.textContent = item.name;
+                title.title = item.name;   // full name on hover when ellipsized
                 tr.appendChild(title);
 
                 const peak = document.createElement('td');
-                if (item.is_number_one) {
-                    const strong = document.createElement('strong');
-                    strong.textContent = '#1';
-                    peak.appendChild(strong);
-                } else {
-                    peak.textContent = '#' + item.peak;
-                }
+                peak.className = 'col-peak' + (item.is_number_one ? ' peak-one' : '');
+                peak.textContent = '#' + (item.is_number_one ? 1 : item.peak);
                 tr.appendChild(peak);
 
                 const weeks = document.createElement('td');
-                weeks.className = 'col-hide';
-                const weeksVal = document.createElement('div');
-                weeksVal.className = 'stat-val';
-                weeksVal.textContent = item.weeks;
-                weeks.appendChild(weeksVal);
+                weeks.className = 'col-weeks col-hide';
+                weeks.textContent = item.weeks;
                 tr.appendChild(weeks);
 
                 const firstDate = document.createElement('td');
-                firstDate.className = 'col-hide';
-                const firstDateVal = document.createElement('div');
-                firstDateVal.className = 'stat-val';
-                firstDateVal.textContent = item.first_date;
-                firstDate.appendChild(firstDateVal);
+                firstDate.className = 'col-debut col-hide';
+                firstDate.textContent = item.first_date;
                 tr.appendChild(firstDate);
 
                 tbody.appendChild(tr);
