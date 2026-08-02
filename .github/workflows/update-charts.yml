@@ -42,7 +42,11 @@ jobs:
       - name: Commit updated data
         id: commit
         run: |
-          git add data/hot100.csv data/billboard200.csv data/global200.csv data/globalexus.csv data/radio.csv data/digital_songs.csv data/streaming_songs.csv data/artist100.csv data/pop_airplay.csv data/adult_contemporary.csv data/adult_pop_airplay.csv data/rhythmic_airplay.csv data/country_airplay.csv data/alternative_airplay.csv data/rnb_hiphop_airplay.csv data/dance_airplay.csv data/adult_rnb_airplay.csv data/bubbling_under.csv
+          # Glob, not a hand-listed set: this list reached 18 paths and every
+          # new chart needed an edit here that nothing enforces. A chart left
+          # off scraped fine, verified fine, and then silently never committed
+          # — the exact failure this archive cannot afford.
+          git add data/*.csv
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No new chart data."
