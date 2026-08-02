@@ -6,33 +6,44 @@
     <title>Dropouts</title>
     {% include '_head_styles.html' %}
     <style>
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
-    h1 { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; }
-    .page-meta { color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; }
+        .wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+        h1 { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; }
+        .page-meta { color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; }
 
-    .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-             gap: 1rem; margin-top: 2rem; }
+        .chart-block { margin-top: 2.5rem; }
+        .chart-block-head {
+            display: flex; align-items: baseline; justify-content: space-between;
+            gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem;
+        }
+        .chart-block-head h2 { font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.01em; }
+        .chart-block-head h2 a { color: var(--text); text-decoration: none; }
+        .chart-block-head h2 a:hover { text-decoration: underline; }
+        .week-range { font-size: 0.8125rem; color: var(--text-muted); }
 
-    .card { border: 1px solid var(--border); background: var(--surface); }
-    .card-head { display: flex; align-items: baseline; justify-content: space-between;
-                 gap: 0.75rem; padding: 0.875rem 1rem; border-bottom: 1px solid var(--border); }
-    .card-title { font-size: 0.9375rem; font-weight: 600; }
-    .card-count { font-size: 0.8125rem; font-weight: 600; color: var(--text-muted);
-                  white-space: nowrap; }
-    .card-dates { font-size: 0.75rem; color: var(--text-muted); padding: 0 1rem 0.75rem;
-                  margin-top: -0.375rem; }
+        /* Same table shell the chart pages use, so paxel.css lands on it identically. */
+        .chart-table { width: 100%; border-collapse: collapse; }
+        .chart-table thead tr { border-bottom: 1px solid var(--border); }
+        .chart-table thead th {
+            font-size: 0.6875rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.06em; color: var(--text-muted);
+            text-align: left; padding: 0.5rem 0.75rem;
+        }
+        .chart-table thead th.col-rank { width: 56px; text-align: center; }
+        .chart-table thead th.col-stat { text-align: center; width: 68px; }
+        .chart-table tbody tr { border-bottom: 1px solid var(--border); }
+        .chart-table tbody tr:last-child { border-bottom: none; }
+        .chart-table tbody tr:hover { background: var(--surface-hover); box-shadow: inset 3px 0 0 var(--row-hover-bar); }
+        .chart-table td { padding: 0.625rem 0.75rem; vertical-align: middle; }
 
-    ol.gone { list-style: none; margin: 0; padding: 0.5rem 0; }
-    ol.gone li { display: flex; align-items: baseline; gap: 0.625rem;
-                 padding: 0.375rem 1rem; font-size: 0.875rem; }
-    .rank { font-variant-numeric: tabular-nums; color: var(--text-muted);
-            font-size: 0.8125rem; min-width: 2.25rem; }
-    .title { font-weight: 500; }
-    .by { color: var(--text-muted); }
-    .wks { margin-left: auto; color: var(--text-muted); font-size: 0.75rem;
-           white-space: nowrap; }
-    .none { padding: 0.75rem 1rem 1rem; font-size: 0.875rem; color: var(--text-muted); }
+        .cell-rank { text-align: center; }
+        .rank-num { font-size: 0.9375rem; font-weight: 700; color: var(--text-muted); }
+        .song-title { font-size: 0.9375rem; font-weight: 600; color: var(--text); }
+        .song-artist { font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.125rem; }
+        .cell-stat { text-align: center; font-size: 0.8125rem; color: var(--text-muted); }
+
+        .none { font-size: 0.875rem; color: var(--text-muted); padding: 0.75rem 0; }
     </style>
+    <link rel="stylesheet" href="/static/paxel.css">
 </head>
 <body>
 {% include '_nav.html' %}
@@ -41,40 +52,47 @@
     <h1>Dropouts</h1>
     <p class="page-meta">
         {{ total }} entries fell off across {{ reports|length }} charts in the latest week.
-        Each chart is compared against its own previous published week, so charts that
-        skipped a week are still compared like for like.
+        Each chart is compared against its own previous published week, so a chart
+        that skipped a week is still compared like for like.
     </p>
 
-    <div class="board">
-        {% for r in reports %}
-        <div class="card">
-            <div class="card-head">
-                <span class="card-title">
-                    <a href="{{ url_for(r.key) }}">{{ r.label }}</a>
-                </span>
-                <span class="card-count">{{ r.dropouts|length }} of {{ r.previous_size }}</span>
-            </div>
-            <div class="card-dates">{{ r.previous_week }} &rarr; {{ r.current_week }}</div>
-
-            {% if r.dropouts %}
-            <ol class="gone">
-                {% for d in r.dropouts %}
-                <li>
-                    <span class="rank">#{{ d.rank }}</span>
-                    <span>
-                        <span class="title">{{ d.title }}</span>
-                        {% if d.artist %}<span class="by"> &mdash; {{ d.artist }}</span>{% endif %}
-                    </span>
-                    {% if d.weeks %}<span class="wks">{{ d.weeks }} wk{{ '' if d.weeks == 1 else 's' }}</span>{% endif %}
-                </li>
-                {% endfor %}
-            </ol>
-            {% else %}
-            <p class="none">Nothing fell off.</p>
-            {% endif %}
+    {% for r in reports %}
+    <div class="chart-block">
+        <div class="chart-block-head">
+            <h2><a href="{{ url_for(r.key) }}">{{ r.label }}</a></h2>
+            <span class="week-range">
+                {{ r.previous_week }} &rarr; {{ r.current_week }}
+                &middot; {{ r.dropouts|length }} of {{ r.previous_size }}
+            </span>
         </div>
-        {% endfor %}
+
+        {% if r.dropouts %}
+        <table class="chart-table">
+            <thead>
+                <tr>
+                    <th class="col-rank">#</th>
+                    <th>{{ 'Artist' if r.dropouts[0].artist is none else 'Song / Artist' }}</th>
+                    <th class="col-stat">Weeks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in r.dropouts %}
+                <tr>
+                    <td class="cell-rank"><div class="rank-num">{{ d.rank }}</div></td>
+                    <td>
+                        <div class="song-title">{{ d.title }}</div>
+                        {% if d.artist %}<div class="song-artist">{{ d.artist }}</div>{% endif %}
+                    </td>
+                    <td class="cell-stat">{{ d.weeks if d.weeks else '&mdash;'|safe }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="none">Nothing fell off.</p>
+        {% endif %}
     </div>
+    {% endfor %}
 </div>
 </body>
 </html>
