@@ -149,19 +149,29 @@ def test_versus_csv_carries_the_scorecard_and_the_weekly_ranks(application):
     labels = [r[0] for r in rows if r]
     for expected, _key in application._VERSUS_CSV_ROWS:
         assert expected in labels
-    # Weekly section: each artist contributes a rank column and a song column,
-    # so two artists make five columns counting the date.
-    weekly_header = next(r for r in rows if r and r[0] == 'Date')
-    assert weekly_header == ['Date', 'Taylor Swift', 'Taylor Swift song',
-                             'Drake', 'Drake song']
+    # Weekly section: one column per song, laid out like the per-artist export
+    # with an extra row attributing each column to the artist it belongs to.
+    song_row = next(r for r in rows if r and r[0] == 'Song')
+    artist_row = next(r for r in rows if r and r[0] == 'Artist')
+    image_row = next(r for r in rows if r and r[0] == 'Image')
+    assert len(song_row) == len(artist_row) == len(image_row) > 3
+    assert set(artist_row[1:]) == {'Taylor Swift', 'Drake'}
+
     dates = [r for r in rows if r and re.fullmatch(r'\d{1,2}/\d{1,2}/\d{4}', r[0])]
     assert len(dates) > 100
-    assert all(len(r) == 5 for r in dates)
-    # A populated rank must come with the song that earned it — a bare number
-    # cannot tell you which song was charting.
-    assert any(r[1] and r[2] for r in dates)
-    assert all(bool(r[2]) == bool(r[1]) for r in dates), 'rank without a song'
-    assert all(bool(r[4]) == bool(r[3]) for r in dates), 'rank without a song'
+    assert all(len(r) == len(song_row) for r in dates), 'ragged date row'
+
+    # The reason this layout exists: the old one wrote each artist's single
+    # best rank per week, so a week where an artist had several songs charting
+    # lost all but one of them. At least one week must show two ranks for the
+    # same artist, or we have silently gone back to best-only.
+    cols = {}
+    for i in range(1, len(artist_row)):
+        cols.setdefault(artist_row[i], []).append(i)
+    assert any(
+        sum(1 for i in idxs if row[i]) > 1
+        for row in dates for idxs in cols.values()
+    ), 'no week shows more than one song per artist'
 
 
 def test_versus_csv_blanks_stats_nulled_by_chart_kind(application):

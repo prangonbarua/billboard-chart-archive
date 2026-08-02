@@ -576,7 +576,12 @@ def _versus_artist_rows(chart_key, artist_name):
     if df is None or not len(df):
         return pd.DataFrame(columns=['Date', 'Rank', 'Song', 'Artist'])
     mask = artist_match_mask(df['Artist'], artist_name)
-    rows = df.loc[mask, ['Rank', 'Song', 'Artist']].copy()
+    # Image URL rides along when the chart has it so the CSV export can fill
+    # its image row; the scorecard ignores the column.
+    cols = ['Rank', 'Song', 'Artist']
+    if 'Image URL' in df.columns:
+        cols.append('Image URL')
+    rows = df.loc[mask, cols].copy()
     rows['Date'] = CHART_DT[chart_key].loc[rows.index]
     return rows
 
@@ -695,8 +700,9 @@ def download_versus_csv():
     for name in names:
         rows = _versus_artist_rows(chart_key, name)
         entries.append((versus.display_name(rows, name),
-                        versus.compute_artist_stats(rows, kind=meta['kind'])))
-    labels = [d for d, _ in entries]
+                        versus.compute_artist_stats(rows, kind=meta['kind']),
+                        rows))
+    labels = [d for d, _, _ in entries]
 
     buf = io.StringIO()
     w = csvmod.writer(buf)
@@ -707,28 +713,48 @@ def download_versus_csv():
         # A stat nulled for this chart kind writes blank, not 0 — the same
         # distinction the scorecard draws with an em dash.
         w.writerow([label] + [
-            ('' if s.get(key) is None else s[key]) for _, s in entries
+            ('' if s.get(key) is None else s[key]) for _, s, _ in entries
         ])
 
-    # Weekly best rank over the union of every week any of them charted, so
-    # the columns line up on shared dates and gaps stay visible as blanks.
-    w.writerow([])
-    w.writerow(['Weekly best rank'])
-    # Each artist gets a rank column and the song that earned it — a bare rank
-    # column cannot tell you which of their songs was charting that week.
-    header = ['Date']
-    for lab in labels:
-        header += [lab, f'{lab} song']
-    w.writerow(header)
-    weeks = [{p['date']: (p['rank'], p.get('song', '')) for p in s['timeline']}
-             for _, s in entries]
-    for d in sorted({d for m in weeks for d in m}):
-        y, mth, day = d.split('-')
-        row = [f'{int(mth)}/{int(day)}/{y}']
-        for m in weeks:
-            rank, song = m.get(d, ('', ''))
-            row += [rank, song]
-        w.writerow(row)
+    # One column per song, not one per artist. The previous layout wrote each
+    # artist's best rank that week, which meant everything else they had
+    # charting that week simply was not in the file. Each artist gets their own
+    # block of song columns and the blocks share the date rows, so this reads
+    # like the per-artist export with one extra row saying whose song a column
+    # is. A collaboration between two compared artists appears in both blocks,
+    # which is what you want when the point is to compare them.
+    blocks = []
+    for label, _stats, rows in entries:
+        if rows.empty:
+            continue
+        pairs, headers, pivot, images = _song_pivot(rows)
+        if pairs:
+            blocks.append((label, pairs, headers, pivot, images))
+
+    if blocks:
+        w.writerow([])
+        w.writerow(['Weekly rank by song'])
+        song_row, artist_row, image_row = ['Song'], ['Artist'], ['Image']
+        for label, pairs, headers, _pivot, images in blocks:
+            song_row += headers
+            artist_row += [label] * len(headers)
+            image_row += [images.get(p, '') for p in pairs]
+        w.writerow(song_row)
+        w.writerow(artist_row)
+        w.writerow(image_row)
+
+        # Union of every week any of them charted, so the blocks line up on
+        # shared dates and gaps stay visible as blanks.
+        for date in sorted({d for _l, _p, _h, pv, _i in blocks for d in pv.index}):
+            row = [f'{date.month}/{date.day}/{date.year}']
+            for _label, pairs, _headers, pivot, _images in blocks:
+                if date in pivot.index:
+                    ranks = pivot.loc[date]
+                    row += [(int(ranks[p]) if pd.notna(ranks.get(p)) else '')
+                            for p in pairs]
+                else:
+                    row += [''] * len(pairs)
+            w.writerow(row)
 
     stem = '_vs_'.join(
         re.sub(r'[^\w\s-]', '', d).strip().replace(' ', '_') for d in labels[:3]
@@ -1801,13 +1827,17 @@ def get_current_number_one():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def _artist_history_csv(df):
-    """One artist's rows as a song-by-song pivot: songs across the top, an
-    image row, then one row per chart week with each song's rank that week
-    (blank when it was not on the chart). `df` must already be filtered to the
-    artist, with Date parsed."""
-    import io, csv as csvmod
-    df = df.dropna(subset=['Date'])
+def _song_pivot(df):
+    """One artist's rows as songs-across-the-top, weeks-down-the-side.
+
+    Shared by both CSV exports so a song is columned the same way whether you
+    downloaded one artist or a comparison. Returns (pairs, headers, pivot,
+    images): `pairs` are the (song, primary artist) column keys in debut
+    order, `headers` their display titles, `pivot` a Date-indexed frame of
+    ranks, `images` a pair -> URL map. `df` must already be filtered to the
+    artist, with Date parsed.
+    """
+    df = df.dropna(subset=['Date']).copy()
     df['Song'] = df['Song'].astype(str)
     df['Rank'] = pd.to_numeric(df['Rank'], errors='coerce')
 
@@ -1833,6 +1863,16 @@ def _artist_history_csv(df):
             urls = grp['Image URL'].dropna()
             urls = urls[urls.astype(str).str.startswith('http')]
             images[pair] = str(urls.iloc[0]) if len(urls) else ''
+
+    return pairs, headers, pivot, images
+
+
+def _artist_history_csv(df):
+    """One artist's chart history as CSV: songs across the top, an image row,
+    then one row per chart week with each song's rank (blank when it was not
+    on the chart)."""
+    import io, csv as csvmod
+    pairs, headers, pivot, images = _song_pivot(df)
 
     buf = io.StringIO()
     writer = csvmod.writer(buf)
