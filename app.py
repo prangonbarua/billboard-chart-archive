@@ -156,6 +156,16 @@ RNB_HIPHOP_DATA, RNB_HIPHOP_AVAILABLE_DATES = _load_global_chart('rnb_hiphop_air
 DANCE_AIRPLAY_DATA, DANCE_AIRPLAY_AVAILABLE_DATES = _load_global_chart('dance_airplay.csv')
 ADULT_RNB_DATA, ADULT_RNB_AVAILABLE_DATES = _load_global_chart('adult_rnb_airplay.csv')
 
+# Discontinued charts. Billboard stopped publishing these, so the weekly
+# scraper never touches them and their newest week is fixed: Heatseekers Songs
+# ends 2014-11-29, Dance Singles Sales 2007-02-24.
+HEATSEEKERS_DATA, HEATSEEKERS_AVAILABLE_DATES = _load_global_chart('heatseekers_songs.csv')
+DANCE_SALES_DATA, DANCE_SALES_AVAILABLE_DATES = _load_global_chart('dance_singles_sales.csv')
+
+# Bubbling Under IS current, so unlike the two above it joins the weekly
+# scraper. Its archive starts at the chart's 1992 revival, not its 1959 debut.
+BUBBLING_DATA, BUBBLING_AVAILABLE_DATES = _load_global_chart('bubbling_under.csv')
+
 # ── Chart registry ──────────────────────────────────────────────────────────
 # Single source of truth for chart metadata. The nav is built by looping this,
 # so adding a chart cannot leave the nav out of sync — commit cd05690 had to
@@ -183,6 +193,10 @@ CHARTS = {
     'dance_airplay':      dict(label='Dance Airplay',        group='Airplay', depth=40, kind='song'),
     'adult_rnb':          dict(label='Adult R&B Airplay',    group='Airplay', depth=30, kind='song'),
 
+    'heatseekers':   dict(label='Heatseekers Songs',   group='Songs', depth=25, kind='song'),
+    'dance_sales':   dict(label='Dance Singles Sales', group='Songs', depth=25, kind='song'),
+    'bubbling':      dict(label='Bubbling Under Hot 100', group='Songs', depth=25, kind='song'),
+
     'albums200':   dict(label='Billboard 200',    group='Albums & Artists', depth=200, kind='album'),
     'artist100':   dict(label='Artist 100',       group='Albums & Artists', depth=100, kind='artist'),
 }
@@ -205,6 +219,9 @@ CHART_DATA = {
     'rnb_hiphop':  (RNB_HIPHOP_DATA,            RNB_HIPHOP_AVAILABLE_DATES),
     'dance_airplay': (DANCE_AIRPLAY_DATA,       DANCE_AIRPLAY_AVAILABLE_DATES),
     'adult_rnb':   (ADULT_RNB_DATA,             ADULT_RNB_AVAILABLE_DATES),
+    'heatseekers': (HEATSEEKERS_DATA,           HEATSEEKERS_AVAILABLE_DATES),
+    'dance_sales': (DANCE_SALES_DATA,           DANCE_SALES_AVAILABLE_DATES),
+    'bubbling':    (BUBBLING_DATA,              BUBBLING_AVAILABLE_DATES),
     'albums200':   (BILLBOARD_200_DATA,         ALBUMS200_AVAILABLE_DATES),
     'artist100':   (ARTIST100_DATA,             ARTIST100_AVAILABLE_DATES),
 }
@@ -1656,7 +1673,7 @@ def pop_airplay():
 # make every one of these routes serve whichever chart the loop ended on — a bug
 # that renders perfectly and is easy to miss.
 for _key in ('adult_pop', 'adult_contemporary', 'rhythmic', 'country_airplay', 'alternative',
-             'rnb_hiphop', 'dance_airplay', 'adult_rnb'):
+             'rnb_hiphop', 'dance_airplay', 'adult_rnb', 'heatseekers', 'dance_sales', 'bubbling'):
     def _format_chart_page(key=_key):
         df, dates = CHART_DATA[key]
         if df is None:

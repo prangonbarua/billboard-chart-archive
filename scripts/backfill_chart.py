@@ -12,7 +12,9 @@ against the adjacent known week and dropped if the full (rank, song, artist)
 ordering is identical. Real consecutive chart weeks always differ.
 
 Usage:
-  backfill_chart.py <bb-slug> <csv-path> <first-week YYYY-MM-DD>
+  backfill_chart.py <bb-slug> <csv-path> <first-week YYYY-MM-DD> [last-week YYYY-MM-DD]
+
+Pass a last week for a discontinued chart; it defaults to this week.
 """
 
 import hashlib
@@ -49,9 +51,14 @@ def signature_from_frame(df, date):
     return hashlib.sha1('\n'.join(parts).encode()).hexdigest()
 
 
-def saturdays_from(first_week):
+def saturdays_from(first_week, last_week=None):
     d = datetime.strptime(first_week, '%Y-%m-%d')
-    stop = datetime.now() + timedelta(days=6)
+    # Discontinued charts stop being published long before today. Without a
+    # last week, every date after the final one is still requested, and each is
+    # a clamped response that costs a round trip to reject — 1,000+ of them on
+    # a chart that ended in 2007.
+    stop = (datetime.strptime(last_week, '%Y-%m-%d') if last_week
+            else datetime.now() + timedelta(days=6))
     out = []
     while d <= stop:
         out.append(d.strftime('%Y-%m-%d'))
@@ -70,15 +77,16 @@ def save(df, path):
 
 
 def main():
-    if len(sys.argv) != 4:
+    if len(sys.argv) not in (4, 5):
         print(__doc__)
         sys.exit(2)
     slug, csv_path, first_week = sys.argv[1], Path(sys.argv[2]), sys.argv[3]
+    last_week = sys.argv[4] if len(sys.argv) == 5 else None
 
     df = pd.read_csv(csv_path, low_memory=False) if csv_path.exists() else pd.DataFrame(columns=COLUMNS)
     have = set(df['Date'].astype(str)) if len(df) else set()
 
-    wanted = saturdays_from(first_week)
+    wanted = saturdays_from(first_week, last_week)
     missing = [w for w in wanted if w not in have]
     print(f'{slug}: {len(wanted)} weeks total, {len(have)} present, {len(missing)} to fetch', flush=True)
 
