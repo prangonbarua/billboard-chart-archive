@@ -47,6 +47,7 @@
             font-family: inherit; font-size: 0.875rem; padding: 0.5rem 0.75rem;
             border: 1px solid var(--border); background: var(--surface); color: var(--text);
         }
+        .week-form { display: flex; gap: 0.5rem; align-items: center; }
         .picker label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;
                         color: var(--text-muted); font-weight: 600; }
         .none { font-size: 0.875rem; color: var(--text-muted); padding: 0.75rem 0; }
@@ -64,25 +65,37 @@
         skipped a week is still compared like for like.
     </p>
 
-    <form class="picker" method="get" action="{{ url_for('dropouts_page') }}">
-        <label for="chartSelect">Chart</label>
-        <select id="chartSelect" name="chart" onchange="this.form.submit()">
-            {% for group, items in charts.items() %}
-            <optgroup label="{{ group }}">
-                {% for c in items %}
-                <option value="{{ c.key }}" {{ 'selected' if c.key == chart_key }}>{{ c.label }}</option>
+    <div class="picker">
+        {# Same <details> panel the nav uses; its styles come from _nav.html,
+           which is already included above, so this stays in one place. #}
+        <label>Chart</label>
+        <details class="nav-dd">
+            <summary>{{ report.label }} <span class="chev">&#9660;</span></summary>
+            <div class="nav-dd-panel">
+                {% for group in ['Songs', 'Airplay', 'Albums & Artists'] %}
+                    {% if charts.get(group) %}
+                    <div class="nav-dd-group">
+                        <div class="nav-dd-label">{{ group }}</div>
+                        {% for c in charts[group] %}
+                            <a href="{{ url_for('dropouts_page', chart=c.key) }}"
+                               class="{{ 'active' if c.key == chart_key else '' }}">{{ c.label }}</a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 {% endfor %}
-            </optgroup>
-            {% endfor %}
-        </select>
+            </div>
+        </details>
 
-        <label for="weekSelect">Week</label>
-        <select id="weekSelect" name="week" onchange="this.form.submit()">
-            {% for w in report.weeks %}
-            <option value="{{ w }}" {{ 'selected' if w == report.current_week }}>{{ w }}</option>
-            {% endfor %}
-        </select>
-    </form>
+        <form class="week-form" method="get" action="{{ url_for('dropouts_page') }}">
+            <input type="hidden" name="chart" value="{{ chart_key }}">
+            <label for="weekSelect">Week</label>
+            <select id="weekSelect" name="week" onchange="this.form.submit()">
+                {% for w in report.weeks %}
+                <option value="{{ w }}" {{ 'selected' if w == report.current_week }}>{{ w }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
 
     <div class="chart-block">
         <div class="chart-block-head">
