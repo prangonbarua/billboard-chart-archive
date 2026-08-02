@@ -728,11 +728,21 @@ def download_versus_csv():
     # the columns line up on shared dates and gaps stay visible as blanks.
     w.writerow([])
     w.writerow(['Weekly best rank'])
-    w.writerow(['Date'] + labels)
-    weeks = [{p['date']: p['rank'] for p in s['timeline']} for _, s in entries]
+    # Each artist gets a rank column and the song that earned it — a bare rank
+    # column cannot tell you which of their songs was charting that week.
+    header = ['Date']
+    for lab in labels:
+        header += [lab, f'{lab} song']
+    w.writerow(header)
+    weeks = [{p['date']: (p['rank'], p.get('song', '')) for p in s['timeline']}
+             for _, s in entries]
     for d in sorted({d for m in weeks for d in m}):
         y, mth, day = d.split('-')
-        w.writerow([f'{int(mth)}/{int(day)}/{y}'] + [m.get(d, '') for m in weeks])
+        row = [f'{int(mth)}/{int(day)}/{y}']
+        for m in weeks:
+            rank, song = m.get(d, ('', ''))
+            row += [rank, song]
+        w.writerow(row)
 
     stem = '_vs_'.join(
         re.sub(r'[^\w\s-]', '', d).strip().replace(' ', '_') for d in labels[:3]

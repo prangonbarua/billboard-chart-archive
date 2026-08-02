@@ -149,11 +149,19 @@ def test_versus_csv_carries_the_scorecard_and_the_weekly_ranks(application):
     labels = [r[0] for r in rows if r]
     for expected, _key in application._VERSUS_CSV_ROWS:
         assert expected in labels
-    # Weekly section: a date row with a rank for at least one artist.
+    # Weekly section: each artist contributes a rank column and a song column,
+    # so two artists make five columns counting the date.
+    weekly_header = next(r for r in rows if r and r[0] == 'Date')
+    assert weekly_header == ['Date', 'Taylor Swift', 'Taylor Swift song',
+                             'Drake', 'Drake song']
     dates = [r for r in rows if r and re.fullmatch(r'\d{1,2}/\d{1,2}/\d{4}', r[0])]
     assert len(dates) > 100
-    assert all(len(r) == 3 for r in dates)
+    assert all(len(r) == 5 for r in dates)
+    # A populated rank must come with the song that earned it — a bare number
+    # cannot tell you which song was charting.
     assert any(r[1] and r[2] for r in dates)
+    assert all(bool(r[2]) == bool(r[1]) for r in dates), 'rank without a song'
+    assert all(bool(r[4]) == bool(r[3]) for r in dates), 'rank without a song'
 
 
 def test_versus_csv_blanks_stats_nulled_by_chart_kind(application):
