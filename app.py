@@ -154,6 +154,7 @@ COUNTRY_AIRPLAY_DATA, COUNTRY_AIRPLAY_AVAILABLE_DATES = _load_global_chart('coun
 ALTERNATIVE_DATA, ALTERNATIVE_AVAILABLE_DATES = _load_global_chart('alternative_airplay.csv')
 RNB_HIPHOP_DATA, RNB_HIPHOP_AVAILABLE_DATES = _load_global_chart('rnb_hiphop_airplay.csv')
 DANCE_AIRPLAY_DATA, DANCE_AIRPLAY_AVAILABLE_DATES = _load_global_chart('dance_airplay.csv')
+ADULT_RNB_DATA, ADULT_RNB_AVAILABLE_DATES = _load_global_chart('adult_rnb_airplay.csv')
 
 # ── Chart registry ──────────────────────────────────────────────────────────
 # Single source of truth for chart metadata. The nav is built by looping this,
@@ -180,6 +181,7 @@ CHARTS = {
     'alternative':        dict(label='Alternative Airplay', group='Airplay', depth=40, kind='song'),
     'rnb_hiphop':         dict(label='Mainstream R&B/Hip-Hop', group='Airplay', depth=40, kind='song'),
     'dance_airplay':      dict(label='Dance Airplay',        group='Airplay', depth=40, kind='song'),
+    'adult_rnb':          dict(label='Adult R&B Airplay',    group='Airplay', depth=25, kind='song'),
 
     'albums200':   dict(label='Billboard 200',    group='Albums & Artists', depth=200, kind='album'),
     'artist100':   dict(label='Artist 100',       group='Albums & Artists', depth=100, kind='artist'),
@@ -202,6 +204,7 @@ CHART_DATA = {
     'alternative': (ALTERNATIVE_DATA,           ALTERNATIVE_AVAILABLE_DATES),
     'rnb_hiphop':  (RNB_HIPHOP_DATA,            RNB_HIPHOP_AVAILABLE_DATES),
     'dance_airplay': (DANCE_AIRPLAY_DATA,       DANCE_AIRPLAY_AVAILABLE_DATES),
+    'adult_rnb':   (ADULT_RNB_DATA,             ADULT_RNB_AVAILABLE_DATES),
     'albums200':   (BILLBOARD_200_DATA,         ALBUMS200_AVAILABLE_DATES),
     'artist100':   (ARTIST100_DATA,             ARTIST100_AVAILABLE_DATES),
 }
@@ -1556,7 +1559,7 @@ def pop_airplay():
 # make every one of these routes serve whichever chart the loop ended on — a bug
 # that renders perfectly and is easy to miss.
 for _key in ('adult_pop', 'adult_contemporary', 'rhythmic', 'country_airplay', 'alternative',
-             'rnb_hiphop', 'dance_airplay'):
+             'rnb_hiphop', 'dance_airplay', 'adult_rnb'):
     def _format_chart_page(key=_key):
         df, dates = CHART_DATA[key]
         if df is None:

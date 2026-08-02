@@ -300,6 +300,7 @@ def main():
     update_chart_data('country-airplay', 'data/country_airplay.csv', weeks_to_fetch=15)
     update_chart_data('alternative-airplay', 'data/alternative_airplay.csv', weeks_to_fetch=15)
     update_chart_data('mainstream-r-and-b-hip-hop', 'data/rnb_hiphop_airplay.csv', weeks_to_fetch=15)
+    update_chart_data('adult-r-and-b-songs', 'data/adult_rnb_airplay.csv', weeks_to_fetch=15)
     update_chart_data('hot-dance-airplay', 'data/dance_airplay.csv', weeks_to_fetch=15)
 
     print("\n" + "="*60)
