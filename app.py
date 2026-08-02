@@ -1309,38 +1309,49 @@ def _deezer_fallback_query(title, artist_credit):
     bare_title = re.sub(r'\s*\([^)]*\)', '', title).strip() or title
     return f"{bare_title} {primary_artist(artist_credit)}"
 
+def _deezer_track_payload(artist_name, song_name):
+    """Deezer artwork for one track as the API's payload dict, or None.
+
+    Split out of the route so the CSV exports can reach the same lookup and,
+    more importantly, the same _deezer_cache: nine of the charts store no
+    Image URL column at all, so their exports resolve artwork here instead.
+    """
+    cache_key = ('track', artist_name.casefold(), song_name.casefold())
+    cached = _deezer_cache_get(cache_key)
+    if cached:
+        return cached
+
+    from urllib.parse import quote
+
+    query = f"{song_name} {artist_name}"
+    url = f"https://api.deezer.com/search/track?q={quote(query)}&limit=3"
+
+    items = _deezer_search_items(url)
+    if not items:
+        simple = _deezer_fallback_query(song_name, artist_name)
+        if simple.casefold() != query.casefold():
+            items = _deezer_search_items(f"https://api.deezer.com/search/track?q={quote(simple)}&limit=3")
+    for item in items:
+        cover = item.get('album', {}).get('cover_xl') or item.get('album', {}).get('cover_big', '')
+        if cover:
+            payload = {
+                'image_url': cover,
+                'track_name': item.get('title', ''),
+                'source': 'deezer'
+            }
+            _deezer_cache_put(cache_key, payload)
+            return payload
+    return None
+
+
 @app.route('/api/song-image/<path:artist_name>/<path:song_name>')
 @limiter.exempt
 def get_song_image(artist_name, song_name):
     """API endpoint to get song artwork from Deezer API"""
-
-    cache_key = ('track', artist_name.casefold(), song_name.casefold())
-    cached = _deezer_cache_get(cache_key)
-    if cached:
-        return jsonify(cached)
-
     try:
-        from urllib.parse import quote
-
-        query = f"{song_name} {artist_name}"
-        url = f"https://api.deezer.com/search/track?q={quote(query)}&limit=3"
-
-        items = _deezer_search_items(url)
-        if not items:
-            simple = _deezer_fallback_query(song_name, artist_name)
-            if simple.casefold() != query.casefold():
-                items = _deezer_search_items(f"https://api.deezer.com/search/track?q={quote(simple)}&limit=3")
-        for item in items:
-            cover = item.get('album', {}).get('cover_xl') or item.get('album', {}).get('cover_big', '')
-            if cover:
-                payload = {
-                    'image_url': cover,
-                    'track_name': item.get('title', ''),
-                    'source': 'deezer'
-                }
-                _deezer_cache_put(cache_key, payload)
-                return jsonify(payload)
-
+        payload = _deezer_track_payload(artist_name, song_name)
+        if payload:
+            return jsonify(payload)
         return jsonify({'error': 'Track not found'}), 404
 
     except Exception as e:
@@ -1953,7 +1964,77 @@ def _song_pivot(df):
             urls = urls[urls.astype(str).str.startswith('http')]
             images[pair] = str(urls.iloc[0]) if len(urls) else ''
 
+    _fill_missing_images(pairs, images, latest_credit)
     return pairs, headers, pivot, images
+
+
+# Nine charts (every genre/format airplay CSV, which the newer backfill pipeline
+# writes) have no Image URL column, so their exports used to emit a blank Image
+# row. Fill from two sources, cheapest first: the charts that DO carry image
+# URLs, then Deezer — the same lookup the song pages use, so a CSV agrees with
+# what the site shows.
+_local_image_index = None
+
+
+def _build_local_image_index():
+    """(song, primary artist) -> artwork URL, from every in-memory chart frame
+    that carries an Image URL column. Built once, lazily: it costs a pass over
+    ~500k rows and only the CSV exports need it."""
+    index = {}
+    for key, (frame, _dates) in CHART_DATA.items():
+        if frame is None or 'Image URL' not in frame.columns:
+            continue
+        sub = frame[['Song', 'Artist', 'Image URL']].dropna(subset=['Image URL'])
+        sub = sub[sub['Image URL'].astype(str).str.startswith('http')]
+        for song, artist, url in sub.itertuples(index=False):
+            index.setdefault((str(song).casefold().strip(), primary_artist(str(artist))), str(url))
+    return index
+
+
+# Live lookups are capped per export so one download of a prolific artist cannot
+# turn into hundreds of serial API calls. Cache hits do not count against it, so
+# a repeated export keeps filling in past the cap.
+_DEEZER_EXPORT_LOOKUPS = 120
+
+
+def _fill_missing_images(pairs, images, latest_credit):
+    """Fill blank entries of `images` in place. Returns nothing; blanks that
+    survive both sources stay blank rather than guessing."""
+    missing = [p for p in pairs if not images.get(p)]
+    if not missing:
+        return
+
+    global _local_image_index
+    if _local_image_index is None:
+        _local_image_index = _build_local_image_index()
+
+    still_missing = []
+    for pair in missing:
+        song, artist = pair
+        url = _local_image_index.get((str(song).casefold().strip(), artist))
+        if url:
+            images[pair] = url
+        else:
+            still_missing.append(pair)
+
+    budget = _DEEZER_EXPORT_LOOKUPS
+    for pair in still_missing:
+        song, artist = pair
+        # Search on the fullest credit seen for the song, which is what the
+        # song pages send and therefore what is already in the cache.
+        credit = str(latest_credit.get(pair, artist))
+        cache_key = ('track', credit.casefold(), str(song).casefold())
+        if _deezer_cache_get(cache_key) is None:
+            if budget <= 0:
+                continue
+            budget -= 1
+        try:
+            payload = _deezer_track_payload(credit, str(song))
+        except Exception as e:      # network/parse — a CSV should still download
+            print(f"Deezer image lookup failed for '{song}' by {credit}: {e}")
+            continue
+        if payload and payload.get('image_url'):
+            images[pair] = payload['image_url']
 
 
 def _artist_history_csv(df):
