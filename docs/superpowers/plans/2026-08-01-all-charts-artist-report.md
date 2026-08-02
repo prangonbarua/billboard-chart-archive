@@ -760,17 +760,44 @@ Add to the `<script>` block in `templates/results.html`, after the existing `cha
             detail.items.forEach((item, i) => {
                 const tr = document.createElement('tr');
                 tr.dataset.song = item.name;
-                const peak = item.is_number_one
-                    ? '<strong>#1</strong>' : '#' + item.peak;
-                // textContent for the title: scraped titles are untrusted and
-                // this table is rebuilt from JSON on every chart switch.
+
+                // Every cell is built with createElement/textContent: scraped
+                // fields are untrusted and this table is rebuilt from JSON on
+                // every chart switch, so no cell may go through innerHTML.
+                const index = document.createElement('td');
+                index.textContent = i + 1;
+                tr.appendChild(index);
+
                 const title = document.createElement('td');
                 title.textContent = item.name;
-                tr.innerHTML = '<td>' + (i + 1) + '</td>'
-                    + '<td></td><td>' + peak + '</td>'
-                    + '<td class="col-hide"><div class="stat-val">' + item.weeks + '</div></td>'
-                    + '<td class="col-hide"><div class="stat-val">' + item.first_date + '</div></td>';
-                tr.replaceChild(title, tr.children[1]);
+                tr.appendChild(title);
+
+                const peak = document.createElement('td');
+                if (item.is_number_one) {
+                    const strong = document.createElement('strong');
+                    strong.textContent = '#1';
+                    peak.appendChild(strong);
+                } else {
+                    peak.textContent = '#' + item.peak;
+                }
+                tr.appendChild(peak);
+
+                const weeks = document.createElement('td');
+                weeks.className = 'col-hide';
+                const weeksVal = document.createElement('div');
+                weeksVal.className = 'stat-val';
+                weeksVal.textContent = item.weeks;
+                weeks.appendChild(weeksVal);
+                tr.appendChild(weeks);
+
+                const firstDate = document.createElement('td');
+                firstDate.className = 'col-hide';
+                const firstDateVal = document.createElement('div');
+                firstDateVal.className = 'stat-val';
+                firstDateVal.textContent = item.first_date;
+                firstDate.appendChild(firstDateVal);
+                tr.appendChild(firstDate);
+
                 tbody.appendChild(tr);
             });
             renderGraph(detail.series);

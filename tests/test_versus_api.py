@@ -65,11 +65,11 @@ def test_versus_empty_artists_param_returns_empty_list(application):
     assert r.get_json()['artists'] == []
 
 
-def test_artists_endpoint_without_chart_is_unchanged(application):
+def test_artists_endpoint_without_chart_uses_all_artists_pool(application):
     r = application.app.test_client().get('/api/artists?q=tay')
     assert r.status_code == 200
     names = r.get_json()['artists']
-    assert names == [a for a in application.MODERN_ARTISTS
+    assert names == [a for a in application.ALL_ARTISTS
                      if a.lower().startswith('tay')][:50]
 
 

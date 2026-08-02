@@ -468,6 +468,22 @@
             .col-hide { display: none; }
             .artist-profile { flex-direction: column; text-align: center; }
         }
+        .coverage-head { display:flex; align-items:baseline; justify-content:space-between; gap:1rem; margin:2rem 0 0.75rem; }
+        .coverage-title { font-size:1rem; font-weight:700; color:var(--text); }
+        .coverage-count { font-size:0.75rem; color:var(--text-muted); }
+        .coverage-scroll { overflow-x:auto; }
+        .coverage-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+        .coverage-table th { text-align:left; font-size:0.68rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); padding:0.5rem 0.75rem; border-bottom:1px solid var(--border); }
+        .coverage-table td { padding:0.6rem 0.75rem; border-bottom:1px solid var(--border); white-space:nowrap; }
+        .coverage-row { cursor:pointer; }
+        .coverage-row.is-selected { background:var(--surface-hover); font-weight:700; }
+        .coverage-label { white-space:nowrap; }
+        .coverage-note { font-size:0.75rem; color:var(--text-muted); margin:0.5rem 0 0; }
+        .detail-head { display:flex; align-items:baseline; justify-content:space-between; gap:1rem; margin:2rem 0 0.5rem; }
+        .detail-title { font-size:1rem; font-weight:700; color:var(--text); }
+        .detail-download { font-size:0.75rem; color:var(--text-muted); }
+        .detail-subtitle { font-size:0.8rem; color:var(--text-muted); margin:0 0 0.5rem; }
+        .chart-wrap { border:1px solid var(--border); border-radius:12px; background:var(--surface); margin:0 0 1.5rem; }
     </style>
     <link rel="stylesheet" href="/static/paxel.css">
 </head>
@@ -480,115 +496,72 @@
             <div class="page-header-top">
                 <div>
                     <div class="page-title">{{ artist_name }}</div>
-                    <div class="page-subtitle">U.S. Top Charts 100 — Chart History</div>
+                    <div class="page-subtitle">Chart History</div>
                 </div>
-                <a class="dl-csv" href="{{ url_for('download_csv', artist_name=artist_name) }}">Download CSV</a>
             </div>
-            <div class="stats-row">
-                <div class="stat-pill">
-                    <span class="stat-pill-value">{{ total_songs }}</span>
-                    <span class="stat-pill-label">Songs Charted</span>
-                </div>
-                <div class="stat-pill">
-                    <span class="stat-pill-value">{{ top_10_hits }}</span>
-                    <span class="stat-pill-label">Top 10 Hits</span>
-                </div>
-                <div class="stat-pill">
-                    <span class="stat-pill-value">{{ number_ones }}</span>
-                    <span class="stat-pill-label">#1 Songs</span>
-                </div>
-                {% if albums and albums|length > 0 %}
-                <div class="stat-pill">
-                    <span class="stat-pill-value">{{ total_albums }}</span>
-                    <span class="stat-pill-label">Albums Charted</span>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Songs / Albums Table -->
-        <div class="card">
-            <div class="tabs-nav">
-                <button class="tab-btn active" id="songsTab" onclick="switchTab('songs')">Songs ({{ total_songs }})</button>
-                {% if albums and albums|length > 0 %}
-                <button class="tab-btn" id="albumsTab" onclick="switchTab('albums')">Albums ({{ total_albums }})</button>
-                {% endif %}
+            <div class="coverage-head">
+                <h2 class="coverage-title">Chart coverage</h2>
+                <span class="coverage-count">charted on {{ coverage|length }} of {{ coverage|length + hidden_count }}</span>
             </div>
 
-            <div id="songsContent">
-                <table class="chart-table">
-                    <thead>
-                        <tr>
-                            <th>Peak</th>
-                            <th class="cell-art"></th>
-                            <th>Song</th>
-                            <th class="col-hide">Weeks</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for song in songs %}
-                        <tr class="{% if song.is_number_one %}row-number-one{% endif %}"
-                            data-song="{{ song.name|e }}"
-                            data-song-only="{{ song.song_only|e }}"
-                            data-artist-only="{{ song.artist_only|e }}">
-                            <td>
-                                <div class="peak-badge-cell {% if song.peak == 1 %}peak-1{% elif song.peak <= 10 %}peak-top10{% endif %}">#{{ song.peak }}</div>
-                            </td>
-                            <td class="cell-art">
-                                <div class="art-thumb">
-                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Crect fill='%23f5f5f3' width='44' height='44'/%3E%3C/svg%3E"
-                                         alt="" loading="lazy">
-                                </div>
-                            </td>
-                            <td>
-                                <div class="song-title">{{ song.song_only }}</div>
-                                
-                            </td>
-                            <td class="col-hide"><div class="stat-val">{{ song.weeks }}</div></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="coverage-scroll">
+            <table class="coverage-table" data-selected-chart="{{ selected_key|e }}">
+                <thead>
+                    <tr>
+                        <th>Chart</th><th>Peak</th><th>Entries</th>
+                        <th>#1s</th><th>Weeks</th><th>Span</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in coverage %}
+                    <tr class="coverage-row{% if c.key == selected_key %} is-selected{% endif %}"
+                        data-chart="{{ c.key|e }}">
+                        <td class="coverage-label">{{ c.label }}</td>
+                        <td>{% if c.best_peak %}#{{ c.best_peak }}{% else %}&mdash;{% endif %}</td>
+                        <td>{% if c.entries is none %}&mdash;{% else %}{{ c.entries }}{% endif %}</td>
+                        <td>{% if c.number_ones is none %}&mdash;{% else %}{{ c.number_ones }}{% endif %}</td>
+                        <td>{{ c.total_weeks_charted }}</td>
+                        <td>{{ c.first_entry[:4] }}&ndash;{{ c.last_entry[:4] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
             </div>
-
-            {% if albums and albums|length > 0 %}
-            <div id="albumsContent" style="display:none;">
-                <table class="chart-table">
-                    <thead>
-                        <tr>
-                            <th>Peak</th>
-                            <th class="cell-art"></th>
-                            <th>Album</th>
-                            <th class="col-hide">Weeks</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for album in albums %}
-                        <tr class="{% if album.is_number_one %}row-number-one{% endif %}"
-                            data-album="{{ album.name|e }}"
-                            data-album-only="{{ album.album_only|e }}"
-                            data-artist-only="{{ album.artist_only|e }}">
-                            <td>
-                                <div class="peak-badge-cell {% if album.peak == 1 %}peak-1{% elif album.peak <= 10 %}peak-top10{% endif %}">#{{ album.peak }}</div>
-                            </td>
-                            <td class="cell-art">
-                                <div class="art-thumb">
-                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Crect fill='%23f5f5f3' width='44' height='44'/%3E%3C/svg%3E"
-                                         alt="" loading="lazy">
-                                </div>
-                            </td>
-                            <td>
-                                <div class="song-title">{{ album.name }}</div>
-                                
-                            </td>
-                            <td class="col-hide"><div class="stat-val">{{ album.weeks }}</div></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            {% if hidden_count %}
+            <p class="coverage-note">{{ hidden_count }} chart{{ 's' if hidden_count != 1 }} with no entries {{ 'are' if hidden_count != 1 else 'is' }} hidden.</p>
             {% endif %}
-        </div>
+
+            <div class="detail-head">
+                <h2 class="detail-title" id="detailTitle">{{ detail.chart.label }}</h2>
+                <a class="detail-download" id="detailDownload"
+                   href="/download-csv/{{ artist_name|urlencode }}?chart={{ selected_key|e }}">Download CSV</a>
+            </div>
+
+            <div class="chart-wrap">
+                <canvas id="chartCanvas"></canvas>
+            </div>
+
+            <div id="detailTable">
+                <h3 class="detail-subtitle" id="detailCount">
+                    {{ 'Albums' if detail.chart.kind == 'album' else 'Songs' }} ({{ detail['items']|length }})
+                </h3>
+                <table class="song-table">
+                    <thead>
+                        <tr><th>#</th><th>Title</th><th>Peak</th><th class="col-hide">Weeks</th><th class="col-hide">Debut</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for item in detail['items'] %}
+                        <tr data-song="{{ item.name|e }}">
+                            <td>{{ loop.index }}</td>
+                            <td>{{ item.name }}</td>
+                            <td>{% if item.is_number_one %}<strong>#1</strong>{% else %}#{{ item.peak }}{% endif %}</td>
+                            <td class="col-hide"><div class="stat-val">{{ item.weeks }}</div></td>
+                            <td class="col-hide"><div class="stat-val">{{ item.first_date }}</div></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
 
         <!-- Weekly Detail Modal -->
         <div id="songModal" class="modal">
@@ -629,49 +602,158 @@
         </footer>
     </div>
 
+    <!-- Chart.js v4.4.4 (MIT), vendored rather than loaded from a CDN: this
+         page is the only external-script consumer in the app, and a deployed
+         site should not lose its graph to someone else's outage or to a
+         network that filters the CDN. -->
+    <script src="{{ url_for('static', filename='js/chart.umd.js') }}"></script>
     <script>
-        const chartData = {{ chart_data|tojson }};
-        const artistName = {{ artist_name|tojson }};
+        const ARTIST_NAME = {{ artist_name|tojson }};
+        const detailCache = { {{ selected_key|tojson }}: {{ detail|tojson }} };
+        let selectedChart = {{ selected_key|tojson }};
+        let currentDetail = detailCache[selectedChart];
 
-        // ── Lazy load artwork ─────────────────────────────────────────
-        const imgObserver = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                if (!entry.isIntersecting) return;
-                const img = entry.target;
-                if (img.dataset.loaded) return;
-                img.dataset.loaded = '1';
-                const row = img.closest('tr');
-                if (!row) return;
-                const songOnly = row.dataset.songOnly;
-                const albumOnly = row.dataset.albumOnly;
-                const artistOnly = row.dataset.artistOnly;
-                const endpoint = songOnly
-                    ? '/api/song-image/' + encodeURIComponent(artistOnly) + '/' + encodeURIComponent(songOnly)
-                    : albumOnly
-                    ? '/api/album-image/' + encodeURIComponent(artistOnly) + '/' + encodeURIComponent(albumOnly)
-                    : null;
-                if (endpoint) {
-                    fetch(endpoint)
-                        .then(r => r.ok ? r.json() : Promise.reject())
-                        .then(d => { if (d.image_url) img.src = d.image_url; })
-                        .catch(() => {});
-                }
-                imgObserver.unobserve(img);
+        async function selectChart(key) {
+            if (key === selectedChart) return;
+            let detail = detailCache[key];
+            if (!detail) {
+                const url = '/api/artist-chart?artist=' + encodeURIComponent(ARTIST_NAME)
+                          + '&chart=' + encodeURIComponent(key);
+                const res = await fetch(url);
+                if (!res.ok) return;
+                detail = await res.json();
+                detailCache[key] = detail;
+            }
+            selectedChart = key;
+            document.querySelectorAll('.coverage-row').forEach(r => {
+                r.classList.toggle('is-selected', r.dataset.chart === key);
             });
-        }, { rootMargin: '100px' });
-        document.querySelectorAll('.art-thumb img').forEach(img => imgObserver.observe(img));
+            renderDetail(detail);
+        }
 
-        // ── Row animations ────────────────────────────────────────────
-        document.querySelectorAll('.chart-table tbody tr').forEach((row, i) => {
-            row.style.animationDelay = Math.min(i * 0.025, 1.0) + 's';
+        function renderDetail(detail) {
+            currentDetail = detail;
+            const noun = detail.chart.kind === 'album' ? 'Albums' : 'Songs';
+            document.getElementById('detailTitle').textContent = detail.chart.label;
+            document.getElementById('detailCount').textContent =
+                noun + ' (' + detail.items.length + ')';
+            document.getElementById('detailDownload').href =
+                '/download-csv/' + encodeURIComponent(ARTIST_NAME)
+                + '?chart=' + encodeURIComponent(detail.chart.key);
+
+            const tbody = document.querySelector('#detailTable tbody');
+            tbody.innerHTML = '';
+            detail.items.forEach((item, i) => {
+                const tr = document.createElement('tr');
+                tr.dataset.song = item.name;
+
+                // Every cell is built with createElement/textContent: scraped
+                // fields are untrusted and this table is rebuilt from JSON on
+                // every chart switch, so no cell may go through innerHTML.
+                const index = document.createElement('td');
+                index.textContent = i + 1;
+                tr.appendChild(index);
+
+                const title = document.createElement('td');
+                title.textContent = item.name;
+                tr.appendChild(title);
+
+                const peak = document.createElement('td');
+                if (item.is_number_one) {
+                    const strong = document.createElement('strong');
+                    strong.textContent = '#1';
+                    peak.appendChild(strong);
+                } else {
+                    peak.textContent = '#' + item.peak;
+                }
+                tr.appendChild(peak);
+
+                const weeks = document.createElement('td');
+                weeks.className = 'col-hide';
+                const weeksVal = document.createElement('div');
+                weeksVal.className = 'stat-val';
+                weeksVal.textContent = item.weeks;
+                weeks.appendChild(weeksVal);
+                tr.appendChild(weeks);
+
+                const firstDate = document.createElement('td');
+                firstDate.className = 'col-hide';
+                const firstDateVal = document.createElement('div');
+                firstDateVal.className = 'stat-val';
+                firstDateVal.textContent = item.first_date;
+                firstDate.appendChild(firstDateVal);
+                tr.appendChild(firstDate);
+
+                tbody.appendChild(tr);
+            });
+            renderGraph(detail.series);
+        }
+
+        document.querySelectorAll('.coverage-row').forEach(row => {
+            row.addEventListener('click', () => selectChart(row.dataset.chart));
         });
+
+        // ── Rank-history graph ───────────────────────────────────────
+        // Series are separated by lightness within the site's own greens rather
+        // than by hue, so the graph stays inside the green/ink/white palette the
+        // rest of the site uses. Rank lines rarely overlap densely enough to
+        // need a second hue family.
+        const GRAPH_COLORS = ['#0c492c', '#12653d', '#1a8a54', '#0fbf74',
+                              '#02ff9a', '#7fffc9', '#111111', '#71717a'];
+
+        let rankChart = null;
+        function renderGraph(series) {
+            if (rankChart) { rankChart.destroy(); rankChart = null; }
+            const canvas = document.getElementById('chartCanvas');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            const labels = [...new Set(Object.values(series).flatMap(points => points.map(p => p.date)))].sort();
+            const datasets = Object.entries(series).map(([title, points], i) => {
+                const byDate = new Map(points.map(p => [p.date, p.rank]));
+                return {
+                    label: title,
+                    data: labels.map(d => byDate.has(d) ? byDate.get(d) : null),
+                    borderColor: GRAPH_COLORS[i % GRAPH_COLORS.length],
+                    backgroundColor: 'transparent',
+                    spanGaps: false,
+                    borderWidth: 2,
+                    pointRadius: 1,
+                    tension: 0,
+                };
+            });
+
+            rankChart = new Chart(canvas.getContext('2d'), {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    animation: false,
+                    responsive: true,
+                    interaction: { mode: 'nearest', intersect: false },
+                    scales: {
+                        y: { reverse: true, title: { display: true, text: 'Rank' }, ticks: { precision: 0 } },
+                        x: { ticks: { maxRotation: 0, autoSkip: true } },
+                    },
+                    plugins: {
+                        legend: { display: datasets.length > 1 && datasets.length <= 12 },
+                    },
+                },
+            });
+        }
+
+        renderGraph(currentDetail.series);
 
         // ── Row clicks ────────────────────────────────────────────────
-        document.querySelectorAll('#songsContent tbody tr').forEach(row => {
-            row.addEventListener('click', () => showSongDetails(row.dataset.song));
-        });
-        document.querySelectorAll('#albumsContent tbody tr').forEach(row => {
-            row.addEventListener('click', () => showAlbumDetails(row.dataset.album));
+        // Delegated on the tbody, not bound per-row: renderDetail rebuilds
+        // the rows on every chart switch, so a one-time forEach would only
+        // ever reach the rows present at page load.
+        document.querySelector('#detailTable tbody').addEventListener('click', e => {
+            const row = e.target.closest('tr');
+            if (!row || !row.dataset.song) return;
+            if (currentDetail && currentDetail.chart.kind === 'album') {
+                showAlbumDetails(row.dataset.song);
+            } else {
+                showSongDetails(row.dataset.song);
+            }
         });
 
         // ── Modal helpers ─────────────────────────────────────────────
@@ -761,14 +843,16 @@
 
             // Fetch Spotify stream count from kworb (best-effort).
             // Find the row for this song to get artist_only / song_only
-            const row = document.querySelector('#songsContent tbody tr[data-song="' + CSS.escape(songName) + '"]');
+            const row = document.querySelector('#detailTable tbody tr[data-song="' + CSS.escape(songName) + '"]');
             if (row && row.dataset.artistOnly && row.dataset.songOnly) {
                 loadSongStreams(row.dataset.artistOnly, row.dataset.songOnly);
             } else {
                 document.getElementById('songStreamsStrip').style.display = 'none';
             }
 
-            const data = chartData[songName];
+            // currentDetail.series holds this chart's rank history, keyed by
+            // title, straight from the same fetch that populated the table.
+            const data = currentDetail && currentDetail.series ? currentDetail.series[songName] : null;
             if (!data || !data.length) {
                 const p = document.createElement('p');
                 p.style.color = 'var(--text-muted)';
@@ -801,7 +885,7 @@
             loading.textContent = 'Loading\u2026';
             container.appendChild(loading);
 
-            fetch('/api/album-history?artist=' + encodeURIComponent(artistName) + '&album=' + encodeURIComponent(albumName))
+            fetch('/api/album-history?artist=' + encodeURIComponent(ARTIST_NAME) + '&album=' + encodeURIComponent(albumName))
                 .then(r => r.ok ? r.json() : Promise.reject())
                 .then(data => {
                     container.textContent = '';
@@ -842,16 +926,6 @@
                 rateLimitModal.style.display = 'none';
             }
         });
-
-        // ── Tab switching ─────────────────────────────────────────────
-        function switchTab(tab) {
-            document.getElementById('songsContent').style.display = tab === 'songs' ? '' : 'none';
-            const ac = document.getElementById('albumsContent');
-            if (ac) ac.style.display = tab === 'albums' ? '' : 'none';
-            document.getElementById('songsTab').classList.toggle('active', tab === 'songs');
-            const at = document.getElementById('albumsTab');
-            if (at) at.classList.toggle('active', tab === 'albums');
-        }
 
     </script>
 </body>
