@@ -766,7 +766,7 @@ def download_versus_csv():
         'Content-Disposition': f'attachment; filename="{stem}_{chart_key}.csv"'})
 
 
-def chart_dropouts(chart_key):
+def chart_dropouts(chart_key, week=None):
     """Entries on a chart's previous published week that are gone from its latest.
 
     Two things here are easy to get wrong.
@@ -793,7 +793,18 @@ def chart_dropouts(chart_key):
     weeks = sorted(dt.dropna().unique())
     if len(weeks) < 2:
         return None
-    current_week, previous_week = weeks[-1], weeks[-2]
+
+    # `week` selects which week to report on; its comparison partner is always
+    # the week immediately before it in this index, never a date arithmetic
+    # step. The first week has no predecessor and so can never be reported on.
+    index = len(weeks) - 1
+    if week:
+        wanted = pd.to_datetime(week, errors='coerce')
+        if not pd.isna(wanted) and wanted in weeks:
+            index = weeks.index(wanted)
+    if index == 0:
+        index = 1
+    current_week, previous_week = weeks[index], weeks[index - 1]
     is_artist_chart = CHARTS[chart_key]['kind'] == 'artist'
 
     def entry_key(song, artist):
@@ -820,18 +831,24 @@ def chart_dropouts(chart_key):
         'previous_week': previous_week.strftime('%Y-%m-%d'),
         'previous_size': len(before),
         'dropouts': gone,
+        'weeks': [w.strftime('%Y-%m-%d') for w in reversed(weeks[1:])],
     }
 
 
 @app.route('/dropouts')
 @limiter.exempt
 def dropouts_page():
-    """What fell off every chart in the most recent week."""
-    reports = [r for r in (chart_dropouts(k) for k in CHARTS) if r]
+    """What fell off a chart in a given week. All state is in the URL so a
+    particular week's dropouts are shareable and back/forward works."""
+    chart_key = request.args.get('chart', 'top100')
+    if chart_key not in CHARTS or CHART_DATA.get(chart_key, (None, None))[0] is None:
+        chart_key = 'top100'
+    report = chart_dropouts(chart_key, request.args.get('week'))
     return render_template(
         'dropouts.html',
-        reports=reports,
-        total=sum(len(r['dropouts']) for r in reports),
+        report=report,
+        chart_key=chart_key,
+        charts=available_charts(),
     )
 
 

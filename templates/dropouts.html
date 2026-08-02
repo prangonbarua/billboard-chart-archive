@@ -41,6 +41,14 @@
         .song-artist { font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.125rem; }
         .cell-stat { text-align: center; font-size: 0.8125rem; color: var(--text-muted); }
 
+
+        .picker { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 1.5rem 0 0; }
+        .picker select {
+            font-family: inherit; font-size: 0.875rem; padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border); background: var(--surface); color: var(--text);
+        }
+        .picker label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;
+                        color: var(--text-muted); font-weight: 600; }
         .none { font-size: 0.875rem; color: var(--text-muted); padding: 0.75rem 0; }
     </style>
     <link rel="stylesheet" href="/static/paxel.css">
@@ -51,48 +59,66 @@
 <div class="wrap">
     <h1>Dropouts</h1>
     <p class="page-meta">
-        {{ total }} entries fell off across {{ reports|length }} charts in the latest week.
-        Each chart is compared against its own previous published week, so a chart
-        that skipped a week is still compared like for like.
+        What fell off a chart from one published week to the next. The comparison
+        partner is always the previous <em>published</em> week, so a chart that
+        skipped a week is still compared like for like.
     </p>
 
-    {% for r in reports %}
+    <form class="picker" method="get" action="{{ url_for('dropouts_page') }}">
+        <label for="chartSelect">Chart</label>
+        <select id="chartSelect" name="chart" onchange="this.form.submit()">
+            {% for group, items in charts.items() %}
+            <optgroup label="{{ group }}">
+                {% for c in items %}
+                <option value="{{ c.key }}" {{ 'selected' if c.key == chart_key }}>{{ c.label }}</option>
+                {% endfor %}
+            </optgroup>
+            {% endfor %}
+        </select>
+
+        <label for="weekSelect">Week</label>
+        <select id="weekSelect" name="week" onchange="this.form.submit()">
+            {% for w in report.weeks %}
+            <option value="{{ w }}" {{ 'selected' if w == report.current_week }}>{{ w }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
     <div class="chart-block">
         <div class="chart-block-head">
-            <h2><a href="{{ url_for(r.key) }}">{{ r.label }}</a></h2>
+            <h2><a href="{{ url_for(report.key) }}">{{ report.label }}</a></h2>
             <span class="week-range">
-                {{ r.previous_week }} &rarr; {{ r.current_week }}
-                &middot; {{ r.dropouts|length }} of {{ r.previous_size }}
+                {{ report.previous_week }} &rarr; {{ report.current_week }}
+                &middot; {{ report.dropouts|length }} of {{ report.previous_size }} fell off
             </span>
         </div>
 
-        {% if r.dropouts %}
+        {% if report.dropouts %}
         <table class="chart-table">
             <thead>
                 <tr>
                     <th class="col-rank">#</th>
-                    <th>{{ 'Artist' if r.dropouts[0].artist is none else 'Song / Artist' }}</th>
+                    <th>{{ 'Artist' if report.dropouts[0].artist is none else 'Song / Artist' }}</th>
                     <th class="col-stat">Weeks</th>
                 </tr>
             </thead>
             <tbody>
-                {% for d in r.dropouts %}
+                {% for d in report.dropouts %}
                 <tr>
                     <td class="cell-rank"><div class="rank-num">{{ d.rank }}</div></td>
                     <td>
                         <div class="song-title">{{ d.title }}</div>
                         {% if d.artist %}<div class="song-artist">{{ d.artist }}</div>{% endif %}
                     </td>
-                    <td class="cell-stat">{{ d.weeks if d.weeks else '&mdash;'|safe }}</td>
+                    <td class="cell-stat">{{ d.weeks if d.weeks else '—' }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         {% else %}
-        <p class="none">Nothing fell off.</p>
+        <p class="none">Nothing fell off this week.</p>
         {% endif %}
     </div>
-    {% endfor %}
 </div>
 </body>
 </html>

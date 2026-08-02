@@ -67,14 +67,26 @@ def test_song_history_never_500s_on_a_missing_song(client, charts, monkeypatch):
     assert bad == {}
 
 
-def test_dropouts_page_covers_every_chart(client, charts):
-    resp = client.get('/dropouts')
-    assert resp.status_code == 200
-    body = resp.get_data(as_text=True)
-    # Labels carry '&' ("Mainstream R&B/Hip-Hop"), which Jinja escapes on render.
-    missing = [m['label'] for m in charts.values()
-               if m['label'].replace('&', '&amp;') not in body]
-    assert missing == []
+def test_dropouts_page_serves_every_chart(client, charts):
+    for key, meta in charts.items():
+        resp = client.get('/dropouts?chart=' + key)
+        assert resp.status_code == 200, key
+        # Labels carry '&' ("Mainstream R&B/Hip-Hop"), which Jinja escapes.
+        assert meta['label'].replace('&', '&amp;') in resp.get_data(as_text=True), key
+
+
+def test_dropouts_bad_filters_fall_back_rather_than_error(client):
+    for q in ['?chart=nope', '?week=not-a-date', '?chart=nope&week=9999-99-99',
+              '?chart=top100&week=1800-01-01']:
+        assert client.get('/dropouts' + q).status_code == 200, q
+
+
+def test_dropouts_week_filter_selects_that_week(charts):
+    import app
+    report = app.chart_dropouts('adult_rnb', '1994-01-01')
+    assert report['current_week'] == '1994-01-01'
+    # Partner is the previous published week, not the date minus seven days.
+    assert report['previous_week'] == '1993-12-25'
 
 
 def test_dropouts_compare_consecutive_published_weeks(charts):
