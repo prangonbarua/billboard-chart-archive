@@ -602,9 +602,11 @@
         </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"
-            integrity="sha256-/tanOfjQ8GhxdN5s0UdF/A/HgJFEqxE9IpCKJr8Nf+o="
-            crossorigin="anonymous"></script>
+    <!-- Chart.js v4.4.4 (MIT), vendored rather than loaded from a CDN: this
+         page is the only external-script consumer in the app, and a deployed
+         site should not lose its graph to someone else's outage or to a
+         network that filters the CDN. -->
+    <script src="{{ url_for('static', filename='js/chart.umd.js') }}"></script>
     <script>
         const ARTIST_NAME = {{ artist_name|tojson }};
         const detailCache = { {{ selected_key|tojson }}: {{ detail|tojson }} };
@@ -692,7 +694,12 @@
         });
 
         // ── Rank-history graph ───────────────────────────────────────
-        const GRAPH_COLORS = ['#2f6f4f', '#b3541e', '#4a5fc1', '#a13d63', '#3f8fa3', '#8a6d3b', '#5b5b5b', '#c0392b'];
+        // Series are separated by lightness within the site's own greens rather
+        // than by hue, so the graph stays inside the green/ink/white palette the
+        // rest of the site uses. Rank lines rarely overlap densely enough to
+        // need a second hue family.
+        const GRAPH_COLORS = ['#0c492c', '#12653d', '#1a8a54', '#0fbf74',
+                              '#02ff9a', '#7fffc9', '#111111', '#71717a'];
 
         let rankChart = null;
         function renderGraph(series) {
