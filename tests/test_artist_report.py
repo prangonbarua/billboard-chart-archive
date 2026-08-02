@@ -168,3 +168,18 @@ def test_analyze_still_redirects_for_an_unknown_artist(application):
     c = application.app.test_client()
     r = c.post('/analyze', data={'artist_name': 'Zzzz Not A Real Artist'})
     assert r.status_code == 302
+
+
+def test_results_page_has_no_tab_switcher(application):
+    """The Songs/Albums tabs are replaced by coverage rows."""
+    c = application.app.test_client()
+    body = c.post('/analyze', data={'artist_name': 'Taylor Swift'}).get_data(as_text=True)
+    assert 'switchTab' not in body
+    assert 'id="albumsTab"' not in body
+
+
+def test_results_page_rows_carry_chart_keys(application):
+    c = application.app.test_client()
+    body = c.post('/analyze', data={'artist_name': 'Taylor Swift'}).get_data(as_text=True)
+    assert 'data-chart="albums200"' in body
+    assert 'data-chart="country_airplay"' in body
