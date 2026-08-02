@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime, timedelta
 from pathlib import Path
+import re
 import time
 import json
 
@@ -41,15 +42,34 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        # Find chart date from page
-        chart_date_elem = soup.find('p', class_='c-tagline')
-        if chart_date_elem and 'dated' in chart_date_elem.text.lower():
-            # Extract date from text like "Week of November 1, 2025"
-            date_text = chart_date_elem.text
-            # Use provided date or extract from page
-            chart_date = date if date else datetime.now().strftime('%Y-%m-%d')
-        else:
-            chart_date = date if date else datetime.now().strftime('%Y-%m-%d')
+        # Billboard answers 200 for a week a chart never had, and the page it
+        # returns parses cleanly, so row count cannot catch it. Two ways it
+        # happens, both observed on adult-r-and-b-songs: a slug that is not a
+        # weekly chart redirects to /charts/year-end/<slug>/, and a date before
+        # the chart launched is clamped to its first published week. Either one
+        # would be stored under the date we ASKED for — fabricated history that
+        # looks complete. The page states the week it actually served, so make
+        # that the authority and drop anything that isn't the week we requested.
+        served_date = None
+        week_text = soup.find(string=re.compile(r'Week of\s+[A-Z]', re.I))
+        if week_text:
+            m = re.search(r'Week of\s+([A-Z][a-z]+\s+\d{1,2},\s*\d{4})', week_text)
+            if m:
+                try:
+                    served_date = datetime.strptime(
+                        re.sub(r'\s+', ' ', m.group(1)), '%B %d, %Y').strftime('%Y-%m-%d')
+                except ValueError:
+                    served_date = None
+
+        if date:
+            if served_date is None:
+                print("✗ No chart date on page (redirect or markup change) — skipping")
+                return None
+            if served_date != date:
+                print(f"✗ Billboard served {served_date}, not {date} — skipping")
+                return None
+
+        chart_date = date if date else (served_date or datetime.now().strftime('%Y-%m-%d'))
 
         # Find all chart entries
         entries = []
@@ -152,7 +172,11 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # the right guard for the weekly path; a backfill of the
                     # 25-row era has to run before this floor applies, which is
                     # how data/dance_airplay.csv was populated.
-                    'hot-dance-airplay': 40}.get(chart_name, 20)
+                    'hot-dance-airplay': 40,
+                    # Adult R&B Airplay launched 1993-09-18 at 30 rows and has
+                    # run 30 every week since — confirmed by find_chart_start.py
+                    # and spot checks at 1995, 2000, 2010, 2020 and 2026.
+                    'hot-adult-r-and-b-airplay': 30}.get(chart_name, 20)
         if len(entries) < expected:
             print(f"✗ Incomplete chart: {len(entries)}/{expected} rows — skipping (will retry next run)")
             time.sleep(1)
@@ -300,6 +324,7 @@ def main():
     update_chart_data('country-airplay', 'data/country_airplay.csv', weeks_to_fetch=15)
     update_chart_data('alternative-airplay', 'data/alternative_airplay.csv', weeks_to_fetch=15)
     update_chart_data('mainstream-r-and-b-hip-hop', 'data/rnb_hiphop_airplay.csv', weeks_to_fetch=15)
+    update_chart_data('hot-adult-r-and-b-airplay', 'data/adult_rnb_airplay.csv', weeks_to_fetch=15)
     update_chart_data('hot-dance-airplay', 'data/dance_airplay.csv', weeks_to_fetch=15)
 
     print("\n" + "="*60)
