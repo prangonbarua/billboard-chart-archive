@@ -1,59 +1,92 @@
-# Handoff: Adult R&B Airplay (chart 17)
+# Adult R&B Airplay (chart 17) — done, plus one open defect
 
-Branch `add-adult-rnb-airplay` (631ec34), off main 66319b6. Main is green and deployed.
+Chart 17 is complete. This file is kept for the slug trap below, which is a live
+hazard for anyone adding another chart, and for the open chart-date defect at
+the end.
 
-## Done
+## The slug trap — read this before adding a chart
 
-Registry wiring in `app.py`, all four touchpoints:
-- `ADULT_RNB_DATA, ADULT_RNB_AVAILABLE_DATES = _load_global_chart('adult_rnb_airplay.csv')`
-- `CHARTS['adult_rnb']` — label "Adult R&B Airplay", group Airplay, depth 25, kind song
-- `CHART_DATA['adult_rnb']`
-- added to the format-airplay route loop, so it gets a page off the shared `chart.html`
+The first attempt at this chart used the slug `adult-r-and-b-songs`. That is not
+a weekly chart URL. Billboard answers it with **HTTP 200** and redirects to
+`/charts/year-end/adult-r-and-b-songs/`, a year-end page that parses perfectly
+well: 50 clean rows, correct-looking songs and artists. The scraper stored those
+rows under whatever date it had requested. Every week it "fetched" — 1992, 1993
+and 2026 alike — was an identical copy of the current year-end list, with Chris
+Brown's "Residuals" at #1 in 1993.
 
-Also `scripts/fast_billboard_scraper.py` (weekly line, slug `adult-r-and-b-songs`)
-and the `git add` line in `.github/workflows/update-charts.yml`.
+Nothing in the old pipeline could catch this. The row-count floor passed (50 rows
+clears any floor), the response was 200, and the markup was valid. It would have
+written 1,760 weeks of fabricated history that looked complete.
 
-Nav needs no edit — it loops the registry.
+A second, separate failure mode has the same shape: a date **before** a chart
+launched is clamped to that chart's first published week, again under the
+requested date, again 200, again valid markup.
 
-## Remaining
+`scrape_billboard_chart` now defends against both. It reads the "Week of ..."
+heading Billboard prints on every real chart page and discards the response
+unless that week equals the week requested. Row count cannot detect either
+failure; the served date can. Verified to reject all three known-bad cases and
+to accept 12 legitimate weeks spanning 1975-2026 across every chart family.
 
-1. **The scrape.** Started 2026-08-02, `nohup python3 scrape_adult_rnb.py` writing
-   `data/adult_rnb_airplay.csv`, ~1,760 weeks back from now, about 7.5 weeks/min
-   so roughly 4 hours. The scraper only writes the CSV at the END, so an
-   interrupted run leaves nothing — check the process before assuming it worked.
-   Re-run: `update_chart_data('adult-r-and-b-songs', 'data/adult_rnb_airplay.csv', weeks_to_fetch=1760)`
-   with `scripts/` on `sys.path`.
+Corrected facts, each independently confirmed:
 
-2. **Confirm the depth.** Registry says 25. The 1993 weeks scrape at 50 rows, so
-   the chart shrank at some point; set `depth` to its CURRENT size, and note the
-   registry comment that depth is display-only and must not be used as a scrape
-   completeness threshold.
-
-3. **`test_every_chart_route_returns_200` fails until the CSV lands.** That is the
-   test doing its job, not a defect. It should pass with no code change once the
-   data is there. Do not merge before it is green.
-
-4. Then merge to main, push, `railway up --detach --service billboard-chart-archive`.
-
-## Separate, unrelated, still open
-
-Data audit on 2026-08-02 found a real defect in three charts — `radio`,
-`digital_songs`, `streaming_songs`. Their pre-November-2025 rows are
-Wednesday-dated and every one is **3 days earlier than Billboard's actual chart
-date**, verified against billboard.com:
-
-| our row | our date | Billboard's date |
+| | first attempt claimed | actual |
 |---|---|---|
-| radio Wed 10-15 | 2025-10-15 | 2025-10-18 |
-| radio Wed 10-22 | 2025-10-22 | 2025-10-25 |
+| slug | `adult-r-and-b-songs` | `hot-adult-r-and-b-airplay` |
+| first week | 1993-04-24 | **1993-09-18** |
+| depth | 25, "shrank from 50" | **30**, never changed |
 
-That is 1,826 / 1,096 / 666 weeks respectively. The 2025-10-25 week is also
-stored **twice** in all three (once as Wed 10-22, once as Sat 10-25) —
-`streaming_songs` shows them byte-identical.
+The "shrank from 50" reading was itself an artifact of the year-end page's 50
+rows. 1993-09-18 is corroborated by `scripts/find_chart_start.py` and by the
+fact that Mainstream R&B/Hip-Hop launched the same week.
 
-Fix: shift Wednesday rows +3 days, then drop the week that collides at the seam.
-The other 13 charts are correctly Saturday-dated.
+Use `scripts/backfill_chart.py` for a full history, never `update_chart_data`.
+The backfill script is resumable and checkpoints every 25 weeks;
+`update_chart_data` accumulates in memory and writes once at the very end, so an
+interrupted run leaves nothing on disk.
+
+    python3 scripts/backfill_chart.py \
+        hot-adult-r-and-b-airplay data/adult_rnb_airplay.csv 1993-09-18
+
+## Result
+
+51,150 rows, 1,705 weeks, 1993-09-18 -> 2026-08-01. Exactly 30 rows every week,
+all Saturday-dated, no duplicate (Date, Rank), no nulls, and zero clamped weeks
+found by the signature check.
+
+11 weeks are absent because **Billboard has no data for them**. Each returns 200
+with an empty page — identical at 893,553 bytes against ~1.55 MB for a real week
+— and each was re-checked well after the scrape with the same result:
+
+- 1998-12-26, 1999-01-02, 1999-01-09
+- 2011-09-17 through 2011-10-22 (six weeks; 2011-10-29 exists)
+- 2011-11-05
+- 2013-08-10
+
+`verify_charts.py` reports these as non-weekly-step warnings, the same way it
+already reports the holiday gaps in adult_contemporary, country and alternative.
+They are not listed in `known_clamped_weeks.json` — that file is for weeks whose
+ranking repeats a neighbour, which is a different condition.
+
+## Still open: chart dates in radio, digital_songs, streaming_songs
+
+Their pre-November-2025 rows are Wednesday-dated and every one is **3 days
+earlier than Billboard's actual chart date**. Confirmed two ways: requesting a
+Wednesday date makes Billboard serve the Wednesday+3 Saturday page, and our
+2020-06-10 rows match Billboard's 2020-06-13 chart exactly.
+
+Affected: radio 1,826 weeks, digital_songs 1,096, streaming_songs 666 — each
+running from that chart's start through 2025-10-22, after which the CSVs switch
+to correct Saturday dating at 2025-10-25. The other 14 charts are Saturday-dated
+throughout.
+
+Fix: shift the Wednesday rows +3 days.
+
+Note: an earlier draft of this file also claimed the 2025-10-25 week was stored
+twice, once as Wed 10-22 and once as Sat 10-25, byte-identical. That does **not**
+hold — radio's 2025-10-22 and 2025-10-25 differ. Re-check the seam before
+assuming there is a collision to clean up.
 
 Also unexplained, low priority: three gaps in `adult_contemporary` at 1979-04-21,
-1979-09-15, 1980-12-06. The other 26 calendar gaps across all charts are
-Billboard's holiday non-publication weeks and are accurate.
+1979-09-15, 1980-12-06. The other calendar gaps across all charts are Billboard's
+holiday non-publication weeks and are accurate.

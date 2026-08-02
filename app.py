@@ -181,7 +181,7 @@ CHARTS = {
     'alternative':        dict(label='Alternative Airplay', group='Airplay', depth=40, kind='song'),
     'rnb_hiphop':         dict(label='Mainstream R&B/Hip-Hop', group='Airplay', depth=40, kind='song'),
     'dance_airplay':      dict(label='Dance Airplay',        group='Airplay', depth=40, kind='song'),
-    'adult_rnb':          dict(label='Adult R&B Airplay',    group='Airplay', depth=25, kind='song'),
+    'adult_rnb':          dict(label='Adult R&B Airplay',    group='Airplay', depth=30, kind='song'),
 
     'albums200':   dict(label='Billboard 200',    group='Albums & Artists', depth=200, kind='album'),
     'artist100':   dict(label='Artist 100',       group='Albums & Artists', depth=100, kind='artist'),
