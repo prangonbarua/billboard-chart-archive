@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dropouts</title>
+    {% include '_head_styles.html' %}
+    <style>
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    h1 { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; }
+    .page-meta { color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; }
+
+    .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+             gap: 1rem; margin-top: 2rem; }
+
+    .card { border: 1px solid var(--border); background: var(--surface); }
+    .card-head { display: flex; align-items: baseline; justify-content: space-between;
+                 gap: 0.75rem; padding: 0.875rem 1rem; border-bottom: 1px solid var(--border); }
+    .card-title { font-size: 0.9375rem; font-weight: 600; }
+    .card-count { font-size: 0.8125rem; font-weight: 600; color: var(--text-muted);
+                  white-space: nowrap; }
+    .card-dates { font-size: 0.75rem; color: var(--text-muted); padding: 0 1rem 0.75rem;
+                  margin-top: -0.375rem; }
+
+    ol.gone { list-style: none; margin: 0; padding: 0.5rem 0; }
+    ol.gone li { display: flex; align-items: baseline; gap: 0.625rem;
+                 padding: 0.375rem 1rem; font-size: 0.875rem; }
+    .rank { font-variant-numeric: tabular-nums; color: var(--text-muted);
+            font-size: 0.8125rem; min-width: 2.25rem; }
+    .title { font-weight: 500; }
+    .by { color: var(--text-muted); }
+    .wks { margin-left: auto; color: var(--text-muted); font-size: 0.75rem;
+           white-space: nowrap; }
+    .none { padding: 0.75rem 1rem 1rem; font-size: 0.875rem; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+{% include '_nav.html' %}
+
+<div class="wrap">
+    <h1>Dropouts</h1>
+    <p class="page-meta">
+        {{ total }} entries fell off across {{ reports|length }} charts in the latest week.
+        Each chart is compared against its own previous published week, so charts that
+        skipped a week are still compared like for like.
+    </p>
+
+    <div class="board">
+        {% for r in reports %}
+        <div class="card">
+            <div class="card-head">
+                <span class="card-title">
+                    <a href="{{ url_for(r.key) }}">{{ r.label }}</a>
+                </span>
+                <span class="card-count">{{ r.dropouts|length }} of {{ r.previous_size }}</span>
+            </div>
+            <div class="card-dates">{{ r.previous_week }} &rarr; {{ r.current_week }}</div>
+
+            {% if r.dropouts %}
+            <ol class="gone">
+                {% for d in r.dropouts %}
+                <li>
+                    <span class="rank">#{{ d.rank }}</span>
+                    <span>
+                        <span class="title">{{ d.title }}</span>
+                        {% if d.artist %}<span class="by"> &mdash; {{ d.artist }}</span>{% endif %}
+                    </span>
+                    {% if d.weeks %}<span class="wks">{{ d.weeks }} wk{{ '' if d.weeks == 1 else 's' }}</span>{% endif %}
+                </li>
+                {% endfor %}
+            </ol>
+            {% else %}
+            <p class="none">Nothing fell off.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+</body>
+</html>

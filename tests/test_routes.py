@@ -65,3 +65,36 @@ def test_song_history_never_500s_on_a_missing_song(client, charts, monkeypatch):
         if resp.status_code >= 500:
             bad[key] = resp.status_code
     assert bad == {}
+
+
+def test_dropouts_page_covers_every_chart(client, charts):
+    resp = client.get('/dropouts')
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    # Labels carry '&' ("Mainstream R&B/Hip-Hop"), which Jinja escapes on render.
+    missing = [m['label'] for m in charts.values()
+               if m['label'].replace('&', '&amp;') not in body]
+    assert missing == []
+
+
+def test_dropouts_compare_consecutive_published_weeks(charts):
+    """A fixed seven-day step would miss Billboard's skipped weeks and report a
+    whole chart as dropouts; the comparison must walk the date index instead."""
+    import app
+    for key in charts:
+        r = app.chart_dropouts(key)
+        assert r is not None, key
+        assert r['previous_week'] < r['current_week'], key
+        # Never the degenerate "everything fell off" that a wrong week pairing gives.
+        assert len(r['dropouts']) < r['previous_size'], key
+
+
+def test_dropouts_key_on_case_insensitive_names(charts):
+    """Scraped artist casing drifts week to week; an exact match would report
+    each drift as a dropout."""
+    import app
+    for key, meta in charts.items():
+        for entry in app.chart_dropouts(key)['dropouts']:
+            assert entry['title'], key
+            if meta['kind'] == 'artist':
+                assert entry['artist'] is None, key

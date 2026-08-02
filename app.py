@@ -766,6 +766,75 @@ def download_versus_csv():
         'Content-Disposition': f'attachment; filename="{stem}_{chart_key}.csv"'})
 
 
+def chart_dropouts(chart_key):
+    """Entries on a chart's previous published week that are gone from its latest.
+
+    Two things here are easy to get wrong.
+
+    Matching is on a casefolded, stripped key, not the raw strings. Scraped
+    artist casing drifts between weeks ("The Kid LAROI" vs "The Kid Laroi") --
+    the same drift that once broke the new-vs-re-entry badge -- and an exact
+    match would report every drift as a dropout plus a debut.
+
+    "Previous week" is the previous PUBLISHED week from the date index, never
+    the latest date minus seven days. Billboard skips weeks: holiday
+    non-publication across most charts, and 11 weeks missing outright on Adult
+    R&B. A fixed seven-day step would land on a week that does not exist, find
+    nothing there, and report the entire chart as having dropped out.
+
+    Artist charts carry the artist name in the Song column with Artist set to
+    "Unknown", so they key on Song alone.
+    """
+    df, _ = CHART_DATA.get(chart_key, (None, None))
+    dt = CHART_DT.get(chart_key)
+    if df is None or dt is None or not len(df):
+        return None
+
+    weeks = sorted(dt.dropna().unique())
+    if len(weeks) < 2:
+        return None
+    current_week, previous_week = weeks[-1], weeks[-2]
+    is_artist_chart = CHARTS[chart_key]['kind'] == 'artist'
+
+    def entry_key(song, artist):
+        title = str(song).casefold().strip()
+        return title if is_artist_chart else (title, str(artist).casefold().strip())
+
+    now = df[dt == current_week]
+    still_charting = {entry_key(s, a) for s, a in zip(now['Song'], now['Artist'])}
+
+    before = df[dt == previous_week].sort_values('Rank')
+    gone = [
+        {'title': song, 'artist': None if is_artist_chart else artist,
+         'rank': safe_int(rank), 'weeks': safe_int(weeks_on)}
+        for song, artist, rank, weeks_on in zip(
+            before['Song'], before['Artist'], before['Rank'], before['Weeks on Chart'])
+        if entry_key(song, artist) not in still_charting
+    ]
+
+    return {
+        'key': chart_key,
+        'label': CHARTS[chart_key]['label'],
+        'group': CHARTS[chart_key]['group'],
+        'current_week': current_week.strftime('%Y-%m-%d'),
+        'previous_week': previous_week.strftime('%Y-%m-%d'),
+        'previous_size': len(before),
+        'dropouts': gone,
+    }
+
+
+@app.route('/dropouts')
+@limiter.exempt
+def dropouts_page():
+    """What fell off every chart in the most recent week."""
+    reports = [r for r in (chart_dropouts(k) for k in CHARTS) if r]
+    return render_template(
+        'dropouts.html',
+        reports=reports,
+        total=sum(len(r['dropouts']) for r in reports),
+    )
+
+
 @app.route('/versus')
 @limiter.exempt
 def versus_page():
