@@ -496,9 +496,8 @@
             <div class="page-header-top">
                 <div>
                     <div class="page-title">{{ artist_name }}</div>
-                    <div class="page-subtitle">U.S. Top Charts 100 — Chart History</div>
+                    <div class="page-subtitle">Chart History</div>
                 </div>
-                <a class="dl-csv" href="{{ url_for('download_csv', artist_name=artist_name) }}">Download CSV</a>
             </div>
             <div class="coverage-head">
                 <h2 class="coverage-title">Chart coverage</h2>
@@ -607,8 +606,6 @@
             integrity="sha256-/tanOfjQ8GhxdN5s0UdF/A/HgJFEqxE9IpCKJr8Nf+o="
             crossorigin="anonymous"></script>
     <script>
-        const artistName = {{ artist_name|tojson }};
-
         const ARTIST_NAME = {{ artist_name|tojson }};
         const detailCache = { {{ selected_key|tojson }}: {{ detail|tojson }} };
         let selectedChart = {{ selected_key|tojson }};
@@ -737,39 +734,6 @@
         }
 
         renderGraph(currentDetail.series);
-
-        // ── Lazy load artwork ─────────────────────────────────────────
-        const imgObserver = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                if (!entry.isIntersecting) return;
-                const img = entry.target;
-                if (img.dataset.loaded) return;
-                img.dataset.loaded = '1';
-                const row = img.closest('tr');
-                if (!row) return;
-                const songOnly = row.dataset.songOnly;
-                const albumOnly = row.dataset.albumOnly;
-                const artistOnly = row.dataset.artistOnly;
-                const endpoint = songOnly
-                    ? '/api/song-image/' + encodeURIComponent(artistOnly) + '/' + encodeURIComponent(songOnly)
-                    : albumOnly
-                    ? '/api/album-image/' + encodeURIComponent(artistOnly) + '/' + encodeURIComponent(albumOnly)
-                    : null;
-                if (endpoint) {
-                    fetch(endpoint)
-                        .then(r => r.ok ? r.json() : Promise.reject())
-                        .then(d => { if (d.image_url) img.src = d.image_url; })
-                        .catch(() => {});
-                }
-                imgObserver.unobserve(img);
-            });
-        }, { rootMargin: '100px' });
-        document.querySelectorAll('.art-thumb img').forEach(img => imgObserver.observe(img));
-
-        // ── Row animations ────────────────────────────────────────────
-        document.querySelectorAll('.chart-table tbody tr').forEach((row, i) => {
-            row.style.animationDelay = Math.min(i * 0.025, 1.0) + 's';
-        });
 
         // ── Row clicks ────────────────────────────────────────────────
         // Delegated on the tbody, not bound per-row: renderDetail rebuilds
@@ -914,7 +878,7 @@
             loading.textContent = 'Loading\u2026';
             container.appendChild(loading);
 
-            fetch('/api/album-history?artist=' + encodeURIComponent(artistName) + '&album=' + encodeURIComponent(albumName))
+            fetch('/api/album-history?artist=' + encodeURIComponent(ARTIST_NAME) + '&album=' + encodeURIComponent(albumName))
                 .then(r => r.ok ? r.json() : Promise.reject())
                 .then(data => {
                     container.textContent = '';
