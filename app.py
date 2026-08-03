@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, send_file, flash, redirect, u
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import math
 import os
 import re
 import threading
@@ -175,6 +176,12 @@ BUBBLING_DATA, BUBBLING_AVAILABLE_DATES = _load_global_chart('bubbling_under.csv
 # must NOT be used as a scrape completeness threshold: these charts changed
 # depth over their lifetimes (Adult Contemporary ran 19-20 rows in 1961 against
 # 30 today), so see the floor in fast_billboard_scraper.py instead.
+# A "grower" is a climb of at least this share of the chart's depth, rounded up.
+# Deliberately proportional, not a flat number of positions: depth ranges from 25
+# (Bubbling Under) to 200 (Global 200), so "+5" is a third of one chart and noise
+# on the other. 5% gives +5 on the Hot 100, +10 on the Global 200, +2 at depth 25.
+GROWER_PCT = 0.05
+
 CHARTS = {
     'top100':      dict(label='The Hot 100',      group='Songs',  depth=100, kind='song'),
     'global200':   dict(label='Global 200',       group='Songs',  depth=200, kind='song'),
@@ -1482,6 +1489,7 @@ def _song_chart_page(source_df, available_dates, endpoint, template):
 
     # Get chart data for selected date
     chart_songs = []
+    grower_min = 1
     if selected_date:
         selected_date_dt = pd.to_datetime(selected_date, errors='coerce')
         if pd.isna(selected_date_dt):
@@ -1529,6 +1537,11 @@ def _song_chart_page(source_df, available_dates, endpoint, template):
         idx_sel = chart_week_index.get(selected_date_dt)
         prev_date = pd.Timestamp(available_dates[idx_sel + 1]) if (
             idx_sel is not None and idx_sel + 1 < len(available_dates)) else None
+
+        # Grower threshold is measured against the depth actually served this week,
+        # not the registry depth: Digital Song Sales ran 50 deep before 2023-09 and
+        # 25 after, and the same climb should not change meaning across that seam.
+        grower_min = max(1, math.ceil(len(date_data) * GROWER_PCT))
 
         for _, row in date_data.iterrows():
             # Get song info
@@ -1584,6 +1597,24 @@ def _song_chart_page(source_df, available_dates, endpoint, template):
                 song_info['change'] = 'same'
                 song_info['change_amount'] = 0
 
+            # Filter tags, all derived from history already computed above.
+            # A debut is NOT a new peak: rank == peak holds trivially on a first
+            # week, which would tag most of the lower chart and say nothing. A
+            # new peak means the song has charted before and just beat its own
+            # best — hence the strict comparison against prior weeks only.
+            prior_ranks = [rk for d, rk in ranks_by_date.items() if d < selected_date_dt]
+            song_info['new_peak'] = bool(prior_ranks) and rank < min(prior_ranks)
+            song_info['grower'] = last_week is not None and (last_week - rank) >= grower_min
+
+            tags = []
+            if song_info['change'] in ('new', 're-entry'):
+                tags.append(song_info['change'])
+            if song_info['grower']:
+                tags.append('grower')
+            if song_info['new_peak']:
+                tags.append('peak')
+            song_info['tags'] = tags
+
             chart_songs.append(song_info)
 
     return render_template(
@@ -1591,6 +1622,7 @@ def _song_chart_page(source_df, available_dates, endpoint, template):
         available_dates=available_dates,
         selected_date=selected_date,
         chart_songs=chart_songs,
+        grower_min=grower_min,
         # Registry entry for the page being rendered. chart.html reads these for
         # its title, heading, and history-API chart param; the older per-chart
         # templates ignore them.
@@ -1602,7 +1634,7 @@ def _song_chart_page(source_df, available_dates, endpoint, template):
 @limiter.exempt
 def top100():
     """Hot 100 Weekly Chart Viewer"""
-    return _song_chart_page(BILLBOARD_DATA, HOT100_AVAILABLE_DATES, 'top100', 'hot100.html')
+    return _song_chart_page(BILLBOARD_DATA, HOT100_AVAILABLE_DATES, 'top100', 'chart.html')
 
 @app.route('/global200')
 @limiter.exempt
@@ -1611,7 +1643,7 @@ def global200():
     if GLOBAL_200_DATA is None:
         flash('Global 200 data is not available', 'error')
         return redirect(url_for('top100'))
-    return _song_chart_page(GLOBAL_200_DATA, GLOBAL200_AVAILABLE_DATES, 'global200', 'global200.html')
+    return _song_chart_page(GLOBAL_200_DATA, GLOBAL200_AVAILABLE_DATES, 'global200', 'chart.html')
 
 @app.route('/globalexus')
 @limiter.exempt
@@ -1620,7 +1652,7 @@ def globalexus():
     if GLOBAL_XUS_DATA is None:
         flash('Global Excl. US data is not available', 'error')
         return redirect(url_for('top100'))
-    return _song_chart_page(GLOBAL_XUS_DATA, GLOBALEXUS_AVAILABLE_DATES, 'globalexus', 'globalexus.html')
+    return _song_chart_page(GLOBAL_XUS_DATA, GLOBALEXUS_AVAILABLE_DATES, 'globalexus', 'chart.html')
 
 @app.route('/radio')
 @limiter.exempt
@@ -1629,7 +1661,7 @@ def radio():
     if RADIO_DATA is None:
         flash('Radio Songs data is not available', 'error')
         return redirect(url_for('top100'))
-    return _song_chart_page(RADIO_DATA, RADIO_AVAILABLE_DATES, 'radio', 'radio.html')
+    return _song_chart_page(RADIO_DATA, RADIO_AVAILABLE_DATES, 'radio', 'chart.html')
 
 @app.route('/digital')
 @limiter.exempt
@@ -1638,7 +1670,7 @@ def digital():
     if DIGITAL_DATA is None:
         flash('Digital Song Sales data is not available', 'error')
         return redirect(url_for('top100'))
-    return _song_chart_page(DIGITAL_DATA, DIGITAL_AVAILABLE_DATES, 'digital', 'digital.html')
+    return _song_chart_page(DIGITAL_DATA, DIGITAL_AVAILABLE_DATES, 'digital', 'chart.html')
 
 @app.route('/streaming')
 @limiter.exempt
@@ -1647,7 +1679,7 @@ def streaming():
     if STREAMING_DATA is None:
         flash('Streaming Songs data is not available', 'error')
         return redirect(url_for('top100'))
-    return _song_chart_page(STREAMING_DATA, STREAMING_AVAILABLE_DATES, 'streaming', 'streaming.html')
+    return _song_chart_page(STREAMING_DATA, STREAMING_AVAILABLE_DATES, 'streaming', 'chart.html')
 
 @app.route('/artist100')
 @limiter.exempt
@@ -1656,7 +1688,7 @@ def artist100():
     if ARTIST100_DATA is None:
         flash('Artist 100 data is not available', 'error')
         return redirect(url_for('top100'))
-    return _song_chart_page(ARTIST100_DATA, ARTIST100_AVAILABLE_DATES, 'artist100', 'artist100.html')
+    return _song_chart_page(ARTIST100_DATA, ARTIST100_AVAILABLE_DATES, 'artist100', 'chart.html')
 
 @app.route('/pop_airplay')
 @limiter.exempt
@@ -1665,7 +1697,7 @@ def pop_airplay():
     if POP_AIRPLAY_DATA is None:
         flash('Pop Airplay data is not available', 'error')
         return redirect(url_for('top100'))
-    return _song_chart_page(POP_AIRPLAY_DATA, POP_AIRPLAY_AVAILABLE_DATES, 'pop_airplay', 'pop_airplay.html')
+    return _song_chart_page(POP_AIRPLAY_DATA, POP_AIRPLAY_AVAILABLE_DATES, 'pop_airplay', 'chart.html')
 
 # ── Genre/format airplay charts ─────────────────────────────────────────────
 # Registered from the registry against the shared chart.html. The `key=key`
@@ -1692,110 +1724,13 @@ def albums200():
         flash('Billboard 200 data is not available', 'error')
         return redirect(url_for('search'))
 
-    # Get the selected date from query params (default to latest)
-    selected_date = request.args.get('date', None)
-
-    # Get unique dates from Billboard 200 data
-    data = BILLBOARD_200_DATA.copy()
-    data['Date'] = pd.to_datetime(data['Date'], errors='coerce')
-    data = data.dropna(subset=['Date'])
-
-    # Available chart dates are precomputed at startup (data is static)
-    available_dates = ALBUMS200_AVAILABLE_DATES
-
-    # If no date selected, use the latest
-    if not selected_date and available_dates:
-        selected_date = available_dates[0]
-
-    # Get chart data for selected date
-    chart_songs = []
-    if selected_date:
-        selected_date_dt = pd.to_datetime(selected_date, errors='coerce')
-        if pd.isna(selected_date_dt):
-            flash('Invalid date', 'error')
-            return redirect(url_for('albums200'))
-        selected_date = selected_date_dt.strftime('%Y-%m-%d')
-        date_data = data[data['Date'] == selected_date_dt]
-        if date_data.empty and available_dates:
-            avail = pd.to_datetime(pd.Series(available_dates))
-            selected_date_dt = avail.iloc[(avail - selected_date_dt).abs().argmin()]
-            selected_date = selected_date_dt.strftime('%Y-%m-%d')
-            date_data = data[data['Date'] == selected_date_dt]
-        date_data = date_data.sort_values('Rank')
-        date_data = date_data.dropna(subset=['Rank'])
-
-        # PRE-CALCULATE cumulative weeks for all albums on this chart
-        historical_data = data[data['Date'] <= selected_date_dt].copy()
-        historical_data['Song_Clean'] = historical_data['Song'].str.strip().str.casefold()
-        historical_data['Artist_Clean'] = historical_data['Artist'].str.strip().str.casefold().str.replace(_CREDIT_MARKER_RE, '', regex=True)
-
-        # Restrict history to the album/artist pairs actually on this chart, so the
-        # lookups below materialize ~200 keys instead of one per pair that ever charted.
-        chart_pairs = set(zip(date_data['Song'].str.strip().str.casefold(), date_data['Artist'].str.strip().str.casefold().str.replace(_CREDIT_MARKER_RE, '', regex=True)))
-        pair_index = pd.MultiIndex.from_frame(historical_data[['Song_Clean', 'Artist_Clean']])
-        historical_data = historical_data[pair_index.isin(chart_pairs)].copy()
-
-        # Chart dates per exact credit, and per primary-artist key (credit variants merged)
-        historical_data['Artist_Full'] = historical_data['Artist'].str.strip().str.casefold()
-        exact_dates = historical_data.groupby(['Song_Clean', 'Artist_Full'])['Date'].agg(set).to_dict()
-        pair_dates = historical_data.groupby(['Song_Clean', 'Artist_Clean'])['Date'].agg(set).to_dict()
-        chart_week_index = {pd.Timestamp(d): i for i, d in enumerate(available_dates)}
-
-        for _, row in date_data.iterrows():
-            # Get album info
-            song_name = row['Song'].strip() if pd.notna(row['Song']) else ''
-            artist_name = row['Artist'].strip() if pd.notna(row['Artist']) else ''
-
-            # Weeks = all weeks under the exact credit, plus credit-variant weeks only
-            # within the contiguous run ending at this chart week — so mid-run credit
-            # drift still merges, but a later same-titled version with a different
-            # credit doesn't inherit an older version's weeks
-            merged_dates = pair_dates.get((song_name.casefold(), primary_artist(artist_name)), set())
-            song_dates = set(exact_dates.get((song_name.casefold(), artist_name.casefold()), set()))
-            cur = selected_date_dt
-            while cur in merged_dates:
-                song_dates.add(cur)
-                idx = chart_week_index.get(cur)
-                if idx is None or idx + 1 >= len(available_dates):
-                    break
-                cur = pd.Timestamp(available_dates[idx + 1])
-            cumulative_weeks = len(song_dates) or 1
-
-            song_info = {
-                'rank': safe_int(row['Rank'], 0),
-                'song': song_name,
-                'artist': artist_name,
-                'last_week': safe_int(row['Last Week']),
-                'peak': safe_int(row['Peak Position'], safe_int(row['Rank'], 0)),
-                'weeks': cumulative_weeks,
-            }
-
-            # Calculate position change
-            if song_info['last_week'] is None:
-                # Re-entry if it charted before the selected date, else new
-                if song_dates - {selected_date_dt}:
-                    song_info['change'] = 're-entry'
-                else:
-                    song_info['change'] = 'new'
-                song_info['change_amount'] = 0
-            elif song_info['rank'] < song_info['last_week']:
-                song_info['change'] = 'up'
-                song_info['change_amount'] = song_info['last_week'] - song_info['rank']
-            elif song_info['rank'] > song_info['last_week']:
-                song_info['change'] = 'down'
-                song_info['change_amount'] = song_info['rank'] - song_info['last_week']
-            else:
-                song_info['change'] = 'same'
-                song_info['change_amount'] = 0
-
-            chart_songs.append(song_info)
-
-    return render_template(
-        'billboard200.html',
-        available_dates=available_dates,
-        selected_date=selected_date,
-        chart_songs=chart_songs
-    )
+    # Was a near-copy of _song_chart_page that stopped just short of the
+    # 2026-07-29 debut/peak fix, so it still read the stored Last Week / Peak
+    # Position columns — corrupt in pre-2025 rows, where a debut was written as
+    # Last Week == Rank and Peak Position == 1. Sharing the renderer fixes those
+    # values on this chart too and gives it the row filters for free.
+    return _song_chart_page(BILLBOARD_200_DATA, ALBUMS200_AVAILABLE_DATES,
+                            'albums200', 'billboard200.html')
 
 @app.route('/api/song-history')
 @limiter.exempt

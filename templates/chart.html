@@ -182,6 +182,44 @@
         .badge-down { background: var(--red-dim);     color: var(--red); }
         .badge-same { background: var(--yellow-dim);  color: var(--yellow); }
 
+        /* Row filters. No transitions or opacity reveals here on purpose:
+           paxel.css kills every animation globally, so anything that depends on
+           one to become visible would simply never appear. Rows are hidden and
+           shown with display, which needs no animation to land. */
+        .chart-filters {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .filter-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .filter-btn:hover { color: var(--text); border-color: var(--border-accent); background: var(--surface-hover); }
+        .filter-btn[aria-pressed="true"] {
+            background: #0c492c;
+            border-color: #0c492c;
+            color: #ffffff;
+        }
+        .filter-count { font-size: 0.75rem; color: var(--text-dim); margin-left: 0.25rem; }
+        .filter-empty { padding: 1.5rem 1rem; font-size: 0.875rem; color: var(--text-muted); }
+
+        /* New peak: a song that has charted before and just beat its own best.
+           Debuts are excluded server-side, so this marks real milestones only. */
+        .chart-table tbody tr.new-peak { background: #edfff7; box-shadow: inset 3px 0 0 #0c492c; }
+        .chart-table tbody tr.new-peak.top10 { background: #edfff7; }
+        .chart-table tbody tr.new-peak .cell-peak .stat-val { color: #0c492c; font-weight: 700; }
+        .hero.new-peak { box-shadow: inset 3px 0 0 #0c492c; }
+
         .cell-art { padding: 0.5rem 0.75rem; }
         .art-thumb {
             width: 44px; height: 44px; border-radius: 6px; overflow: hidden;
@@ -279,7 +317,16 @@
         </div>
 
         {% if chart_songs and chart_songs|length > 0 %}
-        <div class="hero" data-artist="{{ chart_songs[0].artist|e }}" data-song="{{ chart_songs[0].song|e }}" style="cursor:pointer">
+        <div class="chart-filters" id="chartFilters" role="group" aria-label="Filter chart rows">
+            <button type="button" class="filter-btn" data-filter="all" aria-pressed="true">All</button>
+            <button type="button" class="filter-btn" data-filter="new" aria-pressed="false">New</button>
+            <button type="button" class="filter-btn" data-filter="re-entry" aria-pressed="false">Re-entry</button>
+            <button type="button" class="filter-btn" data-filter="grower" aria-pressed="false">Growers (+{{ grower_min }} or more)</button>
+            <button type="button" class="filter-btn" data-filter="peak" aria-pressed="false">New peak</button>
+            <span class="filter-count" id="filterCount"></span>
+        </div>
+
+        <div class="hero{% if chart_songs[0].new_peak %} new-peak{% endif %}" data-tags="{{ chart_songs[0].tags|join(' ') }}" data-artist="{{ chart_songs[0].artist|e }}" data-song="{{ chart_songs[0].song|e }}" style="cursor:pointer">
             <div class="hero-inner">
                 <div class="hero-art">
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Crect fill='%23f5f5f3' width='160' height='160'/%3E%3C/svg%3E"
@@ -325,7 +372,7 @@
                 </thead>
                 <tbody>
                     {% for song in chart_songs[1:10] %}
-                    <tr class="top10" data-artist="{{ song.artist|e }}" data-song="{{ song.song|e }}">
+                    <tr class="top10{% if song.new_peak %} new-peak{% endif %}" data-tags="{{ song.tags|join(' ') }}" data-artist="{{ song.artist|e }}" data-song="{{ song.song|e }}">
                         <td class="cell-rank"><div class="rank-num">{{ song.rank }}</div></td>
                         <td>
                             {% if song.change == 'new' %}<span class="badge badge-new">NEW</span>
@@ -342,17 +389,17 @@
                         </td>
                         <td>
                             <div class="song-title">{{ song.song }}</div>
-                            <div class="song-artist">{{ song.artist }}</div>
+                            {% if chart.kind != 'artist' %}<div class="song-artist">{{ song.artist }}</div>{% endif %}
                         </td>
                         <td class="cell-stat col-stats-hide"><div class="stat-val">{% if song.last_week %}#{{ song.last_week }}{% else %}&#8212;{% endif %}</div></td>
-                        <td class="cell-stat col-stats-hide"><div class="stat-val">#{{ song.peak }}</div></td>
+                        <td class="cell-stat cell-peak col-stats-hide"><div class="stat-val">#{{ song.peak }}</div></td>
                         <td class="cell-stat col-stats-hide"><div class="stat-val">{{ song.weeks }}</div></td>
                     </tr>
                     {% endfor %}
 
                     {% if chart_songs|length > 10 %}
                     {% for song in chart_songs[10:] %}
-                    <tr data-artist="{{ song.artist|e }}" data-song="{{ song.song|e }}">
+                    <tr class="{% if song.new_peak %}new-peak{% endif %}" data-tags="{{ song.tags|join(' ') }}" data-artist="{{ song.artist|e }}" data-song="{{ song.song|e }}">
                         <td class="cell-rank"><div class="rank-num">{{ song.rank }}</div></td>
                         <td>
                             {% if song.change == 'new' %}<span class="badge badge-new">NEW</span>
@@ -369,16 +416,17 @@
                         </td>
                         <td>
                             <div class="song-title">{{ song.song }}</div>
-                            <div class="song-artist">{{ song.artist }}</div>
+                            {% if chart.kind != 'artist' %}<div class="song-artist">{{ song.artist }}</div>{% endif %}
                         </td>
                         <td class="cell-stat col-stats-hide"><div class="stat-val">{% if song.last_week %}#{{ song.last_week }}{% else %}&#8212;{% endif %}</div></td>
-                        <td class="cell-stat col-stats-hide"><div class="stat-val">#{{ song.peak }}</div></td>
+                        <td class="cell-stat cell-peak col-stats-hide"><div class="stat-val">#{{ song.peak }}</div></td>
                         <td class="cell-stat col-stats-hide"><div class="stat-val">{{ song.weeks }}</div></td>
                     </tr>
                     {% endfor %}
                     {% endif %}
                 </tbody>
             </table>
+            <div class="filter-empty" id="filterEmpty" style="display:none">Nothing on this week matches that filter.</div>
         </div>
         {% endif %}
         {% endif %}
@@ -466,6 +514,15 @@
             row.style.animationDelay = `${Math.min(i * 0.025, 1.2)}s`;
         });
 
+        // Artist-kind charts (Artist 100) list artists, not songs, so their
+        // artwork comes from the artist endpoint.
+        const IS_ARTIST_CHART = {{ 'true' if chart.kind == 'artist' else 'false' }};
+        function artworkUrl(artist, song) {
+            return IS_ARTIST_CHART
+                ? '/api/artist-image/' + encodeURIComponent(artist)
+                : '/api/song-image/' + encodeURIComponent(artist) + '/' + encodeURIComponent(song);
+        }
+
         // Artwork lazy load
         const imgObserver = new IntersectionObserver(entries => {
             entries.forEach(entry => {
@@ -476,7 +533,7 @@
                 const artist = img.dataset.artist;
                 const song = img.dataset.song;
                 const placeholder = img.src;
-                fetch('/api/song-image/' + encodeURIComponent(artist) + '/' + encodeURIComponent(song))
+                fetch(artworkUrl(artist, song))
                     .then(r => r.ok ? r.json() : null)
                     .then(d => {
                         if (d && d.image_url) {
@@ -495,7 +552,7 @@
         const heroImg = document.querySelector('.hero-artwork-img');
         if (heroImg) {
             const heroPlaceholder = heroImg.src;
-            fetch('/api/song-image/' + encodeURIComponent(heroImg.dataset.artist) + '/' + encodeURIComponent(heroImg.dataset.song))
+            fetch(artworkUrl(heroImg.dataset.artist, heroImg.dataset.song))
                 .then(r => r.ok ? r.json() : null)
                 .then(d => {
                     if (d && d.image_url) {
@@ -505,6 +562,48 @@
                 })
                 .catch(() => {});
         }
+
+        // Row filters. Single-select, "All" clears. Rows are hidden with display
+        // rather than opacity: paxel.css disables every animation and transition
+        // site-wide, so anything relying on one to become visible never would.
+        (function initRowFilters() {
+            const bar = document.getElementById('chartFilters');
+            if (!bar) return;
+            const countEl = document.getElementById('filterCount');
+            const emptyEl = document.getElementById('filterEmpty');
+            const hero = document.querySelector('.hero[data-tags]');
+            const rows = Array.from(document.querySelectorAll('.chart-table tbody tr[data-tags]'));
+            const total = rows.length + (hero ? 1 : 0);
+
+            function matches(el, filter) {
+                if (filter === 'all') return true;
+                return (el.dataset.tags || '').split(' ').indexOf(filter) !== -1;
+            }
+
+            function apply(filter) {
+                let shown = 0;
+                if (hero) {
+                    const ok = matches(hero, filter);
+                    hero.style.display = ok ? '' : 'none';
+                    if (ok) shown++;
+                }
+                rows.forEach(row => {
+                    const ok = matches(row, filter);
+                    row.style.display = ok ? '' : 'none';
+                    if (ok) shown++;
+                });
+                countEl.textContent = filter === 'all' ? '' : shown + ' of ' + total;
+                if (emptyEl) emptyEl.style.display = shown ? 'none' : '';
+                bar.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.setAttribute('aria-pressed', btn.dataset.filter === filter ? 'true' : 'false');
+                });
+            }
+
+            bar.addEventListener('click', event => {
+                const btn = event.target.closest('.filter-btn');
+                if (btn) apply(btn.dataset.filter);
+            });
+        })();
 
         // Row click handlers (using data attributes instead of onclick to avoid injection)
         document.querySelectorAll('.chart-table tbody tr[data-artist]').forEach(row => {

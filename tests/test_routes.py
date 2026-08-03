@@ -110,3 +110,120 @@ def test_dropouts_key_on_case_insensitive_names(charts):
             assert entry['title'], key
             if meta['kind'] == 'artist':
                 assert entry['artist'] is None, key
+
+
+ROW_TAGS_RE = re.compile(r'data-tags="([^"]*)"')
+
+
+def _row_tags(body):
+    """Tag sets for every filterable entry on a rendered chart page (hero included)."""
+    return [set(m.split()) for m in ROW_TAGS_RE.findall(body)]
+
+
+def test_every_chart_page_offers_the_row_filters(client, charts):
+    """The filter bar is built in the shared renderer so all charts get it from
+    one edit. A chart rendering rows without data-tags would show the buttons
+    and silently filter everything away."""
+    for key in charts:
+        body = client.get('/' + key).get_data(as_text=True)
+        assert 'id="chartFilters"' in body, key
+        for f in ('new', 're-entry', 'grower', 'peak'):
+            assert f'data-filter="{f}"' in body, f'{key}: no {f} filter'
+        rows = ROW_TAGS_RE.findall(body)
+        assert len(rows) > 1, f'{key}: rows carry no data-tags'
+
+
+def test_grower_threshold_scales_with_chart_depth(client):
+    """A flat "+5 positions" would be a third of Bubbling Under and noise on the
+    Global 200. The threshold is a share of the depth actually served."""
+    expected = {'top100': 5, 'global200': 10, 'albums200': 10, 'bubbling': 2, 'adult_rnb': 2}
+    for key, positions in expected.items():
+        body = client.get('/' + key).get_data(as_text=True)
+        assert f'Growers (+{positions} or more)' in body, key
+
+
+def test_a_debut_is_never_tagged_a_new_peak(client, charts):
+    """rank == peak holds trivially on a first week, so counting debuts would
+    light up most of the lower chart and mean nothing."""
+    for key in charts:
+        for tags in _row_tags(client.get('/' + key).get_data(as_text=True)):
+            assert not ('new' in tags and 'peak' in tags), key
+
+
+def test_first_published_week_has_no_peaks_or_re_entries(client):
+    """Nothing can have beaten a previous best, or returned, on week one."""
+    body = client.get('/bubbling?date=1992-12-05').get_data(as_text=True)
+    tags = _row_tags(body)
+    assert tags, 'no rows rendered'
+    assert all('new' in t for t in tags)
+    assert not any('peak' in t or 're-entry' in t or 'grower' in t for t in tags)
+
+
+def test_new_peak_tag_matches_the_chart_history(client):
+    """The tag has to come from real chart history. The stored Peak Position
+    column is corrupt in pre-2025 rows (debuts were written as Peak == 1), so a
+    renderer reading it would tag the wrong songs."""
+    import app
+    import pandas as pd
+
+    body = client.get('/bubbling').get_data(as_text=True)
+    rows = re.findall(
+        r'data-tags="([^"]*)" data-artist="([^"]*)" data-song="([^"]*)"', body)
+    assert rows
+
+    df = app.BUBBLING_DATA.copy()
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+    df['Rank'] = pd.to_numeric(df['Rank'], errors='coerce')
+    df = df.dropna(subset=['Date', 'Rank'])
+    latest = pd.Timestamp(app.BUBBLING_AVAILABLE_DATES[0])
+    key = lambda s, a: (s.strip().casefold(), a.strip().casefold())
+    prior_best = df[df['Date'] < latest].assign(
+        k=[key(s, a) for s, a in zip(df[df['Date'] < latest]['Song'].astype(str),
+                                     df[df['Date'] < latest]['Artist'].astype(str))]
+    ).groupby('k')['Rank'].min().to_dict()
+    this_week = df[df['Date'] == latest]
+    rank_now = {key(str(s), str(a)): int(r) for s, a, r
+                in zip(this_week['Song'], this_week['Artist'], this_week['Rank'])}
+
+    import html as _html
+    for tags, artist, song in rows:
+        k = key(_html.unescape(song), _html.unescape(artist))
+        if k not in rank_now:
+            continue
+        beat_own_best = k in prior_best and rank_now[k] < prior_best[k]
+        assert ('peak' in tags.split()) == beat_own_best, (song, artist)
+
+
+def test_billboard_200_reads_history_not_the_stored_columns(client):
+    """/albums200 used to run its own copy of the renderer that stopped short of
+    the 2026-07-29 debut/peak fix, so it showed the corrupt stored Last Week and
+    Peak Position values. Reverting it to that copy must fail here."""
+    import app
+    import pandas as pd
+
+    body = client.get('/albums200?date=2010-06-05').get_data(as_text=True)
+    rows = re.findall(
+        r'data-tags="[^"]*" data-artist="([^"]*)" data-song="([^"]*)">(.*?)</tr>',
+        body, re.S)
+    assert len(rows) > 100
+
+    df = app.BILLBOARD_200_DATA.copy()
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+    df['Rank'] = pd.to_numeric(df['Rank'], errors='coerce')
+    df = df.dropna(subset=['Date', 'Rank'])
+    sel = pd.Timestamp('2010-06-05')
+    upto = df[df['Date'] <= sel]
+    best = upto.assign(k=[(str(s).strip().casefold(), str(a).strip().casefold())
+                          for s, a in zip(upto['Song'], upto['Artist'])]
+                       ).groupby('k')['Rank'].min().to_dict()
+
+    import html as _html
+    checked = 0
+    for artist, song, cells in rows:
+        k = (_html.unescape(song).strip().casefold(), _html.unescape(artist).strip().casefold())
+        if k not in best:
+            continue
+        shown_peak = int(re.findall(r'class="stat-val">#?([^<]*)<', cells)[1].lstrip('#'))
+        assert shown_peak == int(best[k]), (song, artist, shown_peak, best[k])
+        checked += 1
+    assert checked > 100
