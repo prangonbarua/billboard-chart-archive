@@ -41,14 +41,16 @@ def ranking_signature(rows):
     return hashlib.sha1('\n'.join(parts).encode()).hexdigest()
 
 
-def signature_from_frame(df, date):
-    week = df[df['Date'] == date]
-    if week.empty:
-        return None
-    week = week.sort_values('Rank')
-    parts = [f"{r}|{s}|{a}" for r, s, a in
-             zip(week['Rank'], week['Song'], week['Artist'])]
-    return hashlib.sha1('\n'.join(parts).encode()).hexdigest()
+def signatures_from_frame(df):
+    """date -> ranking signature, for every week already in the frame."""
+    if df.empty:
+        return {}
+    out = {}
+    for date, week in df.sort_values('Rank').groupby('Date', sort=False):
+        parts = [f"{r}|{s}|{a}" for r, s, a in
+                 zip(week['Rank'], week['Song'], week['Artist'])]
+        out[str(date)] = hashlib.sha1('\n'.join(parts).encode()).hexdigest()
+    return out
 
 
 def saturdays_from(first_week, last_week=None):
@@ -91,8 +93,13 @@ def main():
     print(f'{slug}: {len(wanted)} weeks total, {len(have)} present, {len(missing)} to fetch', flush=True)
 
     fails, clamped = [], []
-    # Signature of the most recent week we accepted, for the clamp comparison.
-    prev_sig = signature_from_frame(df, wanted[wanted.index(missing[0]) - 1]) if missing and wanted.index(missing[0]) > 0 else None
+    # A week is clamped when its ranking repeats the week immediately before it
+    # in `wanted`. That predecessor has to be looked up per week rather than
+    # carried in a rolling variable: on a re-run the missing weeks are
+    # scattered, so a rolling signature would compare each one against whatever
+    # week happened to be written last and wave the fabrications through.
+    sigs = signatures_from_frame(df)
+    position = {w: i for i, w in enumerate(wanted)}
 
     for i, week in enumerate(missing):
         rows = None
@@ -110,12 +117,14 @@ def main():
             continue
 
         sig = ranking_signature(rows)
-        if sig is not None and sig == prev_sig:
+        idx = position[week]
+        prev_sig = sigs.get(wanted[idx - 1]) if idx > 0 else None
+        if sig is not None and prev_sig is not None and sig == prev_sig:
             # Identical to the previous week: Billboard clamped an out-of-range
             # date. Writing it would fabricate a week that never existed.
             clamped.append(week)
             continue
-        prev_sig = sig
+        sigs[week] = sig
 
         df = pd.concat([df, pd.DataFrame(rows)], ignore_index=True)
 
