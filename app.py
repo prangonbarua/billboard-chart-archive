@@ -1732,6 +1732,53 @@ def albums200():
     return _song_chart_page(BILLBOARD_200_DATA, ALBUMS200_AVAILABLE_DATES,
                             'albums200', 'billboard200.html')
 
+# Bubbling Under is the Hot 100's feeder chart, so each side answers a question
+# about the other: did this entry graduate, and did that hit start down there?
+CROSSOVER_CHART = {'bubbling': 'top100', 'top100': 'bubbling'}
+
+
+def _crossover_run(chart_key, song, artist, debut):
+    """This song's run on the paired chart, or None if it never charted there.
+
+    The join casefolds BOTH fields. Scraped artist casing drifts week to week
+    ('The Kid LAROI' vs 'The Kid Laroi') — the 2026-07-01 bug — and an exact-key
+    join silently returns nothing, which looks identical to a song that genuinely
+    never crossed over.
+    """
+    other = CROSSOVER_CHART.get(chart_key)
+    df, _ = CHART_DATA.get(other, (None, None))
+    if df is None or not len(df) or other not in CHART_DT:
+        return None
+
+    # Filter on the title first: matching titles are a handful of rows, so the
+    # credit normalization runs over those instead of the whole chart.
+    same_title = df[df['Song'].astype(str).str.strip().str.casefold() == song.strip().casefold()]
+    if same_title.empty:
+        return None
+    match = same_title[
+        same_title['Artist'].map(primary_artist, na_action='ignore') == primary_artist(artist)
+    ]
+    if match.empty:
+        return None
+
+    when = CHART_DT[other].loc[match.index].dropna()
+    ranks = pd.to_numeric(match['Rank'], errors='coerce').dropna()
+    if when.empty or ranks.empty:
+        return None
+
+    first = when.min()
+    return {
+        'chart': other,
+        'label': CHARTS[other]['label'],
+        'debut': first.strftime('%Y-%m-%d'),
+        'peak': int(ranks.min()),
+        'weeks': int(when.nunique()),
+        # Whether that run began after this one — the difference between "reached
+        # the Hot 100" and "was already there".
+        'later': bool(debut is not None and pd.notna(debut) and first > debut),
+    }
+
+
 @app.route('/api/song-history')
 @limiter.exempt
 def get_song_history():
@@ -1749,6 +1796,9 @@ def get_song_history():
     chart = {'popairplay': 'pop_airplay'}.get(chart, chart)
     source, _ = CHART_DATA.get(chart, (None, None))
     if source is None:
+        # Name the fallback rather than leaving `chart` empty: everything below
+        # is then reading the Hot 100 under the key that says so.
+        chart = 'top100'
         source = BILLBOARD_DATA
     data = source.copy()
     data['Date'] = pd.to_datetime(data['Date'], errors='coerce')
@@ -1791,7 +1841,8 @@ def get_song_history():
         'peak': peak,
         'total_weeks': total_weeks,
         'song': song,
-        'artist': artist
+        'artist': artist,
+        'crossover': _crossover_run(chart, song, artist, song_data['Date'].min()),
     })
 
 @app.route('/api/album-history')

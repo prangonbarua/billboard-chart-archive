@@ -1,6 +1,6 @@
 # Handoff: chart row filters + Bubbling Under graduation
 
-Requested 2026-08-03. **Part 1 shipped 2026-08-03. Part 2 is still open.**
+Requested 2026-08-03. **Both parts shipped 2026-08-03.**
 
 ## 1. Row filters: New / Re-entry / Growers / New peak — SHIPPED
 
@@ -61,28 +61,29 @@ pre-2025 rows. So nothing new needs scraping or storing:
 The shipped filter hides rows with `display`, never opacity, for exactly the
 animation reason above. Tests are in `tests/test_routes.py`.
 
-## 2. "Did this Bubbling Under song reach the Hot 100?"
+## 2. "Did this Bubbling Under song reach the Hot 100?" — SHIPPED
 
-On click, show whether a Bubbling Under entry later charted on the Hot 100 —
-ideally its Hot 100 debut date and peak. The inverse is worth offering too: on
-a Hot 100 song, show whether it started on Bubbling Under.
+`_crossover_run` (app.py) returns the song's run on the paired chart, and
+`/api/song-history` carries it as a `crossover` field. The history modal renders
+one line under the stats: "Reached The Hot 100 on 2026-08-01 — peak #89, 1 week"
+on a Bubbling Under entry, "Started on Bubbling Under Hot 100 on 2025-08-16 —
+peak #1, 11 weeks" on the Hot 100 side. `CROSSOVER_CHART` maps the pairing;
+every other chart returns null. The `later` flag is what separates "reached" from
+"was already on".
 
-Both CSVs are already loaded in the same process, and the click path exists
-(`showSongHistory` → `/api/song-history?chart=`). It is a lookup of the same
-song in the Hot 100 data.
+The join casefolds Song and normalizes Artist through `primary_artist`, so
+credit drift matches too. Numbers as of 2026-08-03: 12,468 distinct Bubbling
+Under titles, 5,613 of them also on the Hot 100, 5,607 with the Hot 100 run
+coming later. An exact-case join finds 5,534 — 79 fewer, which is the silent
+failure the trap describes, scaled down.
 
-### The trap
+**Do not read a zero on the current week as a broken join.** Bubbling Under only
+lists songs that have never made the Hot 100, so the newest week legitimately
+returns almost no graduations. Check a historical week, or the aggregate count
+that `tests/test_routes.py` asserts (> 4,000), before concluding anything.
 
-**Casefold both fields on the join.** Scraped artist casing drifts week to
-week ("The Kid LAROI" vs "The Kid Laroi") — this is exactly what the
-2026-07-01 fix addressed, where exact-key lookups silently broke. A
-cross-chart join without `.casefold()` on **both** Song and Artist will drop
-real graduations and look like the feature simply found nothing.
-
-Residual risk after casefolding is title variants — "feat." vs "Featuring",
-parenthetical mixes, remix suffixes. Spot-check a handful of known
-graduations before trusting the numbers, and consider reporting a match count
-so a silent zero is obvious.
+Residual risk is title variants — "feat." vs "Featuring", remix suffixes — which
+casefolding cannot merge.
 
 ## Data state as of 2026-08-03
 

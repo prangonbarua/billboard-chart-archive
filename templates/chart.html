@@ -213,6 +213,17 @@
         .filter-count { font-size: 0.75rem; color: var(--text-dim); margin-left: 0.25rem; }
         .filter-empty { padding: 1.5rem 1rem; font-size: 0.875rem; color: var(--text-muted); }
 
+        /* Bubbling Under <-> Hot 100 crossover note in the history modal. */
+        .modal-crossover {
+            font-size: 0.8125rem;
+            color: var(--text);
+            background: #edfff7;
+            border-left: 3px solid #0c492c;
+            padding: 0.625rem 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+        .modal-crossover .x-detail { color: var(--text-muted); }
+
         /* New peak: a song that has charted before and just beat its own best.
            Debuts are excluded server-side, so this marks real milestones only. */
         .chart-table tbody tr.new-peak { background: #edfff7; box-shadow: inset 3px 0 0 #0c492c; }
@@ -517,6 +528,7 @@
         // Artist-kind charts (Artist 100) list artists, not songs, so their
         // artwork comes from the artist endpoint.
         const IS_ARTIST_CHART = {{ 'true' if chart.kind == 'artist' else 'false' }};
+        const CHART_KEY = '{{ chart_key }}';
         function artworkUrl(artist, song) {
             return IS_ARTIST_CHART
                 ? '/api/artist-image/' + encodeURIComponent(artist)
@@ -663,6 +675,32 @@
                     appendStat(data.total_weeks, 'Total Weeks');
                     const streamBox = appendStat('—', 'Spotify Streams');
                     body.appendChild(grid);
+
+                    // Bubbling Under is the Hot 100's feeder chart, so each side
+                    // says something about the other: whether this entry
+                    // graduated, or whether this hit started down there.
+                    const x = data.crossover;
+                    if (x) {
+                        const note = document.createElement('div');
+                        note.className = 'modal-crossover';
+                        const lead = document.createElement('span');
+                        if (CHART_KEY === 'bubbling') {
+                            lead.textContent = x.later
+                                ? 'Reached ' + x.label + ' on ' + x.debut
+                                : 'Was already on ' + x.label + ', from ' + x.debut;
+                        } else {
+                            lead.textContent = x.later
+                                ? 'Later appeared on ' + x.label + ', from ' + x.debut
+                                : 'Started on ' + x.label + ' on ' + x.debut;
+                        }
+                        const detail = document.createElement('span');
+                        detail.className = 'x-detail';
+                        detail.textContent = ' \u2014 peak #' + x.peak + ', ' +
+                            x.weeks + (x.weeks === 1 ? ' week' : ' weeks');
+                        note.appendChild(lead);
+                        note.appendChild(detail);
+                        body.appendChild(note);
+                    }
 
                     function fmtStreams(n) {
                         if (n == null) return '—';

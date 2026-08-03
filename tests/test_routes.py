@@ -227,3 +227,106 @@ def test_billboard_200_reads_history_not_the_stored_columns(client):
         assert shown_peak == int(best[k]), (song, artist, shown_peak, best[k])
         checked += 1
     assert checked > 100
+
+
+@pytest.fixture(scope='session')
+def graduations():
+    """(song, artist) pairs, in their stored casing, that charted on both
+    Bubbling Under and the Hot 100 — built by an independent join so the tests
+    below are not checking _crossover_run against itself."""
+    import app
+    import pandas as pd
+
+    def keyed(df, key):
+        d = df[['Song', 'Artist']].copy()
+        d['k'] = list(zip(d['Song'].astype(str).str.strip().str.casefold(),
+                          d['Artist'].map(app.primary_artist, na_action='ignore')))
+        d['dt'] = app.CHART_DT[key].loc[d.index]
+        return d
+
+    b = keyed(app.BUBBLING_DATA, 'bubbling')
+    h = keyed(app.BILLBOARD_DATA, 'top100')
+    both = set(b['k']) & set(h['k'])
+    # One stored-casing example per matched pair. A dict, not .loc: the keys are
+    # tuples, which pandas reads as a multi-axis indexer rather than a label.
+    stored = dict(zip(b['k'], zip(b['Song'].astype(str), b['Artist'].astype(str))))
+    return both, [stored[k] for k in sorted(both)[:25]]
+
+
+def test_crossover_finds_the_bulk_of_bubbling_under_graduations(graduations):
+    """A join that fails silently returns zero and looks exactly like a chart
+    where nothing ever graduated. Thousands of titles appear on both charts, so
+    a low number here means the join broke, not that history changed."""
+    both, _ = graduations
+    assert len(both) > 4000, f'only {len(both)} titles matched across the two charts'
+
+
+def test_crossover_resolves_every_sampled_graduation(graduations):
+    import app
+    _, sample = graduations
+    assert sample
+    missed = [(s, a) for s, a in sample
+              if app._crossover_run('bubbling', str(s), str(a), None) is None]
+    assert missed == [], f'{len(missed)} known graduations returned nothing: {missed[:5]}'
+
+
+def test_crossover_join_survives_artist_casing_drift():
+    """Scraped casing drifts week to week ('The Kid LAROI' vs 'The Kid Laroi').
+    An exact-key join drops real graduations and reports nothing found."""
+    import app
+    b = app.BUBBLING_DATA
+    for song, artist in zip(b['Song'].astype(str), b['Artist'].astype(str)):
+        base = app._crossover_run('bubbling', song, artist, None)
+        if base is None:
+            continue
+        for variant in (artist.upper(), artist.lower(), artist.swapcase()):
+            got = app._crossover_run('bubbling', song, variant, None)
+            assert got == base, (song, variant)
+        return
+    pytest.fail('no crossover found to test casing against')
+
+
+def test_crossover_reports_both_directions(client):
+    """Bubbling Under asks 'did it graduate'; the Hot 100 asks 'did it start
+    there'. `later` is what separates the two sentences."""
+    import app
+    b = app.BUBBLING_DATA
+    for song, artist in zip(b['Song'].astype(str), b['Artist'].astype(str)):
+        up = app._crossover_run('bubbling', song, artist, None)
+        if up is None:
+            continue
+        assert up['chart'] == 'top100'
+        down = app._crossover_run('top100', song, artist, None)
+        assert down is not None and down['chart'] == 'bubbling'
+        # Each side reports the other chart's run, so the labels must differ.
+        assert up['label'] != down['label']
+        return
+    pytest.fail('no crossover found')
+
+
+def test_charts_without_a_pair_report_no_crossover(client, charts):
+    """Only Bubbling Under and the Hot 100 are paired; everything else must
+    return null rather than a wrong-chart match or an error."""
+    import app
+    for key in charts:
+        if key in ('bubbling', 'top100') or app.CHARTS[key]['kind'] != 'song':
+            continue
+        df, _ = app.CHART_DATA[key]
+        song, artist = str(df['Song'].iloc[0]), str(df['Artist'].iloc[0])
+        assert app._crossover_run(key, song, artist, None) is None, key
+
+
+def test_song_history_carries_the_crossover_field(client):
+    import app
+    b = app.BUBBLING_DATA
+    for song, artist in zip(b['Song'].astype(str), b['Artist'].astype(str)):
+        if app._crossover_run('bubbling', song, artist, None) is None:
+            continue
+        r = client.get('/api/song-history', query_string={
+            'chart': 'bubbling', 'artist': artist, 'song': song})
+        assert r.status_code == 200
+        x = r.get_json()['crossover']
+        assert x and x['chart'] == 'top100'
+        assert set(x) == {'chart', 'label', 'debut', 'peak', 'weeks', 'later'}
+        return
+    pytest.fail('no crossover found')
