@@ -74,6 +74,19 @@ def fetch_yearend(slug: str, year: int, session=None, timeout: int = 25) -> list
     return parse_yearend(r.text)
 
 
+def is_weekly_url(url: str) -> bool:
+    """Whether a settled URL is a weekly chart rather than a year-end one.
+
+    A year-end-only slug has no weekly page, and asking for one redirects to
+    the LATEST year-end chart: /charts/hot-100-songs/ settles at
+    /charts/year-end/hot-100-songs/. Taking that as the weekly reference would
+    drop the most recent year of every such chart as a fall-through, which is
+    the exact opposite of the intended guard. A slug with no weekly page also
+    cannot fall through to one, so there is nothing to compare against.
+    """
+    return '/year-end/' not in url
+
+
 def fetch_weekly(slug: str, session=None, timeout: int = 25) -> list[dict]:
     """The chart's own weekly page, used only as a fall-through reference."""
     url = f'https://www.billboard.com/charts/{slug}/'
@@ -84,7 +97,7 @@ def fetch_weekly(slug: str, session=None, timeout: int = 25) -> list[dict]:
         r = sess.get(url, timeout=timeout)
     except requests.RequestException:
         return []
-    if r.status_code != 200:
+    if r.status_code != 200 or not is_weekly_url(r.url):
         return []
     return parse_yearend(r.text)
 

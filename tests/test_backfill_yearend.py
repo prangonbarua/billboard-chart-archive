@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'scripts'))
 
-from backfill_yearend import parse_yearend, scrape_chart
+from backfill_yearend import is_weekly_url, parse_yearend, scrape_chart
 
 ROW = '''
 <div class="o-chart-results-list-row-container">
@@ -94,6 +94,19 @@ def test_scrape_rejects_the_weekly_chart_falling_through():
                                  range(2020, 2025), fetch=fake_fetch,
                                  weekly_rows=weekly)
     assert rows == []
+
+
+def test_a_year_end_only_slug_has_no_weekly_page():
+    """/charts/hot-100-songs/ settles at /charts/year-end/hot-100-songs/.
+
+    That is the LATEST year-end chart. Treating it as the weekly reference
+    would drop the newest year of every year-end-only chart.
+    """
+    assert not is_weekly_url('https://www.billboard.com/charts/year-end/hot-100-songs/')
+
+
+def test_a_real_weekly_page_is_recognised():
+    assert is_weekly_url('https://www.billboard.com/charts/adult-contemporary/')
 
 
 def test_weekly_rows_do_not_suppress_a_real_year():

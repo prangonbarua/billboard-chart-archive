@@ -80,13 +80,21 @@ def candidates(key, label):
     yield f'hot-{base}-songs'
 
 
-def titles(session, url):
-    """Ordered row titles for a chart page, or [] if there are none."""
+def titles(session, url, weekly_only=False):
+    """Ordered row titles for a chart page, or [] if there are none.
+
+    With weekly_only, a response that settles on a year-end URL returns []: a
+    year-end-only slug has no weekly page, and asking for one redirects to the
+    LATEST year-end chart. Comparing against that would reject the slug for
+    matching itself.
+    """
     try:
         r = session.get(url, timeout=25)
     except requests.RequestException:
         return []
     if r.status_code != 200:
+        return []
+    if weekly_only and '/year-end/' in r.url:
         return []
     soup = BeautifulSoup(r.text, 'html.parser')
     out = []
@@ -104,7 +112,8 @@ def rows_for(session, slug):
     The weekly page is fetched once and compared against every probe year: a
     slug with no year-end edition serves that exact page for any year asked.
     """
-    weekly = titles(session, f'https://www.billboard.com/charts/{slug}/')
+    weekly = titles(session, f'https://www.billboard.com/charts/{slug}/',
+                    weekly_only=True)
     best = 0
     for year in PROBE_YEARS:
         got = titles(session,
