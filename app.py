@@ -270,6 +270,43 @@ del _k, _df, _d, _names
 # unreachable from a search box that can now report on all of them.
 ALL_ARTISTS = sorted({a for names in CHART_ARTISTS.values() for a in names})
 
+
+# Year-end charts.
+# One combined CSV rather than the per-chart files the weekly charts use: the
+# whole year-end dataset is smaller than one weekly chart and every row has the
+# same shape, so 20 more globals would buy nothing.
+#
+# Only genuine years are in the file. Billboard answers any year, clamping a
+# missing one forward to the next year it holds, and a chart with no year-end
+# edition at all is answered with its current weekly chart. Neither states a
+# year anywhere on the page. See scripts/yearend_guard.py and
+# docs/HANDOFF-year-end.md.
+def _load_yearend():
+    path = DATA_DIR / 'yearend.csv'
+    if not path.exists():
+        print('yearend.csv not found. Year-end views will be unavailable.')
+        return {}, {}
+    df = pd.read_csv(path, low_memory=False)
+    df['Year'] = pd.to_numeric(df['Year'], errors='coerce')
+    df['Rank'] = pd.to_numeric(df['Rank'], errors='coerce')
+    df = df.dropna(subset=['Year', 'Rank'])
+    df['Year'] = df['Year'].astype(int)
+    df['Rank'] = df['Rank'].astype(int)
+
+    data, years = {}, {}
+    for key, group in df.groupby('Chart'):
+        if key not in CHARTS:
+            continue
+        group = group.sort_values(['Year', 'Rank'])
+        data[key] = group
+        years[key] = sorted(group['Year'].unique().tolist(), reverse=True)
+    print(f'Loaded {len(df)} year-end records across {len(data)} charts')
+    return data, years
+
+
+YEAREND_DATA, YEAREND_YEARS = _load_yearend()
+
+
 def available_charts():
     """Registry entries that actually have data loaded, grouped for the nav."""
     groups = {}
@@ -1482,8 +1519,67 @@ def get_artist_image(artist_name):
         print(f"Deezer artist-image error for '{artist_name}': {e}")
         return jsonify({'error': str(e)}), 500
 
+def _yearend_chart_page(chart_key):
+    """Year-end view of a chart.
+
+    Year-end rows have no Last Week, Peak Position or Weeks on Chart, so none
+    of the weekly badges, filters or history apply — the template hides them
+    under mode='yearend'.
+
+    A year not in YEAREND_YEARS is one Billboard fabricates, so it redirects
+    rather than rendering: a shared link must not be able to produce a page of
+    invented history.
+    """
+    years = YEAREND_YEARS.get(chart_key)
+    df = YEAREND_DATA.get(chart_key)
+    if not years or df is None:
+        flash(f"{CHARTS[chart_key]['label']} has no year-end chart", 'error')
+        return redirect(url_for(chart_key))
+
+    raw = request.args.get('year')
+    selected_year = years[0]
+    if raw:
+        try:
+            asked = int(raw)
+        except ValueError:
+            flash('Invalid year', 'error')
+            return redirect(url_for(chart_key, view='yearend'))
+        if asked not in years:
+            flash(f'Billboard publishes no {asked} year-end chart for '
+                  f"{CHARTS[chart_key]['label']}", 'error')
+            return redirect(url_for(chart_key, view='yearend'))
+        selected_year = asked
+
+    rows = df[df['Year'] == selected_year].sort_values('Rank')
+    chart_songs = [{
+        'rank': int(r['Rank']),
+        'song': str(r['Song']).strip() if pd.notna(r['Song']) else '',
+        'artist': str(r['Artist']).strip() if pd.notna(r['Artist']) else '',
+        'image_url': str(r['Image URL']) if pd.notna(r['Image URL']) else '',
+        'tags': [],
+    } for _, r in rows.iterrows()]
+
+    return render_template(
+        'chart.html',
+        mode='yearend',
+        yearend_years=years,
+        selected_year=selected_year,
+        chart_songs=chart_songs,
+        available_dates=[],
+        selected_date=None,
+        grower_min=1,
+        chart=CHARTS.get(chart_key, {}),
+        chart_key=chart_key,
+    )
+
+
 def _song_chart_page(source_df, available_dates, endpoint, template):
     """Shared weekly song-chart page renderer (Hot 100 and the global charts)."""
+    # Every chart route funnels through here, so the year-end view is picked up
+    # for all of them from this one branch: no new routes, no registry change.
+    if request.args.get('view') == 'yearend':
+        return _yearend_chart_page(endpoint)
+
     # Get the selected date from query params (default to latest)
     selected_date = request.args.get('date', None)
 
@@ -1635,7 +1731,11 @@ def _song_chart_page(source_df, available_dates, endpoint, template):
         # its title, heading, and history-API chart param; the older per-chart
         # templates ignore them.
         chart=CHARTS.get(endpoint, {}),
-        chart_key=endpoint
+        chart_key=endpoint,
+        mode='weekly',
+        # Drives the Weekly/Year-End toggle. Empty for a chart with no
+        # year-end edition, which is how the toggle stays hidden there.
+        yearend_years=YEAREND_YEARS.get(endpoint, []),
     )
 
 @app.route('/top100')
