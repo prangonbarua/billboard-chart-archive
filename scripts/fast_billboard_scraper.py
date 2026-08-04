@@ -179,7 +179,10 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     'hot-adult-r-and-b-airplay': 30,
                     # Bubbling Under has run 25 rows every week since its
                     # 1992 revival, the only span Billboard serves.
-                    'bubbling-under-hot-100-singles': 25}.get(chart_name, 20)
+                    'bubbling-under-hot-100-singles': 25,
+                    # Canadian Hot 100 has run 100 rows every week since
+                    # Billboard's archive begins at 2007-03-31.
+                    'canadian-hot-100': 100}.get(chart_name, 20)
         if len(entries) < expected:
             print(f"✗ Incomplete chart: {len(entries)}/{expected} rows — skipping (will retry next run)")
             time.sleep(1)
@@ -330,6 +333,7 @@ def main():
     update_chart_data('hot-adult-r-and-b-airplay', 'data/adult_rnb_airplay.csv', weeks_to_fetch=15)
     update_chart_data('hot-dance-airplay', 'data/dance_airplay.csv', weeks_to_fetch=15)
     update_chart_data('bubbling-under-hot-100-singles', 'data/bubbling_under.csv', weeks_to_fetch=15)
+    update_chart_data('canadian-hot-100', 'data/canadian_hot100.csv', weeks_to_fetch=15)
 
     print("\n" + "="*60)
     if success_hot100 and success_bb200:
