@@ -210,6 +210,16 @@
             border-color: var(--surface-hover);
             color: var(--text);
         }
+        /* Weekly/Year-End switch. Reuses .filter-btn for the pill styling and
+           its aria-pressed active state; these are links, not buttons, so the
+           underline and visited colour have to be cleared. */
+        .view-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .view-toggle .filter-btn { text-decoration: none; display: inline-block; }
         .filter-count { font-size: 0.75rem; color: var(--text-dim); margin-left: 0.25rem; }
         .filter-empty { padding: 1.5rem 1rem; font-size: 0.875rem; color: var(--text-muted); }
 
@@ -309,8 +319,9 @@
         <div class="page-header">
             <div>
                 <h1 class="page-title">{{ chart.label }}</h1>
-                <p class="page-meta">Ranked by streaming, airplay &amp; sales &middot; <span class="page-date">{{ selected_date }}</span></p>
+                <p class="page-meta">Ranked by streaming, airplay &amp; sales &middot; <span class="page-date">{% if mode == 'yearend' %}{{ selected_year }}{% else %}{{ selected_date }}{% endif %}</span></p>
             </div>
+            {% if mode != 'yearend' %}
             <div class="date-nav">
                 <button class="nav-btn" id="prevWeek">&#8592; Prev</button>
                 <div class="date-selectors">
@@ -325,9 +336,41 @@
                 </div>
                 <button class="nav-btn" id="nextWeek">Next &#8594;</button>
             </div>
+            {% else %}
+            {# The year-end picker is a different control from the weekly
+               yearSelect above, which filters weeks within a year. Reusing
+               that id would leave the weekly script wired to this one. #}
+            <div class="date-nav">
+                <div class="date-selectors">
+                    <label for="yearEndSelect">Year</label>
+                    <select id="yearEndSelect"
+                            onchange="location.href='{{ url_for(chart_key, view='yearend') }}&amp;year=' + this.value">
+                        {% for y in yearend_years %}
+                        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
+        {% if yearend_years is defined and yearend_years %}
+        <div class="view-toggle" role="group" aria-label="Chart view">
+            <a class="filter-btn" href="{{ url_for(chart_key) }}"
+               aria-pressed="{{ 'false' if mode == 'yearend' else 'true' }}">Weekly</a>
+            <a class="filter-btn" href="{{ url_for(chart_key, view='yearend') }}"
+               aria-pressed="{{ 'true' if mode == 'yearend' else 'false' }}">Year-End</a>
+        </div>
+        {% endif %}
+
+        {% if mode == 'yearend' %}
+        <p class="page-meta">Billboard's year-end archive is not continuous.
+           Years missing from this list are years it does not publish, not
+           years this site failed to collect.</p>
+        {% endif %}
+
         {% if chart_songs and chart_songs|length > 0 %}
+        {% if mode != 'yearend' %}
         <div class="chart-filters" id="chartFilters" role="group" aria-label="Filter chart rows">
             <button type="button" class="filter-btn" data-filter="all" aria-pressed="true">All</button>
             <button type="button" class="filter-btn" data-filter="new" aria-pressed="false">New</button>
@@ -336,6 +379,7 @@
             <button type="button" class="filter-btn" data-filter="peak" aria-pressed="false">New peak</button>
             <span class="filter-count" id="filterCount"></span>
         </div>
+        {% endif %}
 
         <div class="hero{% if chart_songs[0].new_peak %} new-peak{% endif %}" data-tags="{{ chart_songs[0].tags|join(' ') }}" data-artist="{{ chart_songs[0].artist|e }}" data-song="{{ chart_songs[0].song|e }}" style="cursor:pointer">
             <div class="hero-inner">
@@ -347,6 +391,7 @@
                 <div>
                     <div class="hero-title">{{ chart_songs[0].song }}</div>
                     <div class="hero-artist">{{ chart_songs[0].artist }}</div>
+                    {% if mode != 'yearend' %}
                     <div class="hero-stats">
                         <div>
                             <div class="hero-stat-label">Peak</div>
@@ -363,6 +408,7 @@
                         </div>
                         {% endif %}
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -373,18 +419,21 @@
                 <thead>
                     <tr>
                         <th class="col-rank">#</th>
-                        <th class="col-change">Change</th>
+                        {% if mode != 'yearend' %}<th class="col-change">Change</th>{% endif %}
                         <th class="col-art"></th>
                         <th>Song / Artist</th>
+                        {% if mode != 'yearend' %}
                         <th class="col-stat col-stats-hide">Last Wk</th>
                         <th class="col-stat col-stats-hide">Peak</th>
                         <th class="col-stat col-stats-hide">Weeks</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
                     {% for song in chart_songs[1:10] %}
                     <tr class="top10{% if song.new_peak %} new-peak{% endif %}" data-tags="{{ song.tags|join(' ') }}" data-artist="{{ song.artist|e }}" data-song="{{ song.song|e }}">
                         <td class="cell-rank"><div class="rank-num">{{ song.rank }}</div></td>
+                        {% if mode != 'yearend' %}
                         <td>
                             {% if song.change == 'new' %}<span class="badge badge-new">NEW</span>
                             {% elif song.change == 're-entry' %}<span class="badge badge-re">RE</span>
@@ -392,6 +441,7 @@
                             {% elif song.change == 'down' %}<span class="badge badge-down">&#9660; {{ song.change_amount }}</span>
                             {% else %}<span class="badge badge-same">&#8212;</span>{% endif %}
                         </td>
+                        {% endif %}
                         <td class="cell-art">
                             <div class="art-thumb">
                                 <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Crect fill='%23f5f5f3' width='44' height='44'/%3E%3C/svg%3E"
@@ -402,9 +452,11 @@
                             <div class="song-title">{{ song.song }}</div>
                             {% if chart.kind != 'artist' %}<div class="song-artist">{{ song.artist }}</div>{% endif %}
                         </td>
+                        {% if mode != 'yearend' %}
                         <td class="cell-stat col-stats-hide"><div class="stat-val">{% if song.last_week %}#{{ song.last_week }}{% else %}&#8212;{% endif %}</div></td>
                         <td class="cell-stat cell-peak col-stats-hide"><div class="stat-val">#{{ song.peak }}</div></td>
                         <td class="cell-stat col-stats-hide"><div class="stat-val">{{ song.weeks }}</div></td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
 
@@ -412,6 +464,7 @@
                     {% for song in chart_songs[10:] %}
                     <tr class="{% if song.new_peak %}new-peak{% endif %}" data-tags="{{ song.tags|join(' ') }}" data-artist="{{ song.artist|e }}" data-song="{{ song.song|e }}">
                         <td class="cell-rank"><div class="rank-num">{{ song.rank }}</div></td>
+                        {% if mode != 'yearend' %}
                         <td>
                             {% if song.change == 'new' %}<span class="badge badge-new">NEW</span>
                             {% elif song.change == 're-entry' %}<span class="badge badge-re">RE</span>
@@ -419,6 +472,7 @@
                             {% elif song.change == 'down' %}<span class="badge badge-down">&#9660; {{ song.change_amount }}</span>
                             {% else %}<span class="badge badge-same">&#8212;</span>{% endif %}
                         </td>
+                        {% endif %}
                         <td class="cell-art">
                             <div class="art-thumb">
                                 <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Crect fill='%23f5f5f3' width='44' height='44'/%3E%3C/svg%3E"
@@ -429,9 +483,11 @@
                             <div class="song-title">{{ song.song }}</div>
                             {% if chart.kind != 'artist' %}<div class="song-artist">{{ song.artist }}</div>{% endif %}
                         </td>
+                        {% if mode != 'yearend' %}
                         <td class="cell-stat col-stats-hide"><div class="stat-val">{% if song.last_week %}#{{ song.last_week }}{% else %}&#8212;{% endif %}</div></td>
                         <td class="cell-stat cell-peak col-stats-hide"><div class="stat-val">#{{ song.peak }}</div></td>
                         <td class="cell-stat col-stats-hide"><div class="stat-val">{{ song.weeks }}</div></td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
                     {% endif %}
@@ -464,6 +520,10 @@
         </div>
     </div>
 
+    {# Weekly-only. In year-end mode available_dates is empty, so the week
+       filters and the prev/next handlers would run against an empty list, and
+       the song-history modal has no weekly run to show for a year-end row. #}
+    {% if mode != 'yearend' %}
     <script>
         const allDates = {{ available_dates|tojson }};
         const selectedDate = {{ selected_date|tojson }};
@@ -818,5 +878,6 @@
         window.addEventListener('click', e => { if (e.target === document.getElementById('historyModal')) closeHistoryModal(); });
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHistoryModal(); });
     </script>
+    {% endif %}
 </body>
 </html>
