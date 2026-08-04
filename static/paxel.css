@@ -66,12 +66,25 @@ img {
   border-radius: 0 !important;
 }
 
-/* Scrollbars hidden — scrolling still works, no visible bar */
-html, body, * {
+/* Scrollbars inside elements (modals, wide tables) stay hidden — scrolling
+   still works, no visible bar. */
+* {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
 }
-::-webkit-scrollbar { display: none; width: 0; height: 0; }
+*::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+/* The page scrollbar is the exception: visible, in the site greens. The
+   element selectors outrank the universal ones above, so the rules here win
+   without needing to fight them. */
+html {
+  scrollbar-width: thin !important;
+  scrollbar-color: #0c492c #ffffff;
+}
+html::-webkit-scrollbar { display: block; width: 10px; height: 10px; }
+html::-webkit-scrollbar-track { background: #ffffff; }
+html::-webkit-scrollbar-thumb { background: #0c492c; }
+html::-webkit-scrollbar-thumb:hover { background: #0fbf74; }
 
 /* Dithered side rails — fixed columns at each screen edge, dense at the
    outer edge fading inward, with a 1px dark-green inner rule. */
