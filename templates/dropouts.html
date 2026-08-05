@@ -75,7 +75,7 @@
                 {% for group in ['Songs', 'Airplay', 'Albums & Artists'] %}
                     {% if charts.get(group) %}
                     <div class="nav-dd-group">
-                        <div class="nav-dd-label">{{ group }}</div>
+                        <div class="nav-dd-label">{{ 'Albums' if group == 'Albums & Artists' else group }}</div>
                         {% for c in charts[group] %}
                             <a href="{{ url_for('dropouts_page', chart=c.key) }}"
                                class="{{ 'active' if c.key == chart_key else '' }}">{{ c.label }}</a>
