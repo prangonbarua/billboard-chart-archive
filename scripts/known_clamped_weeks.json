@@ -41,14 +41,9 @@
     "1991-12-28"
   ],
 
-  "_radio": "New Year weeks, first two years of the chart's life.",
+  "_radio": "New Year weeks, first two years of the chart's life, and the same dates top100 and albums200 already carry. Re-dated from 1990-12-26/1991-12-25 when the Wednesday-dated weeks were shifted to Billboard's real Saturday dates. Both were re-checked at source: Billboard serves each with its own 'Week of' heading and a full ~1.98 MB page, so the repeated ranking is a genuine frozen holiday chart, not a clamp.",
   "radio": [
-    "1990-12-26",
-    "1991-12-25"
-  ],
-
-  "_streaming": "Not a holiday: radio, digital and streaming were dated Wednesdays until 2025-10-22 and Saturdays from 2025-10-25, so those two dates are one chart week recorded twice. Accepted rather than deleted because the real fix is re-dating all Wednesday-dated weeks in those three files, which is tracked in the follow-ups doc.",
-  "streaming": [
-    "2025-10-25"
+    "1990-12-29",
+    "1991-12-28"
   ]
 }

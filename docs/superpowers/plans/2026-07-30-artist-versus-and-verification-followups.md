@@ -28,16 +28,6 @@ Open these and look at them:
 
 ### Data
 
-- **radio, digital_songs and streaming_songs are dated three days early for
-  their entire history.** They use Wednesday dates until 2025-10-22 and
-  Saturday dates from 2025-10-25; every other chart in the repo is Saturday
-  throughout, which is Billboard's own convention. That makes 2025-10-22 and
-  2025-10-25 the same chart week recorded twice — identical in streaming,
-  near-identical in radio and digital — and leaves a 3-day step in all three
-  files. The fix is re-dating 1826 radio, 1096 digital and 666 streaming weeks
-  by +3 days and merging the collision at the seam, not deleting a week. Until
-  then the streaming duplicate is baselined in
-  `scripts/known_clamped_weeks.json` and the step shows as a warning.
 - The clamped-week check only compares a week against its immediate
   predecessor. A clamp that reproduces a week further back is invisible to it.
 
@@ -68,6 +58,25 @@ Open these and look at them:
 
 ## Closed
 
+- **radio, digital_songs and streaming_songs were dated three days early for
+  their entire history.** Wednesday dates until 2025-10-22, Saturday dates from
+  2025-10-25, against Billboard's Saturday convention everywhere else. By
+  2026-08 this had stopped being cosmetic: the scraper's 52-week gap-backfill
+  looks for missing Saturdays, saw every Wednesday-stored week as absent,
+  refetched it, and wrote a Saturday row identical to the Wednesday row three
+  days earlier — which is what failed the 2026-08-05 scheduled run. Fixed by
+  shifting 1826 radio, 1096 digital and 666 streaming weeks by +3 days.
+  Two checks came first, both at source: 24 sampled weeks spread across all
+  three histories matched Billboard's chart for date+3 at 100% on the top 20
+  and never matched date−4; and the one collision, 2025-10-22 landing on the
+  existing 2025-10-25, turned out to be the same chart week twice — all 50
+  ranks identical, so the Wednesday copy was dropped rather than merged. It was
+  the worse of the two anyway: `#` image URLs, no Weeks on Chart, the
+  pre-2025 debut corruption in Last Week and Peak, and commas mangled to `;`
+  and `|`. Only the date field of each line was rewritten; every other byte is
+  unchanged. All three files now run gap-free at 7 days from first week to
+  last. The stale `streaming` baseline entry came out of
+  `known_clamped_weeks.json` and the two `radio` entries were re-dated.
 - **Versus had no CSV export** while the artist report page did. `229330d`
   added `/download-versus-csv`, taking the same query as `/api/versus` so an
   export always matches the comparison on screen.
