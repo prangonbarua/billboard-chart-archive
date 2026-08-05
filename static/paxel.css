@@ -74,17 +74,45 @@ img {
 }
 *::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
-/* The page scrollbar is the exception: visible, in the site greens. The
-   element selectors outrank the universal ones above, so the rules here win
-   without needing to fight them. */
+/* The page scrollbar is the exception: visible, and drawn as the last column of
+   the dithered rail it sits against rather than a control bolted to the edge.
+   Same #0fbf74 as the rail's ink and its inner rule, a white gutter, a hairline
+   against the rail, and the square corners the rest of the site uses.
+   Firefox has no scrollbar pseudo-elements, so it gets the nearest thing its
+   two standard properties can express. */
 html {
   scrollbar-width: thin !important;
-  scrollbar-color: #0c492c #ffffff;
+  scrollbar-color: #0fbf74 #ffffff;
 }
-html::-webkit-scrollbar { display: block; width: 10px; height: 10px; }
-html::-webkit-scrollbar-track { background: #ffffff; }
-html::-webkit-scrollbar-thumb { background: #0c492c; }
-html::-webkit-scrollbar-thumb:hover { background: #0fbf74; }
+
+/* Chrome and Safari can draw it properly — but only once scrollbar-color is
+   handed back to `auto`. While that property is set, Chrome renders its own
+   rounded pill from it and ignores every pseudo-element below, which is how the
+   bar ended up a dark rounded lozenge against a square-edged site. */
+@supports selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-width: auto !important;
+    scrollbar-color: auto !important;
+  }
+  html::-webkit-scrollbar { display: block; width: 12px; height: 12px; background: #ffffff; }
+  html::-webkit-scrollbar-track {
+    /* Hairline as a gradient stop, not a border: Chrome ignores borders here. */
+    background: linear-gradient(to right, rgba(15, 191, 116, 0.35) 0 1px, #ffffff 1px);
+  }
+  html::-webkit-scrollbar-thumb {
+    /* padding-box turns the border into a gutter rather than a green edge, so
+       the thumb reads as a 6px bar with air around it. The border is transparent
+       rather than white so the track's hairline runs behind it unbroken. The
+       universal border-radius reset does not reach pseudo-elements — hence the
+       explicit 0. */
+    background: #0fbf74;
+    border: 3px solid transparent;
+    border-radius: 0;
+    background-clip: padding-box;
+  }
+  html::-webkit-scrollbar-thumb:hover { background: #0c492c; background-clip: padding-box; }
+  html::-webkit-scrollbar-corner { background: #ffffff; }
+}
 
 /* Dithered side rails — fixed columns at each screen edge, dense at the
    outer edge fading inward, with a 1px dark-green inner rule. */
