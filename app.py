@@ -317,10 +317,24 @@ def available_charts():
         groups.setdefault(meta['group'], []).append(dict(meta, key=key))
     return groups
 
+def yearend_charts():
+    """Charts with a genuine year-end edition, in registry order.
+
+    Built from YEAREND_YEARS rather than CHARTS on purpose: rnb_hiphop,
+    heatseekers and bubbling have no year-end edition at all, so listing every
+    chart here would put three links in the nav that only redirect back with an
+    error. See docs/HANDOFF-year-end.md.
+    """
+    return [dict(CHARTS[key], key=key) for key in CHARTS if key in YEAREND_YEARS]
+
 @app.context_processor
 def inject_nav():
     """Every template gets the nav data, so the nav lives in one partial."""
-    return {'nav_groups': available_charts(), 'nav_charts': CHARTS}
+    return {
+        'nav_groups': available_charts(),
+        'nav_charts': CHARTS,
+        'nav_yearend': yearend_charts(),
+    }
 
 def safe_int(val, default=None):
     if pd.isna(val):
