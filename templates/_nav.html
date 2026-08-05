@@ -58,7 +58,11 @@
         left: 0;
         min-width: 460px;
         display: flex;
-        gap: 1.5rem;
+        /* Each column is as wide as its longest link, so a short entry beside a
+           long one already leaves a ragged edge — worst where Airplay's
+           'Mainstream R&B/Hip-Hop' meets the two-item Albums & Artists column.
+           1rem keeps the columns legibly apart without adding to that. */
+        gap: 1rem;
         padding: 1rem 1.25rem;
         background: var(--bg);
         border: 1px solid var(--border);
