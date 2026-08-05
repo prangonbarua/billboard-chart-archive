@@ -121,14 +121,14 @@ def _row_tags(body):
 
 
 def test_every_chart_page_offers_the_row_filters(client, charts):
-    """The filter bar is built in the shared renderer so all charts get it from
-    one edit. A chart rendering rows without data-tags would show the buttons
-    and silently filter everything away."""
+    """The filter select is built in the shared renderer so all charts get it
+    from one edit. A chart rendering rows without data-tags would show the
+    control and silently filter everything away."""
     for key in charts:
         body = client.get('/' + key).get_data(as_text=True)
-        assert 'id="chartFilters"' in body, key
+        assert 'id="rowFilterSelect"' in body, key
         for f in ('new', 're-entry', 'grower', 'peak'):
-            assert f'data-filter="{f}"' in body, f'{key}: no {f} filter'
+            assert f'value="{f}"' in body, f'{key}: no {f} filter'
         rows = ROW_TAGS_RE.findall(body)
         assert len(rows) > 1, f'{key}: rows carry no data-tags'
 
