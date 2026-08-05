@@ -1533,6 +1533,27 @@ def get_artist_image(artist_name):
         print(f"Deezer artist-image error for '{artist_name}': {e}")
         return jsonify({'error': str(e)}), 500
 
+# Billboard lazy-loads chart artwork, so a row scraped before its <img> swapped
+# in the real source carries this placeholder gif instead. It is not artwork,
+# and 16% of the year-end scrape has it.
+_BB_LAZY_FALLBACK = 'lazyload-fallback'
+
+
+def _billboard_art(raw, size=''):
+    """Billboard's own artwork URL for a year-end row, or '' if it has none.
+
+    charts-static.billboard.com is what billboard.com itself serves chart
+    thumbnails from, and it hotlinks without a referer. It publishes exactly
+    two sizes — 180x180 (as scraped) and 344x344; every other dimension 403s,
+    so `size` may only ever be one of those two.
+    """
+    if not raw or _BB_LAZY_FALLBACK in raw:
+        return ''
+    if size and '-180x180.' in raw:
+        return raw.replace('-180x180.', f'-{size}.')
+    return raw
+
+
 def _yearend_chart_page(chart_key):
     """Year-end view of a chart.
 
@@ -1565,13 +1586,25 @@ def _yearend_chart_page(chart_key):
         selected_year = asked
 
     rows = df[df['Year'] == selected_year].sort_values('Rank')
-    chart_songs = [{
-        'rank': int(r['Rank']),
-        'song': str(r['Song']).strip() if pd.notna(r['Song']) else '',
-        'artist': str(r['Artist']).strip() if pd.notna(r['Artist']) else '',
-        'image_url': str(r['Image URL']) if pd.notna(r['Image URL']) else '',
-        'tags': [],
-    } for _, r in rows.iterrows()]
+    is_artist_chart = CHARTS.get(chart_key, {}).get('kind') == 'artist'
+
+    def _row(r):
+        name = str(r['Song']).strip() if pd.notna(r['Song']) else ''
+        credit = str(r['Artist']).strip() if pd.notna(r['Artist']) else ''
+        art = str(r['Image URL']) if pd.notna(r['Image URL']) else ''
+        return {
+            'rank': int(r['Rank']),
+            'song': name,
+            # Artist 100 year-end rows are artists, not songs: the name sits in
+            # the Song column and Artist is the literal string 'Unknown'. Left
+            # as scraped, the artwork lookup searches Deezer for "Unknown".
+            'artist': name if is_artist_chart else credit,
+            'image_url': _billboard_art(art),
+            'image_url_lg': _billboard_art(art, '344x344'),
+            'tags': [],
+        }
+
+    chart_songs = [_row(r) for _, r in rows.iterrows()]
 
     return render_template(
         'chart.html',

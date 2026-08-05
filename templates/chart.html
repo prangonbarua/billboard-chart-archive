@@ -387,6 +387,7 @@
                 <div class="hero-art">
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Crect fill='%23f5f5f3' width='160' height='160'/%3E%3C/svg%3E"
                         alt="artwork" class="hero-artwork-img"
+                        data-art="{{ chart_songs[0].image_url_lg|default('', true)|e }}"
                         data-song="{{ chart_songs[0].song|e }}" data-artist="{{ chart_songs[0].artist|e }}">
                 </div>
                 <div>
@@ -446,7 +447,8 @@
                         <td class="cell-art">
                             <div class="art-thumb">
                                 <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Crect fill='%23f5f5f3' width='44' height='44'/%3E%3C/svg%3E"
-                                    alt="art" data-song="{{ song.song|e }}" data-artist="{{ song.artist|e }}" loading="lazy">
+                                    alt="art" data-art="{{ song.image_url|default('', true)|e }}"
+                                    data-song="{{ song.song|e }}" data-artist="{{ song.artist|e }}" loading="lazy">
                             </div>
                         </td>
                         <td>
@@ -477,7 +479,8 @@
                         <td class="cell-art">
                             <div class="art-thumb">
                                 <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Crect fill='%23f5f5f3' width='44' height='44'/%3E%3C/svg%3E"
-                                    alt="art" data-song="{{ song.song|e }}" data-artist="{{ song.artist|e }}" loading="lazy">
+                                    alt="art" data-art="{{ song.image_url|default('', true)|e }}"
+                                    data-song="{{ song.song|e }}" data-artist="{{ song.artist|e }}" loading="lazy">
                             </div>
                         </td>
                         <td>
@@ -520,6 +523,68 @@
             <div class="modal-body" id="modalBody"></div>
         </div>
     </div>
+
+    {# Artwork runs in both modes. It used to live inside the weekly-only block
+       below, which left every year-end row showing the grey placeholder. #}
+    <script>
+        // Artist-kind charts (Artist 100) list artists, not songs, so their
+        // artwork comes from the artist endpoint. Year-end albums200 renders
+        // through this template too, and albums resolve on their own endpoint.
+        const ART_KIND = '{{ chart.kind|default('song', true) }}';
+        function artworkUrl(artist, song) {
+            if (ART_KIND === 'artist') return '/api/artist-image/' + encodeURIComponent(artist);
+            const ep = ART_KIND === 'album' ? '/api/album-image/' : '/api/song-image/';
+            return ep + encodeURIComponent(artist) + '/' + encodeURIComponent(song);
+        }
+
+        // data-art is Billboard's own charts-static URL, carried by the
+        // year-end rows. When it is there no lookup is needed; the Deezer
+        // endpoints are the fallback for the rows Billboard lazy-loaded past.
+        function paintArt(img) {
+            if (img.dataset.loaded) return;
+            img.dataset.loaded = '1';
+            const placeholder = img.src;
+            const direct = img.dataset.art;
+            if (!direct) { fetchArt(img, placeholder); return; }
+
+            // charts-static publishes 180x180 for every row it has art for but
+            // not always the 344x344 the hero asks for, so a missing large size
+            // steps down one before giving up. A URL dead at both sizes falls
+            // through to the lookup rather than leaving the row grey.
+            const small = direct.replace('-344x344.', '-180x180.');
+            const giveUp = () => { img.onerror = null; img.src = placeholder; fetchArt(img, placeholder); };
+            img.onerror = small === direct ? giveUp : () => {
+                img.onerror = giveUp;
+                img.src = small;
+            };
+            img.src = direct;
+        }
+
+        function fetchArt(img, placeholder) {
+            fetch(artworkUrl(img.dataset.artist, img.dataset.song))
+                .then(r => r.ok ? r.json() : null)
+                .then(d => {
+                    if (d && d.image_url) {
+                        img.onerror = () => { img.onerror = null; img.src = placeholder; };
+                        img.src = d.image_url;
+                    }
+                })
+                .catch(() => {});
+        }
+
+        const imgObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                paintArt(entry.target);
+                imgObserver.unobserve(entry.target);
+            });
+        }, { rootMargin: '120px' });
+
+        document.querySelectorAll('.art-thumb img[data-song]').forEach(img => imgObserver.observe(img));
+
+        const heroImg = document.querySelector('.hero-artwork-img');
+        if (heroImg) paintArt(heroImg);
+    </script>
 
     {# Weekly-only. In year-end mode available_dates is empty, so the week
        filters and the prev/next handlers would run against an empty list, and
@@ -586,55 +651,7 @@
             row.style.animationDelay = `${Math.min(i * 0.025, 1.2)}s`;
         });
 
-        // Artist-kind charts (Artist 100) list artists, not songs, so their
-        // artwork comes from the artist endpoint.
-        const IS_ARTIST_CHART = {{ 'true' if chart.kind == 'artist' else 'false' }};
         const CHART_KEY = '{{ chart_key }}';
-        function artworkUrl(artist, song) {
-            return IS_ARTIST_CHART
-                ? '/api/artist-image/' + encodeURIComponent(artist)
-                : '/api/song-image/' + encodeURIComponent(artist) + '/' + encodeURIComponent(song);
-        }
-
-        // Artwork lazy load
-        const imgObserver = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                if (!entry.isIntersecting) return;
-                const img = entry.target;
-                if (img.dataset.loaded) return;
-                img.dataset.loaded = '1';
-                const artist = img.dataset.artist;
-                const song = img.dataset.song;
-                const placeholder = img.src;
-                fetch(artworkUrl(artist, song))
-                    .then(r => r.ok ? r.json() : null)
-                    .then(d => {
-                        if (d && d.image_url) {
-                            img.onerror = () => { img.onerror = null; img.src = placeholder; };
-                            img.src = d.image_url;
-                        }
-                    })
-                    .catch(() => {});
-                imgObserver.unobserve(img);
-            });
-        }, { rootMargin: '120px' });
-
-        document.querySelectorAll('.art-thumb img[data-song]').forEach(img => imgObserver.observe(img));
-
-        // Hero image
-        const heroImg = document.querySelector('.hero-artwork-img');
-        if (heroImg) {
-            const heroPlaceholder = heroImg.src;
-            fetch(artworkUrl(heroImg.dataset.artist, heroImg.dataset.song))
-                .then(r => r.ok ? r.json() : null)
-                .then(d => {
-                    if (d && d.image_url) {
-                        heroImg.onerror = () => { heroImg.onerror = null; heroImg.src = heroPlaceholder; };
-                        heroImg.src = d.image_url;
-                    }
-                })
-                .catch(() => {});
-        }
 
         // Row filters. Single-select, "All" clears. Rows are hidden with display
         // rather than opacity: paxel.css disables every animation and transition
