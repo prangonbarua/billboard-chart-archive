@@ -66,7 +66,11 @@
         box-shadow: 0 8px 28px rgba(0, 0, 0, 0.10);
         z-index: 200;
     }
-    .nav-dd-group { display: flex; flex-direction: column; gap: 0.125rem; min-width: 130px; }
+    /* No min-width: every group but Albums & Artists has links wider than any
+       floor worth setting, so a floor only ever padded that one column with
+       dead space and left a visibly wider gap before Year-End. Columns size to
+       their own content and the flex gap does the spacing. */
+    .nav-dd-group { display: flex; flex-direction: column; gap: 0.125rem; }
     .nav-dd-label {
         font-size: 0.6875rem;
         font-weight: 600;
@@ -75,6 +79,14 @@
         color: var(--text-muted);
         opacity: 0.7;
         padding: 0 0.5rem 0.375rem;
+        white-space: nowrap;
+        /* A group is as wide as its links, never as wide as its heading.
+           'Albums & Artists' is wider than 'Billboard 200', and letting it set
+           the column width opened a gap half again the size of the others
+           before Year-End. width:0 keeps it out of the intrinsic width;
+           min-width:100% still stretches it across the settled column. */
+        width: 0;
+        min-width: 100%;
     }
     .nav-dd-group a { padding: 0.3125rem 0.5rem; white-space: nowrap; }
 
