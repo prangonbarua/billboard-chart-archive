@@ -182,7 +182,7 @@ CANADIAN_DATA, CANADIAN_AVAILABLE_DATES = _load_global_chart('canadian_hot100.cs
 # depth over their lifetimes (Adult Contemporary ran 19-20 rows in 1961 against
 # 30 today), so see the floor in fast_billboard_scraper.py instead.
 CHARTS = {
-    'top100':      dict(label='The Hot 100',      group='Songs',  depth=100, kind='song'),
+    'top100':      dict(label='The Hot 100™',   group='Songs',  depth=100, kind='song'),
     'global200':   dict(label='Global 200',       group='Songs',  depth=200, kind='song'),
     'globalexus':  dict(label='Global Excl. US',  group='Songs',  depth=200, kind='song'),
     'radio':       dict(label='Radio Songs',      group='Songs',  depth=40,  kind='song'),
@@ -204,7 +204,7 @@ CHARTS = {
     'bubbling':      dict(label='Bubbling Under Hot 100', group='Songs', depth=25, kind='song'),
     'canadian_hot100': dict(label='Canadian Hot 100', group='Songs', depth=100, kind='song'),
 
-    'albums200':   dict(label='Billboard 200',    group='Albums & Artists', depth=200, kind='album'),
+    'albums200':   dict(label='Billboard 200™', group='Albums & Artists', depth=200, kind='album'),
     'artist100':   dict(label='Artist 100',       group='Albums & Artists', depth=100, kind='artist'),
 }
 
