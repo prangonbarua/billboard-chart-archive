@@ -73,9 +73,6 @@
         .nav-btn:disabled:hover { color: var(--text-muted); border-color: var(--border); background: transparent; }
         .date-selectors { display: flex; align-items: center; gap: 0.5rem; }
         .date-selectors label { font-size: 0.75rem; color: var(--text-dim); font-weight: 500; }
-        /* The filter is a different axis from the week pickers it shares the
-           bar with, so a hairline separates the two groups. */
-        .filter-selector { border-left: 1px solid var(--border); padding-left: 0.75rem; }
         select {
             background: var(--surface-hover);
             border: 1px solid var(--border);
@@ -216,8 +213,6 @@
             margin-bottom: 1.5rem;
         }
         .view-toggle .filter-btn { text-decoration: none; display: inline-block; }
-        .filter-count { font-size: 0.75rem; color: var(--text-dim); margin-left: 0.25rem; }
-        .filter-empty { padding: 1.5rem 1rem; font-size: 0.875rem; color: var(--text-muted); }
 
         /* Bubbling Under <-> Hot 100 crossover note in the history modal. */
         .modal-crossover {
@@ -331,22 +326,6 @@
                     </select>
                 </div>
                 <button class="nav-btn" id="nextWeek">Next &#8594;</button>
-                {# Row filter. It sits in the header beside the week pickers
-                   rather than in a pill row above the table: it is one more way
-                   of choosing what the page shows, same as Year and Week. #}
-                {% if chart_songs %}
-                <div class="date-selectors filter-selector">
-                    <label for="rowFilterSelect">Filter</label>
-                    <select id="rowFilterSelect">
-                        <option value="all">All</option>
-                        <option value="new">New</option>
-                        <option value="re-entry">Re-entry</option>
-                        <option value="grower">Growers (+{{ grower_min }} or more)</option>
-                        <option value="peak">New peak</option>
-                    </select>
-                    <span class="filter-count" id="filterCount"></span>
-                </div>
-                {% endif %}
             </div>
             {% else %}
             {# The year-end picker is a different control from the weekly
@@ -497,7 +476,6 @@
                     {% endif %}
                 </tbody>
             </table>
-            <div class="filter-empty" id="filterEmpty" style="display:none">Nothing on this week matches that filter.</div>
         </div>
         {% endif %}
         {% endif %}
@@ -652,45 +630,6 @@
         });
 
         const CHART_KEY = '{{ chart_key }}';
-
-        // Row filters. Single-select, "All" clears. Rows are hidden with display
-        // rather than opacity: paxel.css disables every animation and transition
-        // site-wide, so anything relying on one to become visible never would.
-        (function initRowFilters() {
-            const select = document.getElementById('rowFilterSelect');
-            if (!select) return;
-            const countEl = document.getElementById('filterCount');
-            const emptyEl = document.getElementById('filterEmpty');
-            const hero = document.querySelector('.hero[data-tags]');
-            const rows = Array.from(document.querySelectorAll('.chart-table tbody tr[data-tags]'));
-            const total = rows.length + (hero ? 1 : 0);
-
-            function matches(el, filter) {
-                if (filter === 'all') return true;
-                return (el.dataset.tags || '').split(' ').indexOf(filter) !== -1;
-            }
-
-            function apply(filter) {
-                let shown = 0;
-                if (hero) {
-                    const ok = matches(hero, filter);
-                    hero.style.display = ok ? '' : 'none';
-                    if (ok) shown++;
-                }
-                rows.forEach(row => {
-                    const ok = matches(row, filter);
-                    row.style.display = ok ? '' : 'none';
-                    if (ok) shown++;
-                });
-                countEl.textContent = filter === 'all' ? '' : shown + ' of ' + total;
-                if (emptyEl) emptyEl.style.display = shown ? 'none' : '';
-            }
-
-            select.addEventListener('change', () => apply(select.value));
-            // A reloaded page can restore the last selection in the box; apply it
-            // so the rows match what the box says.
-            if (select.value !== 'all') apply(select.value);
-        })();
 
         // Row click handlers (using data attributes instead of onclick to avoid injection)
         document.querySelectorAll('.chart-table tbody tr[data-artist]').forEach(row => {

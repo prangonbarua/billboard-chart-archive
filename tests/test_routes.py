@@ -116,30 +116,29 @@ ROW_TAGS_RE = re.compile(r'data-tags="([^"]*)"')
 
 
 def _row_tags(body):
-    """Tag sets for every filterable entry on a rendered chart page (hero included)."""
+    """Tag sets for every entry on a rendered chart page (hero included)."""
     return [set(m.split()) for m in ROW_TAGS_RE.findall(body)]
 
 
-def test_every_chart_page_offers_the_row_filters(client, charts):
-    """The filter select is built in the shared renderer so all charts get it
-    from one edit. A chart rendering rows without data-tags would show the
-    control and silently filter everything away."""
+def test_every_chart_page_tags_its_rows(client, charts):
+    """data-tags is written by the shared renderer, so all charts get it from one
+    edit. It is how the tests below observe the new/re-entry/peak derivation,
+    and a chart rendering rows without it would silently skip those checks."""
     for key in charts:
         body = client.get('/' + key).get_data(as_text=True)
-        assert 'id="rowFilterSelect"' in body, key
-        for f in ('new', 're-entry', 'grower', 'peak'):
-            assert f'value="{f}"' in body, f'{key}: no {f} filter'
         rows = ROW_TAGS_RE.findall(body)
         assert len(rows) > 1, f'{key}: rows carry no data-tags'
 
 
-def test_grower_threshold_scales_with_chart_depth(client):
-    """A flat "+5 positions" would be a third of Bubbling Under and noise on the
-    Global 200. The threshold is a share of the depth actually served."""
-    expected = {'top100': 5, 'global200': 10, 'albums200': 10, 'bubbling': 2, 'adult_rnb': 2}
-    for key, positions in expected.items():
+def test_the_row_filter_control_is_gone(client, charts):
+    """The Filter dropdown was removed from the chart toolbar. Its markup and the
+    grower threshold that fed its one computed option should not come back with
+    a template copy-paste."""
+    for key in charts:
         body = client.get('/' + key).get_data(as_text=True)
-        assert f'Growers (+{positions} or more)' in body, key
+        assert 'rowFilterSelect' not in body, key
+        assert 'filterCount' not in body, key
+        assert 'Growers (+' not in body, key
 
 
 def test_a_debut_is_never_tagged_a_new_peak(client, charts):
@@ -156,7 +155,7 @@ def test_first_published_week_has_no_peaks_or_re_entries(client):
     tags = _row_tags(body)
     assert tags, 'no rows rendered'
     assert all('new' in t for t in tags)
-    assert not any('peak' in t or 're-entry' in t or 'grower' in t for t in tags)
+    assert not any('peak' in t or 're-entry' in t for t in tags)
 
 
 def test_new_peak_tag_matches_the_chart_history(client):

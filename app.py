@@ -3,7 +3,6 @@ from flask import Flask, render_template, request, send_file, flash, redirect, u
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-import math
 import os
 import re
 import threading
@@ -182,12 +181,6 @@ CANADIAN_DATA, CANADIAN_AVAILABLE_DATES = _load_global_chart('canadian_hot100.cs
 # must NOT be used as a scrape completeness threshold: these charts changed
 # depth over their lifetimes (Adult Contemporary ran 19-20 rows in 1961 against
 # 30 today), so see the floor in fast_billboard_scraper.py instead.
-# A "grower" is a climb of at least this share of the chart's depth, rounded up.
-# Deliberately proportional, not a flat number of positions: depth ranges from 25
-# (Bubbling Under) to 200 (Global 200), so "+5" is a third of one chart and noise
-# on the other. 5% gives +5 on the Hot 100, +10 on the Global 200, +2 at depth 25.
-GROWER_PCT = 0.05
-
 CHARTS = {
     'top100':      dict(label='The Hot 100',      group='Songs',  depth=100, kind='song'),
     'global200':   dict(label='Global 200',       group='Songs',  depth=200, kind='song'),
@@ -1614,7 +1607,6 @@ def _yearend_chart_page(chart_key):
         chart_songs=chart_songs,
         available_dates=[],
         selected_date=None,
-        grower_min=1,
         chart=CHARTS.get(chart_key, {}),
         chart_key=chart_key,
     )
@@ -1640,7 +1632,6 @@ def _song_chart_page(source_df, available_dates, endpoint, template):
 
     # Get chart data for selected date
     chart_songs = []
-    grower_min = 1
     if selected_date:
         selected_date_dt = pd.to_datetime(selected_date, errors='coerce')
         if pd.isna(selected_date_dt):
@@ -1688,11 +1679,6 @@ def _song_chart_page(source_df, available_dates, endpoint, template):
         idx_sel = chart_week_index.get(selected_date_dt)
         prev_date = pd.Timestamp(available_dates[idx_sel + 1]) if (
             idx_sel is not None and idx_sel + 1 < len(available_dates)) else None
-
-        # Grower threshold is measured against the depth actually served this week,
-        # not the registry depth: Digital Song Sales ran 50 deep before 2023-09 and
-        # 25 after, and the same climb should not change meaning across that seam.
-        grower_min = max(1, math.ceil(len(date_data) * GROWER_PCT))
 
         for _, row in date_data.iterrows():
             # Get song info
@@ -1748,20 +1734,20 @@ def _song_chart_page(source_df, available_dates, endpoint, template):
                 song_info['change'] = 'same'
                 song_info['change_amount'] = 0
 
-            # Filter tags, all derived from history already computed above.
+            # Row state, derived from the history already computed above.
+            # new_peak drives the .new-peak row styling; tags render as
+            # data-tags, which is what the route tests read to check this
+            # derivation against the raw CSV.
             # A debut is NOT a new peak: rank == peak holds trivially on a first
             # week, which would tag most of the lower chart and say nothing. A
             # new peak means the song has charted before and just beat its own
             # best — hence the strict comparison against prior weeks only.
             prior_ranks = [rk for d, rk in ranks_by_date.items() if d < selected_date_dt]
             song_info['new_peak'] = bool(prior_ranks) and rank < min(prior_ranks)
-            song_info['grower'] = last_week is not None and (last_week - rank) >= grower_min
 
             tags = []
             if song_info['change'] in ('new', 're-entry'):
                 tags.append(song_info['change'])
-            if song_info['grower']:
-                tags.append('grower')
             if song_info['new_peak']:
                 tags.append('peak')
             song_info['tags'] = tags
@@ -1773,7 +1759,6 @@ def _song_chart_page(source_df, available_dates, endpoint, template):
         available_dates=available_dates,
         selected_date=selected_date,
         chart_songs=chart_songs,
-        grower_min=grower_min,
         # Registry entry for the page being rendered. chart.html reads these for
         # its title, heading, and history-API chart param; the older per-chart
         # templates ignore them.

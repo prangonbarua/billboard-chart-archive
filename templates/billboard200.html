@@ -111,9 +111,6 @@
         .nav-btn:disabled:hover { color: var(--text-muted); border-color: var(--border); background: transparent; }
         .date-selectors { display: flex; align-items: center; gap: 0.5rem; }
         .date-selectors label { font-size: 0.75rem; color: var(--text-dim); font-weight: 500; }
-        /* The filter is a different axis from the week pickers it shares the
-           bar with, so a hairline separates the two groups. */
-        .filter-selector { border-left: 1px solid var(--border); padding-left: 0.75rem; }
         select {
             background: var(--surface-hover);
             border: 1px solid var(--border);
@@ -219,13 +216,6 @@
         .badge-down { background: var(--red-dim);    color: var(--red); }
         .badge-same { background: var(--yellow-dim); color: var(--yellow); }
 
-        /* Row filters. No transitions or opacity reveals here on purpose:
-           paxel.css kills every animation globally, so anything that depends on
-           one to become visible would simply never appear. Rows are hidden and
-           shown with display, which needs no animation to land. */
-        .filter-count { font-size: 0.75rem; color: var(--text-dim); margin-left: 0.25rem; }
-        .filter-empty { padding: 1.5rem 1rem; font-size: 0.875rem; color: var(--text-muted); }
-
         /* New peak: an album that has charted before and just beat its own best.
            Debuts are excluded server-side, so this marks real milestones only. */
         .chart-table tbody tr.new-peak { background: #edfff7; box-shadow: inset 3px 0 0 #0c492c; }
@@ -326,22 +316,6 @@
                     </select>
                 </div>
                 <button class="nav-btn" id="nextWeek">Next &#8594;</button>
-                {# Row filter. It sits in the header beside the week pickers
-                   rather than in a pill row above the table: it is one more way
-                   of choosing what the page shows, same as Year and Week. #}
-                {% if chart_songs %}
-                <div class="date-selectors filter-selector">
-                    <label for="rowFilterSelect">Filter</label>
-                    <select id="rowFilterSelect">
-                        <option value="all">All</option>
-                        <option value="new">New</option>
-                        <option value="re-entry">Re-entry</option>
-                        <option value="grower">Growers (+{{ grower_min }} or more)</option>
-                        <option value="peak">New peak</option>
-                    </select>
-                    <span class="filter-count" id="filterCount"></span>
-                </div>
-                {% endif %}
             </div>
         </div>
 
@@ -446,7 +420,6 @@
                     {% endif %}
                 </tbody>
             </table>
-            <div class="filter-empty" id="filterEmpty" style="display:none">Nothing on this week matches that filter.</div>
         </div>
         {% endif %}
         {% endif %}
@@ -571,45 +544,6 @@
                 })
                 .catch(() => {});
         }
-
-        // Row filters. Single-select, "All" clears. Rows are hidden with display
-        // rather than opacity: paxel.css disables every animation and transition
-        // site-wide, so anything relying on one to become visible never would.
-        (function initRowFilters() {
-            const select = document.getElementById('rowFilterSelect');
-            if (!select) return;
-            const countEl = document.getElementById('filterCount');
-            const emptyEl = document.getElementById('filterEmpty');
-            const hero = document.querySelector('.hero[data-tags]');
-            const rows = Array.from(document.querySelectorAll('.chart-table tbody tr[data-tags]'));
-            const total = rows.length + (hero ? 1 : 0);
-
-            function matches(el, filter) {
-                if (filter === 'all') return true;
-                return (el.dataset.tags || '').split(' ').indexOf(filter) !== -1;
-            }
-
-            function apply(filter) {
-                let shown = 0;
-                if (hero) {
-                    const ok = matches(hero, filter);
-                    hero.style.display = ok ? '' : 'none';
-                    if (ok) shown++;
-                }
-                rows.forEach(row => {
-                    const ok = matches(row, filter);
-                    row.style.display = ok ? '' : 'none';
-                    if (ok) shown++;
-                });
-                countEl.textContent = filter === 'all' ? '' : shown + ' of ' + total;
-                if (emptyEl) emptyEl.style.display = shown ? 'none' : '';
-            }
-
-            select.addEventListener('change', () => apply(select.value));
-            // A reloaded page can restore the last selection in the box; apply it
-            // so the rows match what the box says.
-            if (select.value !== 'all') apply(select.value);
-        })();
 
         // Row click handlers
         document.querySelectorAll('.chart-table tbody tr[data-artist]').forEach(row => {
