@@ -3,6 +3,7 @@ Keep the fast unit tests in test_versus.py, which must never import app."""
 import csv
 import io
 import re
+from datetime import datetime
 
 import pandas as pd
 import pytest
@@ -227,6 +228,63 @@ def test_artist_csv_404s_for_an_artist_absent_from_that_chart(application):
     r = application.app.test_client().get(
         '/download-csv/Zzzznotanartist?chart=country_airplay')
     assert r.status_code == 404
+
+
+def _week_rows(rows):
+    """The date section of an export as (date, row) pairs, with a None date for
+    each gap-marker row."""
+    out = []
+    for r in rows:
+        if not r:
+            continue
+        if re.fullmatch(r'\d{1,2}/\d{1,2}/\d{4}', r[0]):
+            out.append((datetime.strptime(r[0], '%m/%d/%Y').date(), r))
+        elif r[0] == '.':
+            out.append((None, r))
+    return out
+
+
+def _assert_gaps_are_marked(weeks):
+    """Exactly one marker row wherever the step between chart weeks is longer
+    than a week, and none anywhere else."""
+    assert any(d is None for d, _r in weeks), 'no gap markers at all'
+    prev, marked = None, False
+    for date, _r in weeks:
+        if date is None:
+            assert prev is not None, 'gap marker before the first week'
+            assert not marked, 'two markers for one gap'
+            marked = True
+            continue
+        if prev is not None:
+            assert ((date - prev).days > 7) == marked, \
+                f'marker/gap mismatch at {date} (previous week {prev})'
+        prev, marked = date, False
+    assert not marked, 'gap marker after the last week'
+
+
+def test_artist_csv_marks_gaps_between_non_consecutive_weeks(application):
+    """A song that fell off and came back charts again years later sits in the
+    row right below where it left; a filler row makes the break visible."""
+    body = application.app.test_client().get(
+        '/download-csv/Chubby Checker').get_data(as_text=True)
+    rows = list(csv.reader(io.StringIO(body)))
+    width = len(rows[0])
+    weeks = _week_rows(rows)
+    _assert_gaps_are_marked(weeks)
+    for date, row in weeks:
+        if date is None:
+            assert row == ['.'] + [''] * (width - 1), 'marker row is not a bare dot'
+
+
+def test_versus_csv_marks_gaps_between_non_consecutive_weeks(application):
+    body = _versus_csv(application, 'chart=top100&artists=Chubby+Checker|Elvis+Presley')[1]
+    rows = list(csv.reader(io.StringIO(body)))
+    width = len(next(r for r in rows if r and r[0] == 'Song'))
+    weeks = _week_rows(rows)
+    _assert_gaps_are_marked(weeks)
+    for date, row in weeks:
+        if date is None:
+            assert row == ['.'] + [''] * (width - 1), 'marker row is not a bare dot'
 
 
 def test_versus_chips_link_each_artists_own_csv(application):

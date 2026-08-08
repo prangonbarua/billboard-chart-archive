@@ -824,7 +824,12 @@ def download_versus_csv():
 
         # Union of every week any of them charted, so the blocks line up on
         # shared dates and gaps stay visible as blanks.
-        for date in sorted({d for _l, _p, _h, pv, _i in blocks for d in pv.index}):
+        all_dates = sorted({d for _l, _p, _h, pv, _i in blocks for d in pv.index})
+        width = sum(len(p) for _l, p, _h, _pv, _i in blocks)
+        for date in _weeks_with_gaps(all_dates):
+            if date is None:
+                w.writerow([_GAP_MARKER] + [''] * width)
+                continue
             row = [f'{date.month}/{date.day}/{date.year}']
             for _label, pairs, _headers, pivot, _images in blocks:
                 if date in pivot.index:
@@ -2181,6 +2186,25 @@ def _fill_missing_images(pairs, images, latest_credit):
             images[pair] = payload['image_url']
 
 
+# An export writes only the weeks something was charting, in date order, so a
+# song that fell off and came back reads as two adjacent rows that can be years
+# apart — nothing on the sheet says a break happened. One filler row per gap,
+# date cell a bare dot and every rank blank, sits where the missing weeks would
+# have gone. One dot per gap regardless of its length, not one per missing week.
+_GAP_MARKER = '.'
+
+
+def _weeks_with_gaps(dates):
+    """Yield each date in order, preceded by None wherever the step from the
+    previous date is longer than one week. None means: write a marker row."""
+    prev = None
+    for date in dates:
+        if prev is not None and (date - prev).days > 7:
+            yield None
+        yield date
+        prev = date
+
+
 def _artist_history_csv(df):
     """One artist's chart history as CSV: songs across the top, an image row,
     then one row per chart week with each song's rank (blank when it was not
@@ -2192,7 +2216,11 @@ def _artist_history_csv(df):
     writer = csvmod.writer(buf)
     writer.writerow(['Song'] + headers)
     writer.writerow(['Image'] + [images.get(p, '') for p in pairs])
-    for date, row in pivot.iterrows():
+    for date in _weeks_with_gaps(pivot.index):
+        if date is None:
+            writer.writerow([_GAP_MARKER] + [''] * len(pairs))
+            continue
+        row = pivot.loc[date]
         date_str = f"{date.month}/{date.day}/{date.year}"
         writer.writerow([date_str] + [
             (int(row[p]) if pd.notna(row.get(p)) else '') for p in pairs
