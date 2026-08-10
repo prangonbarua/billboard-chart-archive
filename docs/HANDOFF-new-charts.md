@@ -13,6 +13,38 @@ Requested, probed thoroughly, and unavailable. Do not re-derive.
 | **Hot 100 Recurrents** | 6 variants 404. Billboard's own slug `hot-singles-recurrents` also 404s on www; `assets.billboard.com` is dead (expired cert, 503) |
 | **European Hot 100 Singles** (1984-2010) | Weekly URL redirects to `/charts/year-end/...` — the reverse-redirect trap. No weekly archive |
 
+### Rolling Stone Top 100 — measured 2026-08-10, NOT addable
+
+Requested and probed to exhaustion. It is not a Billboard chart: it ran on
+rollingstone.com/charts, compiled by Alpha Data, so nothing in this repo
+reaches it. It ran mid-2019 into **2022**, a year longer than it is usually
+remembered.
+
+| Source | Finding |
+|---|---|
+| `rollingstone.com/charts/*` | 200 but redirects to a generic `/music/` page. All variants return an identical 517 KB, so it is one landing page. **A row count would accept this** — same shape as the European trap below |
+| Dated URLs on the live site | 404 |
+| `api.alphadata.fm` | connect timeout; `alphadata.fm` unreachable |
+| Wayback `/charts/songs/` | alive: 1,145 daily snapshots, 104 distinct weeks of ~183 (2019: 8, 2020: 53, 2021: 43) |
+
+**The blocker: every archived page holds ranks 1-15 only.** Weekly, the 283
+archived dated URLs, and the year-end pages all carry `data-results-per="15"`.
+Ranks 16-100 loaded through `wp-admin/admin-ajax.php` in batches of 15, and the
+only admin-ajax responses Wayback kept are `google-get-comments`. The markup
+itself is clean and parseable — `section.c-chart__table--single` with rank,
+title, artist, label and stream counts — so this is not a parsing problem. The
+data was never archived.
+
+**The dated URLs lie.** `/charts/songs/2018-07-06/` serves "Hot Girl Summer"
+and "Señorita", which are August 2019, and `/charts/songs/2019-01-24/` serves
+the same mid-2019 chart. The page ignored the date in the URL and returned
+whatever was current when the snapshot was taken. Only the Wayback timestamp
+dates a snapshot. Do not treat the 283 dated URLs as 283 distinct weeks.
+
+A Rolling Stone **Top 15** covering ~57% of weeks is buildable from Wayback and
+would need a new scraper; it would be the only non-Billboard chart on the site.
+That is a different chart from the one requested and has not been built.
+
 **The European year-end is a trap too.** Every year 1984-2008 returns the SAME
 10 rows (identical md5) and the content is 2009 music — #1 "When Love Takes
 Over". 2009-2011 return 0 rows. Billboard holds one 10-row list filed under the
