@@ -99,15 +99,36 @@ automatically — expect genuine publication gaps to need
   absent — four early-January — where Billboard repeated the previous week's
   ranking and the clamp guard declined to store it twice. That is correct
   behaviour, not data loss to chase.
-- **official-uk-songs**: backfill STARTED 2026-08-09 to `data/uk_songs.csv`,
-  running under nohup and resumable. Not wired yet. **When it finishes: wire
-  it (5 edits), then raise its floor from 10 to 20.** Expect rows/week to run
-  10 to 20 and expect gaps — check them the way Japan's were checked before
-  assuming anything is wrong.
-- The other seven: not started. Agreed order is cheapest-first — Rock (894 wks),
-  Gospel (1116), Christian (1207), Top Album Sales (1837), Latin (2083), then
-  country-songs and r-b-hip-hop-songs (3538 each). At ~2s/week that is roughly
-  7 hours for all seven.
+- **official-uk-songs: DONE and SHIPPED** as chart 24 (commit 379621b). 13,950
+  rows / 811 weeks, 2011-01-29 to 2026-08-15. Depth runs 10 at launch (227
+  weeks) and 20 thereafter (584 weeks) — nothing partial in between. One week
+  absent, 2011-12-31, the New Year repeat the clamp guard correctly declined
+  to store twice. Floor raised 10 -> 20. Wired and 139 tests pass.
+- **rock-songs**: backfill STARTED 2026-08-10 to `data/rock_songs.csv`, under
+  nohup, log `logs_rock.out`. 896 weeks. Measured 50 rows at launch and at
+  2010 / 2015 / 2020 / today, so the default floor of 20 backfills it safely;
+  **raise to 50 when wiring.**
+- **gospel-songs**: backfill STARTED 2026-08-10 to `data/gospel_songs.csv`,
+  under nohup, log `logs_gospel.out`. 1118 weeks. Measured 25 rows at launch
+  and throughout; default floor of 20 is safe, **raise to 25 when wiring.**
+- The other five: not started. Agreed order is cheapest-first — Christian
+  (1207), Top Album Sales (1837), Latin (2083), then country-songs and
+  r-b-hip-hop-songs (3538 each).
+
+### Launch depths measured before backfilling (do not re-derive)
+
+Probe the launch week and a few spot dates BEFORE starting any backfill — the
+floor has to sit at or below the shallowest real week or that era is rejected.
+
+| slug | launch depth | modern depth | backfill floor | floor after wiring |
+|---|---|---|---|---|
+| `rock-songs` | 50 | 50 | 20 (default) | 50 |
+| `gospel-songs` | 25 | 25 | 20 (default) | 25 |
+| `christian-songs` | 40 | 50 | 20 (default) | 50 |
+| `latin-songs` | **1** | 50 | **must be set to 1** | 50 |
+
+Christian was 40 at 2003-06-21 and 2004, and 50 by 2012 — so it grew, and the
+default floor covers the whole run.
 
 **Latin needs a floor of 1** to backfill (it serves 1 row/week in 1986), and
 that floor must be raised to 50 afterwards. It is the most dangerous of the
