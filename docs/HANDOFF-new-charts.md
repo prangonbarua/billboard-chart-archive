@@ -255,3 +255,62 @@ of 1 to backfill, and that floor must be raised afterwards.
 **Do NOT re-run `backfill_chart.py` over a partly-filled CSV to retry scattered
 stragglers** — the known `prev_sig` bug fabricates weeks. A retry is only safe
 when the missing weeks are one contiguous block after a present week.
+
+## OPEN WORK — requested 2026-08-10, NOT started
+
+Two requests arrived after charts 22-31 shipped. Neither is started; both are
+multi-hour jobs. Charts 22-31 and the hover/credit fixes are all deployed and
+verified, so the tree is clean to pick up from.
+
+### 1. Year-end editions for charts 22-31
+
+`data/yearend.csv` still covers only the original 18 charts, so `?view=yearend`
+302s on all ten new ones and the toggle is hidden. That is correct behaviour,
+not a bug.
+
+**A discovery run was STARTED and left running** — `scripts/discover_yearend_slugs.py`,
+log `logs_yearend_discover.out`. It loops `app.CHARTS`, which is now all 31, so
+it probes the ten new charts as well as re-probing the original 21.
+
+**IT OVERWRITES `scripts/yearend_slugs.json` WHOLESALE.** A backup was taken
+first at `scripts/yearend_slugs.json.bak`. Before trusting the new file, diff
+it against the .bak and confirm these hand-corrected entries survived, because
+for each of them the OBVIOUS slug is the weekly one and the discovery heuristic
+has no way to know that:
+
+    digital             -> digital-songs
+    adult_contemporary  -> adult-contemporary-songs
+    country_airplay     -> country-airplay-songs
+    alternative         -> alternative-songs
+
+Also confirm `rnb_hiphop`, `heatseekers` and `bubbling` are still null. Each has
+a near miss that a row count accepts; they have NO year-end edition. Do not
+"fix" them.
+
+Then: backfill with `scripts/backfill_yearend.py`, which already carries the
+guards for all three fabrication modes (forward clamp, weekly fall-through,
+reverse redirect). Re-read the year-end trap section in the project notes before
+trusting any year's output — the pages state no year anywhere, so the only
+detection is that within a run of consecutive years sharing one ranking
+signature, ONLY THE LATEST is genuine.
+
+### 2. "All the airplay charts you can find"
+
+Not started, nothing probed. The registry currently holds nine airplay charts:
+pop_airplay, adult_pop, adult_contemporary, rhythmic, country_airplay,
+alternative, rnb_hiphop, dance_airplay, adult_rnb.
+
+Billboard publishes more. The following are CANDIDATES ONLY — they are written
+from recall, NOT measured, and every one must be probed with a dated fetch
+before being believed, exactly as the ten above were:
+
+    rock-airplay, mainstream-rock-songs, triple-a, latin-airplay,
+    latin-pop-airplay, tropical-airplay, regional-mexican-airplay,
+    christian-airplay, gospel-airplay, smooth-jazz-songs,
+    dance-mix-show-airplay
+
+Use `scripts/find_chart_start.py <slug>` for first weeks and probe launch depth
+BEFORE backfilling — the scrape floor defaults to 20 and silently rejects any
+shallower era, which is the trap that nearly cost Latin its entire 1986. Note
+find_chart_start.py only tries Saturdays, so probe the launch weekday too for
+anything predating the mid-1960s.

@@ -1,0 +1,23 @@
+{
+  "top100": "hot-100-songs",
+  "global200": "billboard-global-200",
+  "globalexus": "billboard-global-excl-us",
+  "radio": "radio-songs",
+  "digital": "digital-songs",
+  "streaming": "streaming-songs",
+  "pop_airplay": "pop-songs",
+  "adult_pop": "adult-pop-songs",
+  "adult_contemporary": "adult-contemporary-songs",
+  "rhythmic": "rhythmic-songs",
+  "country_airplay": "country-airplay-songs",
+  "alternative": "alternative-songs",
+  "rnb_hiphop": null,
+  "dance_airplay": "dance-mix-show-airplay-songs",
+  "adult_rnb": "adult-r-and-b-songs",
+  "heatseekers": null,
+  "dance_sales": "hot-dance-singles-sales",
+  "bubbling": null,
+  "canadian_hot100": "canadian-hot-100",
+  "albums200": "top-billboard-200-albums",
+  "artist100": "top-artists"
+}
