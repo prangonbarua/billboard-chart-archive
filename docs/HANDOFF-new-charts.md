@@ -44,8 +44,12 @@ Songs"). Depth is the CURRENT row count. First week from
 | `christian-songs` | Hot Christian Songs | 2003-06-21 | 50 | 1207 | 3.7h |
 | `top-album-sales` | Top Album Sales | 1991-05-25 | 50 | 1837 | 5.6h |
 | `latin-songs` | Hot Latin Songs | 1986-09-06 | 50 | 2083 | 6.4h |
-| `country-songs` | Hot Country Songs | 1958-10-18 | 50 | 3538 | 10.8h |
-| `r-b-hip-hop-songs` | Hot R&B/Hip-Hop Songs | 1958-10-18 | 50 | 3538 | 10.8h |
+| `country-songs` | Hot Country Songs | **1958-10-20** | 50 | 3539 | 10.8h |
+| `r-b-hip-hop-songs` | Hot R&B/Hip-Hop Songs | **1958-10-20** | 50 | 3478 | 10.8h |
+
+The two 1958 first weeks are corrected from the 1958-10-18 this table used to
+carry — see the dating section below. `find_chart_start.py` only ever tries
+Saturdays, so it named the Saturday nearest a Monday-dated launch.
 
 **Total ~16,470 weeks.** The 11s/week figure from the Canadian Hot 100 backfill
 turned out to be far too pessimistic: Dance/Electronic did 647 weeks in about
@@ -111,9 +115,15 @@ automatically — expect genuine publication gaps to need
 - **gospel-songs**: backfill STARTED 2026-08-10 to `data/gospel_songs.csv`,
   under nohup, log `logs_gospel.out`. 1118 weeks. Measured 25 rows at launch
   and throughout; default floor of 20 is safe, **raise to 25 when wiring.**
-- The other five: not started. Agreed order is cheapest-first — Christian
-  (1207), Top Album Sales (1837), Latin (2083), then country-songs and
-  r-b-hip-hop-songs (3538 each).
+- **christian-songs**: backfill STARTED 2026-08-10 to
+  `data/christian_songs.csv`, under nohup, log `logs_christian.out`. 1209
+  weeks. **Raise floor to 50 when wiring.**
+- The other three: not started. Agreed order is cheapest-first — Top Album
+  Sales (1837), Latin (2083), then country-songs (3539) and
+  r-b-hip-hop-songs (3478).
+
+Three backfills have run concurrently since 2026-08-10 with no rate limiting
+from billboard.com. Each still sleeps 1s per request.
 
 ### Launch depths measured before backfilling (do not re-derive)
 
@@ -125,10 +135,40 @@ floor has to sit at or below the shallowest real week or that era is rejected.
 | `rock-songs` | 50 | 50 | 20 (default) | 50 |
 | `gospel-songs` | 25 | 25 | 20 (default) | 25 |
 | `christian-songs` | 40 | 50 | 20 (default) | 50 |
+| `top-album-sales` | 100 | 50 | 20 (default) | 50 |
+| `country-songs` | 30 (1962) | 50 | 20 (default) | 50 |
+| `r-b-hip-hop-songs` | 30 (1962) | 50 | 20 (default) | 50 |
 | `latin-songs` | **1** | 50 | **must be set to 1** | 50 |
 
 Christian was 40 at 2003-06-21 and 2004, and 50 by 2012 — so it grew, and the
-default floor covers the whole run.
+default floor covers the whole run. **Top Album Sales shrank**: 100 rows from
+1991 through at least 2015, 50 today, so the registry's 50 is the modern value
+only and must not be read as a scrape threshold. Country and R&B were 30 rows
+in 1962 and 100 by 1990, both above the default floor.
+
+## The two 1958 charts are MONDAY-dated for their first three years
+
+Measured 2026-08-10. `country-songs` and `r-b-hip-hop-songs` were dated
+**Monday** from their 1958-10-20 launch through **1961-12-25**, and Saturday
+from **1962-01-06** — a real 12-day step across the change. Both charts share
+the same calendar.
+
+This was silent. `backfill_chart.py` stepped 7 days from the first week
+assuming Saturday, so every Monday week — 166 per chart — was never requested.
+The Saturdays it asked for instead do not exist; Billboard clamps each to a
+nearby real week and the scraper's served-week guard rejects it, so the whole
+era would have surfaced as ~166 entries in the fail list, indistinguishable
+from network flakiness.
+
+Fixed in `CHART_CALENDARS` in `scripts/backfill_chart.py` (commit cf50a6c),
+with tests in `tests/test_backfill_chart.py`. **Before backfilling any chart
+that predates the mid-1960s, probe its launch weekday first** — request a
+midweek date and read the `Week of ...` heading back; Billboard's clamp
+reports the real chart date, which is what makes the weekday discoverable.
+
+`r-b-hip-hop-songs` also has a genuine hiatus: suspended after **1963-11-23**,
+resumed **1965-01-30**. Those 61 weeks are in `CHART_GAPS` and are not
+requested. That is why its week count is 3478 against Country's 3539.
 
 **Latin needs a floor of 1** to backfill (it serves 1 row/week in 1986), and
 that floor must be raised to 50 afterwards. It is the most dangerous of the
