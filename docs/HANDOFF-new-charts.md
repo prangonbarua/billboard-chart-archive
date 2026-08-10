@@ -427,6 +427,19 @@ japan-hot-100 / official-uk-songs entries before running, and raise it to 40
 once the CSV is complete. Mainstream Rock needs no override: it serves 40 at
 every era probed, 1981 through 2026, with no clamping after launch.
 
+**BOTH BACKFILLS ARE RUNNING as of 2026-08-10, started detached.**
+
+    mainstream_rock    -> data/mainstream_rock.csv     logs_mainstream_rock.out
+    adult_alternative  -> data/adult_alternative.csv   logs_adult_alternative.out
+
+Check the logs before anything else: expect roughly 2,370 and 1,594 weeks
+kept. Early output confirmed 40 rows at 1981 and 20 at 1996, so the floors are
+holding.
+
+**Then raise `triple-a` from 15 to 40** in `fast_billboard_scraper.py`. It is
+set to 15 as a BACKFILL floor only; leaving it there weakens the guard on the
+live weekly path once the chart is wired.
+
 Order is DATA FIRST, as above — the route test requires 200 for every
 registered chart, so a chart registered before its CSV exists turns the suite
 red.
