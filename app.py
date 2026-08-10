@@ -215,6 +215,14 @@ RNB_SONGS_DATA, RNB_SONGS_AVAILABLE_DATES = _load_global_chart('rnb_hiphop_songs
 # 1991 through at least 2015, 50 today — so the registry's 50 is modern only.
 TOP_ALBUM_SALES_DATA, TOP_ALBUM_SALES_AVAILABLE_DATES = _load_global_chart('top_album_sales.csv')
 
+# Hot Latin Songs. Runs 1986-09-06 to date. Its early depth is the shallowest
+# on the site — Billboard published ONE row a week for much of 1986 — before
+# settling at 40 through the 1990s and 50 since 2005. Eleven weeks are absent:
+# ten year-end freezes where Billboard repeated the prior week's ranking, and
+# 1998-10-10/1998-10-17, which the site never published (both clamp forward to
+# 1998-10-24 at source). The registry's 50 is the modern depth only.
+LATIN_SONGS_DATA, LATIN_SONGS_AVAILABLE_DATES = _load_global_chart('latin_songs.csv')
+
 # ── Chart registry ──────────────────────────────────────────────────────────
 # Single source of truth for chart metadata. The nav is built by looping this,
 # so adding a chart cannot leave the nav out of sync — commit cd05690 had to
@@ -254,6 +262,7 @@ CHARTS = {
     'christian':        dict(label='Hot Christian Songs', group='Songs', depth=50, kind='song'),
     'country_songs':    dict(label='Hot Country Songs', group='Songs', depth=50, kind='song'),
     'rnb_songs':        dict(label='Hot R&B/Hip-Hop Songs', group='Songs', depth=50, kind='song'),
+    'latin_songs':      dict(label='Hot Latin Songs', group='Songs', depth=50, kind='song'),
 
     'albums200':   dict(label='Billboard 200™', group='Albums & Artists', depth=200, kind='album'),
     'artist100':   dict(label='Artist 100',       group='Albums & Artists', depth=100, kind='artist'),
@@ -290,6 +299,7 @@ CHART_DATA = {
     'christian':       (CHRISTIAN_DATA,         CHRISTIAN_AVAILABLE_DATES),
     'country_songs':   (COUNTRY_SONGS_DATA,     COUNTRY_SONGS_AVAILABLE_DATES),
     'rnb_songs':       (RNB_SONGS_DATA,         RNB_SONGS_AVAILABLE_DATES),
+    'latin_songs':     (LATIN_SONGS_DATA,       LATIN_SONGS_AVAILABLE_DATES),
     'top_album_sales': (TOP_ALBUM_SALES_DATA,   TOP_ALBUM_SALES_AVAILABLE_DATES),
     'albums200':   (BILLBOARD_200_DATA,         ALBUMS200_AVAILABLE_DATES),
     'artist100':   (ARTIST100_DATA,             ARTIST100_AVAILABLE_DATES),
@@ -1913,7 +1923,7 @@ def pop_airplay():
 for _key in ('adult_pop', 'adult_contemporary', 'rhythmic', 'country_airplay', 'alternative',
              'rnb_hiphop', 'dance_airplay', 'adult_rnb', 'heatseekers', 'dance_sales', 'bubbling',
              'canadian_hot100', 'dance_electronic', 'japan_hot100', 'uk_songs',
-             'rock_songs', 'gospel', 'christian', 'country_songs', 'rnb_songs',
+             'rock_songs', 'gospel', 'christian', 'country_songs', 'rnb_songs', 'latin_songs',
              # kind='album' renders correctly through chart.html, which only
              # special-cases 'artist'; the album title takes the song slot.
              'top_album_sales'):

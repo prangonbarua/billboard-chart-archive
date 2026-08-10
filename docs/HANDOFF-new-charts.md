@@ -127,11 +127,32 @@ automatically — expect genuine publication gaps to need
   remaining failure on each is 2026-08-15, the leading edge Billboard has not
   posted for these charts; the weekly path picks it up.
 
-**Charts 22-30 are wired, verified and committed. 22-26 are deployed; 27-30
-are NOT yet deployed.**
-- **latin-songs**: backfill STARTED 2026-08-10, log `logs_latin.out`, 2085
-  weeks, running with **floor 1** (commit 98bf30f). Confirmed serving 1-row
-  weeks in 1986. **Raise the floor to 50 once the CSV is complete.**
+- **latin-songs: DONE and SHIPPED** as chart 31. 96,777 rows / 2,071 weeks,
+  1986-09-06 to 2026-08-08. Floor raised 1 -> 50. Depth runs 1 (1986) -> 40
+  (1990s) -> 50 (2005 on), so `verify_charts.py` warns about two sub-5-row
+  weeks; those are real. Eleven weeks are absent and all eleven were checked
+  at source: nine year-end/New-Year freezes plus **2004-10-02**, where
+  Billboard repeated the prior ranking and the clamp guard correctly declined
+  to store it twice, and **1998-10-10 / 1998-10-17**, which Billboard never
+  published at all (both clamp forward to 1998-10-24).
+  **2004-10-09 hit the predecessor-absent hole and had to be dropped.**
+  Billboard froze Hot Latin Songs for three consecutive weeks — 09-25, 10-02
+  and 10-09 each serve their OWN date, heading matching, with one identical
+  ranking. The guard skipped 10-02, so when 10-09 was fetched its chronological
+  predecessor was missing from the CSV and there was nothing to compare it
+  against, exactly as the country_songs 1987-01-03 case below predicts. It was
+  dropped to match how the other ten repeats on this chart are handled.
+  **The lesson generalises: a freeze longer than two weeks defeats the guard,
+  because the guard's own skip creates the hole the next week falls through.**
+  Always re-run `verify_charts.py` after a backfill and check any flagged week
+  against its served-week heading before assuming fabrication.
+
+**All ten charts 22-31 are wired, verified and committed. 22-26 are deployed;
+27-31 are NOT yet deployed.**
+
+None of charts 22-31 have year-end data — `data/yearend.csv` still covers only
+the original 18 — so `?view=yearend` correctly 302s on all ten and the toggle
+is not rendered. Extending year-end coverage to them is a separate follow-up.
 
 Six backfills ran concurrently on 2026-08-10 with no rate limiting from
 billboard.com. Each still sleeps 1s per request.

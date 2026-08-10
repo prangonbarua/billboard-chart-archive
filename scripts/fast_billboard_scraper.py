@@ -217,12 +217,14 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # era, so 50 is the right guard for each.
                     'country-songs': 50, 'r-b-hip-hop-songs': 50,
                     'top-album-sales': 50,
-                    # BACKFILL FLOOR, NOT A MODERN DEPTH — raise to 50 once
-                    # data/latin_songs.csv is complete. Hot Latin Songs really
-                    # does serve ONE row per week in 1986; the default floor of
-                    # 20 would reject its entire first era and leave a CSV that
-                    # looks finished and is missing years.
-                    'latin-songs': 1}.get(chart_name, 20)
+                    # Latin's backfill is COMPLETE (2072 weeks), so the floor of
+                    # 1 it needed is gone and this is back to its modern depth.
+                    # The 1 was never a depth — Hot Latin Songs really does
+                    # serve ONE row per week in 1986, and the default floor of
+                    # 20 would have rejected its entire first era and left a CSV
+                    # that looked finished and was missing years. It has run 50
+                    # since 2005, so 50 guards the live weekly path correctly.
+                    'latin-songs': 50}.get(chart_name, 20)
         if len(entries) < expected:
             print(f"✗ Incomplete chart: {len(entries)}/{expected} rows — skipping (will retry next run)")
             time.sleep(1)
@@ -383,6 +385,7 @@ def main():
     update_chart_data('country-songs', 'data/country_songs.csv', weeks_to_fetch=15)
     update_chart_data('r-b-hip-hop-songs', 'data/rnb_hiphop_songs.csv', weeks_to_fetch=15)
     update_chart_data('top-album-sales', 'data/top_album_sales.csv', weeks_to_fetch=15)
+    update_chart_data('latin-songs', 'data/latin_songs.csv', weeks_to_fetch=15)
 
     print("\n" + "="*60)
     if success_hot100 and success_bb200:
