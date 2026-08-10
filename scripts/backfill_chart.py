@@ -56,7 +56,15 @@ CHART_CALENDARS = {
 # was suspended after 1963-11-23 and resumed 1965-01-30 — 61 weeks that all
 # clamp forward to 1965-01-30 and cost a wasted round trip each.
 CHART_GAPS = {
-    'r-b-hip-hop-songs': [('1963-11-24', '1965-01-29')],
+    # Both charts skipped the New Year week of 1961-01-02 — 1960-12-26 is
+    # followed directly by 1961-01-09. Observed live in both backfills, which
+    # each spent three attempts on it before giving up. The neighbouring New
+    # Years, 1959-01-05 and 1960-01-04, were published normally, so this is a
+    # one-off and not a yearly pattern.
+    'country-songs':     [('1961-01-02', '1961-01-02')],
+    'r-b-hip-hop-songs': [('1961-01-02', '1961-01-02'),
+                          # Suspended after 1963-11-23, resumed 1965-01-30.
+                          ('1963-11-24', '1965-01-29')],
 }
 
 
