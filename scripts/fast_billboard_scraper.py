@@ -195,7 +195,12 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # both serve 10 rows, and the week before each serves that
                     # same first week's content under its own date, which is
                     # the pre-launch clamp the served-week guard catches.
-                    'japan-hot-100': 10,
+                    # Japan's backfill is COMPLETE, so this is back to its
+                    # modern depth and guards the live weekly path properly.
+                    'japan-hot-100': 25,
+                    # Still a BACKFILL FLOOR — raise to 20 once the UK CSV is
+                    # complete. It launched at 10 rows and the default floor of
+                    # 20 would reject its early era silently.
                     'official-uk-songs': 10}.get(chart_name, 20)
         if len(entries) < expected:
             print(f"✗ Incomplete chart: {len(entries)}/{expected} rows — skipping (will retry next run)")
@@ -349,6 +354,7 @@ def main():
     update_chart_data('bubbling-under-hot-100-singles', 'data/bubbling_under.csv', weeks_to_fetch=15)
     update_chart_data('canadian-hot-100', 'data/canadian_hot100.csv', weeks_to_fetch=15)
     update_chart_data('dance-electronic-songs', 'data/dance_electronic_songs.csv', weeks_to_fetch=15)
+    update_chart_data('japan-hot-100', 'data/japan_hot100.csv', weeks_to_fetch=15)
 
     print("\n" + "="*60)
     if success_hot100 and success_bb200:
