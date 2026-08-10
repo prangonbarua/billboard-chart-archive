@@ -203,6 +203,18 @@ GOSPEL_DATA, GOSPEL_AVAILABLE_DATES = _load_global_chart('gospel_songs.csv')
 # registry's 50 is the modern depth only, not a scrape threshold.
 CHRISTIAN_DATA, CHRISTIAN_AVAILABLE_DATES = _load_global_chart('christian_songs.csv')
 
+# Hot Country Songs and Hot R&B/Hip-Hop Songs — the CONSUMPTION charts, which
+# are different data from the existing country_airplay and rnb_hiphop airplay
+# charts. Both start 1958-10-20 and are MONDAY-dated until 1961-12-25, and both
+# date the Bicentennial week Sunday 1976-07-04; see CHART_CALENDARS in
+# scripts/backfill_chart.py. Depth runs 29 to 100 across their lives.
+COUNTRY_SONGS_DATA, COUNTRY_SONGS_AVAILABLE_DATES = _load_global_chart('country_songs.csv')
+RNB_SONGS_DATA, RNB_SONGS_AVAILABLE_DATES = _load_global_chart('rnb_hiphop_songs.csv')
+
+# Top Album Sales. Runs 1991-05-25 to date. Its depth SHRANK — 100 rows from
+# 1991 through at least 2015, 50 today — so the registry's 50 is modern only.
+TOP_ALBUM_SALES_DATA, TOP_ALBUM_SALES_AVAILABLE_DATES = _load_global_chart('top_album_sales.csv')
+
 # ── Chart registry ──────────────────────────────────────────────────────────
 # Single source of truth for chart metadata. The nav is built by looping this,
 # so adding a chart cannot leave the nav out of sync — commit cd05690 had to
@@ -240,9 +252,12 @@ CHARTS = {
     'rock_songs':       dict(label='Hot Rock & Alternative Songs', group='Songs', depth=50, kind='song'),
     'gospel':           dict(label='Hot Gospel Songs', group='Songs', depth=25, kind='song'),
     'christian':        dict(label='Hot Christian Songs', group='Songs', depth=50, kind='song'),
+    'country_songs':    dict(label='Hot Country Songs', group='Songs', depth=50, kind='song'),
+    'rnb_songs':        dict(label='Hot R&B/Hip-Hop Songs', group='Songs', depth=50, kind='song'),
 
     'albums200':   dict(label='Billboard 200™', group='Albums & Artists', depth=200, kind='album'),
     'artist100':   dict(label='Artist 100',       group='Albums & Artists', depth=100, kind='artist'),
+    'top_album_sales': dict(label='Top Album Sales', group='Albums & Artists', depth=50, kind='album'),
 }
 
 # Frame + available dates per chart key. Keyed to the module globals above so
@@ -273,6 +288,9 @@ CHART_DATA = {
     'rock_songs':      (ROCK_SONGS_DATA,        ROCK_SONGS_AVAILABLE_DATES),
     'gospel':          (GOSPEL_DATA,            GOSPEL_AVAILABLE_DATES),
     'christian':       (CHRISTIAN_DATA,         CHRISTIAN_AVAILABLE_DATES),
+    'country_songs':   (COUNTRY_SONGS_DATA,     COUNTRY_SONGS_AVAILABLE_DATES),
+    'rnb_songs':       (RNB_SONGS_DATA,         RNB_SONGS_AVAILABLE_DATES),
+    'top_album_sales': (TOP_ALBUM_SALES_DATA,   TOP_ALBUM_SALES_AVAILABLE_DATES),
     'albums200':   (BILLBOARD_200_DATA,         ALBUMS200_AVAILABLE_DATES),
     'artist100':   (ARTIST100_DATA,             ARTIST100_AVAILABLE_DATES),
 }
@@ -1895,7 +1913,10 @@ def pop_airplay():
 for _key in ('adult_pop', 'adult_contemporary', 'rhythmic', 'country_airplay', 'alternative',
              'rnb_hiphop', 'dance_airplay', 'adult_rnb', 'heatseekers', 'dance_sales', 'bubbling',
              'canadian_hot100', 'dance_electronic', 'japan_hot100', 'uk_songs',
-             'rock_songs', 'gospel', 'christian'):
+             'rock_songs', 'gospel', 'christian', 'country_songs', 'rnb_songs',
+             # kind='album' renders correctly through chart.html, which only
+             # special-cases 'artist'; the album title takes the song slot.
+             'top_album_sales'):
     def _format_chart_page(key=_key):
         df, dates = CHART_DATA[key]
         if df is None:

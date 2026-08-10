@@ -211,6 +211,12 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # 50 for its last 894 weeks, so 50 guards the weekly path
                     # correctly. Its shallow era is already in the CSV.
                     'christian-songs': 50,
+                    # All three run 50 rows today. Country and R&B were 29-100
+                    # over their lives and Top Album Sales SHRANK from 100 to
+                    # 50, but the weekly path never looks back past the modern
+                    # era, so 50 is the right guard for each.
+                    'country-songs': 50, 'r-b-hip-hop-songs': 50,
+                    'top-album-sales': 50,
                     # BACKFILL FLOOR, NOT A MODERN DEPTH — raise to 50 once
                     # data/latin_songs.csv is complete. Hot Latin Songs really
                     # does serve ONE row per week in 1986; the default floor of
@@ -374,6 +380,9 @@ def main():
     update_chart_data('rock-songs', 'data/rock_songs.csv', weeks_to_fetch=15)
     update_chart_data('gospel-songs', 'data/gospel_songs.csv', weeks_to_fetch=15)
     update_chart_data('christian-songs', 'data/christian_songs.csv', weeks_to_fetch=15)
+    update_chart_data('country-songs', 'data/country_songs.csv', weeks_to_fetch=15)
+    update_chart_data('r-b-hip-hop-songs', 'data/rnb_hiphop_songs.csv', weeks_to_fetch=15)
+    update_chart_data('top-album-sales', 'data/top_album_sales.csv', weeks_to_fetch=15)
 
     print("\n" + "="*60)
     if success_hot100 and success_bb200:
