@@ -206,7 +206,13 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # rows in all 895 weeks of its history and gospel-songs 25
                     # in all 1117, measured across the completed CSVs. So these
                     # are modern depths and backfill floors at once.
-                    'rock-songs': 50, 'gospel-songs': 25}.get(chart_name, 20)
+                    'rock-songs': 50, 'gospel-songs': 25,
+                    # BACKFILL FLOOR, NOT A MODERN DEPTH — raise to 50 once
+                    # data/latin_songs.csv is complete. Hot Latin Songs really
+                    # does serve ONE row per week in 1986; the default floor of
+                    # 20 would reject its entire first era and leave a CSV that
+                    # looks finished and is missing years.
+                    'latin-songs': 1}.get(chart_name, 20)
         if len(entries) < expected:
             print(f"✗ Incomplete chart: {len(entries)}/{expected} rows — skipping (will retry next run)")
             time.sleep(1)
