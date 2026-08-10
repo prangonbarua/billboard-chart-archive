@@ -207,6 +207,18 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # in all 1117, measured across the completed CSVs. So these
                     # are modern depths and backfill floors at once.
                     'rock-songs': 50, 'gospel-songs': 25,
+                    # BACKFILL FLOOR, NOT A MODERN DEPTH — raise to 40 once
+                    # the CSV is complete. Adult Alternative serves 20 rows in
+                    # 1996 and 2000, 30 by 2010 and 40 today, so its early era
+                    # sits exactly ON the default floor of 20 and any week
+                    # served one row short would be dropped SILENTLY. Measured
+                    # 2026-08-10: 1996-01-20 is the first week (1996-01-13 and
+                    # 1996-01-06 both clamp forward to it) at 20 rows.
+                    'triple-a': 15,
+                    # Mainstream Rock needs no backfill floor: it served 40
+                    # rows at every era probed, 1981-03-21 through 2026, with
+                    # no clamping after launch.
+                    'hot-mainstream-rock-tracks': 40,
                     # Christian grew 30 -> 40 -> 50 over its life and has run
                     # 50 for its last 894 weeks, so 50 guards the weekly path
                     # correctly. Its shallow era is already in the CSV.
