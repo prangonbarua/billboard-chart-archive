@@ -34,8 +34,17 @@ def real_years(year_sigs: dict[int, str | None],
                weekly_sig: str | None = None) -> list[int]:
     """Genuine years, ascending, from a {year: signature} map.
 
-    A year survives unless the NEXT year is consecutive and carries the same
-    signature, which means this year is that year's clamped copy.
+    A year survives unless some LATER year carries the same signature, which
+    means this year is that year's clamped copy.
+
+    The later year does not have to be adjacent. Requiring adjacency was the
+    original rule and it leaks: hot-rock-songs answers 1962-1978 and 1982-2005
+    with 2009's list but returns 0 rows for 1979-1981 and 2006-2008, and those
+    empty years break the run into three pieces. 1978 and 2005 then have no
+    consecutive successor and both survive, storing 2009's chart twice under
+    years in which the chart did not exist. Two ranking orders of fifty songs
+    do not coincide by accident, so an equal signature is a copy however far
+    apart the years sit.
 
     `weekly_sig` is the signature of the chart's own weekly page. Years
     matching it are removed first, before the clamp rule runs, so that
@@ -43,12 +52,6 @@ def real_years(year_sigs: dict[int, str | None],
     """
     years = sorted(y for y, s in year_sigs.items()
                    if s is not None and s != weekly_sig)
-    keep = []
-    for i, year in enumerate(years):
-        nxt = years[i + 1] if i + 1 < len(years) else None
-        clamped = (nxt is not None
-                   and nxt == year + 1
-                   and year_sigs[nxt] == year_sigs[year])
-        if not clamped:
-            keep.append(year)
-    return keep
+    return [year for i, year in enumerate(years)
+            if not any(year_sigs[later] == year_sigs[year]
+                       for later in years[i + 1:])]

@@ -313,13 +313,53 @@ It checkpoints `data/yearend.csv` after every chart, so an interrupted run keeps
 its finished charts. **Back that file up first** — it holds 18 charts of good
 data and the script rewrites it in place.
 
-One thing to check in the output rather than assume: these charts all launched
-long after 1958, and the early years return a clamped copy of the first real
-year at full depth. The guard collapses a consecutive identical run to its last
-year, which is correct ONLY while the run stays byte-identical all the way to
-the real year. A single year that parses one row short breaks the run and leaves
-a fabricated year standing. Read the `dropped ...: duplicate of ...` lines and
-confirm the kept range starts at the chart's real launch year.
+**BACKFILL DONE 2026-08-10.** All seven ran; `data/yearend.csv` now covers 25
+charts and 555 years. It caught the failure predicted above, twice, so the
+guard has been changed.
+
+### The clamp guard leaked, and how
+
+`hot-rock-songs` answers 1962-1978 AND 1982-2005 with **2009's list**, and
+returns 0 rows for 1979-1981 and 2006-2008. Those empty years split one clamped
+run into three pieces. The old rule dropped a year only when the NEXT year was
+*consecutive* and identical, so 1978 and 2005 each had no consecutive successor
+and both survived — storing 2009's chart under two years in which the chart did
+not exist. `yearend_guard.real_years` now drops a year when ANY later year has
+the same signature, adjacent or not. Two orderings of fifty songs do not
+coincide by accident. A test asserted the old behaviour on the reasoning that a
+gap means the years are not one run; it was untested reasoning and is now
+replaced with this case.
+
+### The hole the guard cannot close
+
+The guard compares years against each other, so it only catches a copy whose
+original is also kept. `latin_songs` 1996 held a **2006** list ("Hips Don't
+Lie", "Rompe"); 2006 was never kept, so no signature matched and it passed
+every structural check. It is invisible to any year-vs-year rule.
+
+The detector that does not need a duplicate is content: a genuine year-end for
+year Y is compiled from year Y's weekly charts, so its titles must appear in
+that year's weekly data. Latin 1996 scored **0%** against 52 scraped weeks of
+1996. That check is now `scripts/verify_yearend.py`:
+
+    python3 scripts/verify_yearend.py      # 555 years, 0 failed, ~15s
+
+**Run it after every year-end backfill.** Anything it fails goes into
+`backfill_yearend.FABRICATED` so a later run cannot restore it — the guard will
+not catch it a second time either. Years whose weekly archive does not reach
+back far enough are reported as untestable and must be triaged by hand into
+`UNTESTABLE_OK`; the untriaged ones fail the run rather than passing quietly.
+
+Three years were removed as fabricated: `rock_songs` 1978 and 2005, and
+`latin_songs` 1996.
+
+### Still untriaged, inherited
+
+`verify_yearend.py` accepts `dance_sales` 2007-2013 and `alternative` 1988 only
+to get a clean baseline. They are NOT verified. Dance Singles Sales ended in
+2007, so six year-end editions after the chart stopped publishing is the same
+shape as the Latin 1996 finding and deserves the same content check. This is
+pre-existing data, not from this backfill.
 
 ### 2. "All the airplay charts you can find"
 

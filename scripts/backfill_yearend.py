@@ -37,6 +37,17 @@ COLUMNS = ['Chart', 'Year', 'Rank', 'Song', 'Artist', 'Image URL']
 FIRST_YEAR = 1958
 LAST_YEAR = 2025
 
+# Fabricated years the signature guard cannot see, because the year they copy
+# is not itself kept and so there is no matching signature to collapse them
+# into. Found by scripts/verify_yearend.py, which checks a year's titles
+# against that chart's own weekly data for the same year.
+#   latin_songs 1996 - holds a 2006 list ("Hips Don't Lie", "Rompe"). Zero of
+#     its titles appear anywhere in 1996's weekly data, and all 52 weeks of
+#     1996 are scraped, so this is disagreement and not a coverage gap.
+FABRICATED = {
+    'latin_songs': {1996},
+}
+
 HEADERS = {'User-Agent': ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
                           'AppleWebKit/537.36')}
 
@@ -126,6 +137,7 @@ def scrape_chart(chart_key, slug, years, fetch=fetch_yearend, session=None,
         time.sleep(0.5)
 
     keep = set(real_years(sigs, weekly_sig=weekly_sig))
+    keep -= FABRICATED.get(chart_key, set())
     dropped = []
     for year in sorted(y for y in sigs if sigs[y] is not None):
         if year in keep:
@@ -166,7 +178,9 @@ def main(argv=None):
         if years:
             print(f'  range: {years[0]}-{years[-1]}', flush=True)
         for year, dupe in dropped:
-            print(f'  dropped {year}: duplicate of {dupe}', flush=True)
+            why = (f'duplicate of {dupe}' if dupe
+                   else 'weekly fall-through or excluded by name')
+            print(f'  dropped {year}: {why}', flush=True)
         if rows:
             frames.append(pd.DataFrame(rows))
         # Checkpoint after every chart, so an interrupted run keeps its work.

@@ -53,11 +53,22 @@ def test_fabricated_run_between_two_real_runs():
     assert real_years(sigs) == [1989, 1990, 2006, 2007]
 
 
-def test_non_consecutive_years_with_equal_signatures_both_survive():
-    # A gap year means these are not one run, so neither can be a clamp of
-    # the other. Equal signatures here would be a source oddity, not proof.
+def test_non_consecutive_years_with_equal_signatures_collapse():
+    # This test used to assert both survive, on the reasoning that a gap means
+    # the two are not one run so neither can be a clamp of the other. Measured
+    # 2026-08-10, that is wrong: hot-rock-songs serves 2009's list for both
+    # 1978 and 2005 while returning 0 rows for 1979-1981 and 2006-2008, so the
+    # empty years split one clamped run into pieces. Both survived the old rule
+    # and stored 2009's chart under years in which the chart did not exist.
     sigs = {2010: 'A', 2012: 'A'}
-    assert real_years(sigs) == [2010, 2012]
+    assert real_years(sigs) == [2012]
+
+
+def test_gap_years_do_not_rescue_a_clamped_copy():
+    # The hot-rock-songs shape, reduced: one list served for two blocks
+    # separated by years the source answers with nothing.
+    sigs = {1978: 'A', 1979: None, 1980: None, 2005: 'A', 2009: 'A'}
+    assert real_years(sigs) == [2009]
 
 
 def test_years_with_no_signature_are_dropped():

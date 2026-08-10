@@ -37,10 +37,16 @@ def test_hot100_has_no_fabricated_years(mod):
 
 
 def test_no_chart_without_an_edition_has_data(mod):
-    """The three charts Billboard publishes no year-end edition for.
+    """The charts Billboard publishes no year-end edition for.
 
     Each is answered with its current weekly chart rather than a 404, so a
     row here would be one arbitrary week stored as a year of history.
+
+    rnb_hiphop was on this list and has been removed: it does have a year-end
+    edition, at r-and-b-hip-hop-airplay-songs. The slug is unreachable from the
+    chart's label because '&' expands to 'and', giving 'randb' where Billboard
+    writes 'r-and-b', and the earlier check gave up after two other candidates.
     """
-    for key in ('rnb_hiphop', 'heatseekers', 'bubbling'):
+    for key in ('heatseekers', 'bubbling', 'rnb_songs', 'uk_songs',
+                'top_album_sales', 'japan_hot100'):
         assert key not in mod.YEAREND_DATA, key
