@@ -393,6 +393,44 @@ to get a clean baseline. They are NOT verified. Dance Singles Sales ended in
 shape as the Latin 1996 finding and deserves the same content check. This is
 pre-existing data, not from this backfill.
 
+### 1b. Mainstream Rock + Adult Alternative — MEASURED 2026-08-10, not backfilled
+
+Requested by name. Both are real and addable. Everything below is a dated
+fetch, not recall; the backfill itself has NOT been started.
+
+| key | slug | Billboard's own label | first week | depth | weeks | est. |
+|---|---|---|---|---|---|---|
+| `mainstream_rock` | `hot-mainstream-rock-tracks` | Mainstream Rock Airplay | **1981-03-21** | 40 | ~2,370 | ~1.3h |
+| `adult_alternative` | `triple-a` | Adult Alternative Airplay | **1996-01-20** | 40 now, **20 at launch** | ~1,594 | ~0.9h |
+
+~3,960 weeks total, roughly 2.2 hours at the measured ~2s/week.
+
+**Neither slug is guessable.** `mainstream-rock-songs` and
+`adult-alternative-songs` both return 0 rows, and `mainstream-rock-airplay` and
+`adult-alternative-airplay` both 404.
+
+**`rock-airplay` is a DIFFERENT chart** — label "Rock & Alternative Airplay",
+50 deep, clamps to 2009-06-20 so that is its launch era. It is neither of these
+two and is not the existing `rock_songs` (that one is the consumption chart).
+It is a third chart, unrequested and unadded.
+
+First weeks are confirmed by clamp-forward: `hot-mainstream-rock-tracks` at
+1981-03-14 and 1981-03-07 both serve March 21, 1981, and `triple-a` at
+1996-01-13 and 1996-01-06 both serve January 20, 1996.
+
+**The trap here is Adult Alternative's launch depth.** It serves 20 rows in
+1996 and 2000, 30 by 2010, 40 today. The default scrape floor is exactly 20, so
+the whole 1996-2000s era sits ON the boundary and any week Billboard serves at
+19 rows is dropped SILENTLY, leaving a CSV that looks finished. Set an explicit
+backfill floor for `triple-a` in `fast_billboard_scraper.py` alongside the
+japan-hot-100 / official-uk-songs entries before running, and raise it to 40
+once the CSV is complete. Mainstream Rock needs no override: it serves 40 at
+every era probed, 1981 through 2026, with no clamping after launch.
+
+Order is DATA FIRST, as above — the route test requires 200 for every
+registered chart, so a chart registered before its CSV exists turns the suite
+red.
+
 ### 2. "All the airplay charts you can find"
 
 Not started, nothing probed. The registry currently holds nine airplay charts:
