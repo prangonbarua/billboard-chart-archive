@@ -115,15 +115,50 @@ automatically — expect genuine publication gaps to need
 - **gospel-songs**: backfill STARTED 2026-08-10 to `data/gospel_songs.csv`,
   under nohup, log `logs_gospel.out`. 1118 weeks. Measured 25 rows at launch
   and throughout; default floor of 20 is safe, **raise to 25 when wiring.**
-- **christian-songs**: backfill STARTED 2026-08-10 to
-  `data/christian_songs.csv`, under nohup, log `logs_christian.out`. 1209
-  weeks. **Raise floor to 50 when wiring.**
-- The other three: not started. Agreed order is cheapest-first — Top Album
-  Sales (1837), Latin (2083), then country-songs (3539) and
-  r-b-hip-hop-songs (3478).
+- **rock-songs: DONE and SHIPPED** as chart 25 (commit 696fc7c). 44,750 rows /
+  895 weeks, 50 rows every week, zero gaps. Floor set to 50.
+- **gospel-songs: DONE and SHIPPED** as chart 26 (commit 696fc7c). 27,925 rows
+  / 1117 weeks, 25 rows every week, zero gaps. Floor set to 25.
+- **christian-songs: backfill DONE**, 1208 weeks, 2003-06-21 to 2026-08-08,
+  1 failed (2026-08-08 leading edge). **NOT WIRED YET** — this is chart 27.
+  Raise floor to 50 when wiring.
+- **country-songs / r-b-hip-hop-songs / top-album-sales: backfills DONE but
+  INCOMPLETE**, then re-run to recover. See the deploy warning below. None are
+  wired. Floors: 50 for all three when wired.
+- **latin-songs**: backfill STARTED 2026-08-10, log `logs_latin.out`, 2085
+  weeks, running with **floor 1** (commit 98bf30f). Confirmed serving 1-row
+  weeks in 1986. **Raise the floor to 50 once the CSV is complete.**
 
-Three backfills have run concurrently since 2026-08-10 with no rate limiting
-from billboard.com. Each still sleeps 1s per request.
+Six backfills ran concurrently on 2026-08-10 with no rate limiting from
+billboard.com. Each still sleeps 1s per request.
+
+### Do not deploy while a backfill is running
+
+`railway up` uploads the whole working directory — 208 MB, mostly `data/`.
+That upload saturated the connection and starved the running scrapers: country
+lost 46 weeks, r-b-hip-hop 51 and top-album-sales 34, all to read timeouts and
+one DNS resolution failure, in contiguous blocks that look like Billboard
+outages and are not. Pause backfills before deploying, or expect to re-run.
+
+Re-running to recover them IS safe. The `prev_sig` fabrication bug that the
+warning at the end of this file describes is fixed — `main()` looks each
+week's chronological predecessor up from the CSV rather than carrying a
+rolling signature, and `tests/test_backfill_chart.py` covers the scattered
+re-run case directly.
+
+### Deploying
+
+`railway` CLI is installed and authenticated. The service exists but is not
+locally linked, so pass it explicitly:
+
+    git push origin main
+    railway up --service billboard-chart-archive --detach
+
+Live at https://billboard-chart-archive-production.up.railway.app. A build
+takes about 100 seconds to go live after upload. Verify over HTTP by fetching
+each new chart's route and checking the `<h1>`, not just the status code.
+
+**Charts 22-26 are DEPLOYED and verified live as of 2026-08-10.**
 
 ### Launch depths measured before backfilling (do not re-derive)
 
