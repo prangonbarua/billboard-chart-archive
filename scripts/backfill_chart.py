@@ -61,8 +61,14 @@ CHART_GAPS = {
     # each spent three attempts on it before giving up. The neighbouring New
     # Years, 1959-01-05 and 1960-01-04, were published normally, so this is a
     # one-off and not a yearly pattern.
-    'country-songs':     [('1961-01-02', '1961-01-02')],
+    # 1976-07-03 never existed on these two charts either — that week is dated
+    # Sunday 1976-07-04, see CHART_EXTRA_WEEKS. Suppressing the Saturday keeps
+    # the run from spending three attempts rediscovering it, and leaves
+    # 1976-07-04 with a real predecessor for the clamp guard to compare against.
+    'country-songs':     [('1961-01-02', '1961-01-02'),
+                          ('1976-07-03', '1976-07-03')],
     'r-b-hip-hop-songs': [('1961-01-02', '1961-01-02'),
+                          ('1976-07-03', '1976-07-03'),
                           # Suspended after 1963-11-23, resumed 1965-01-30.
                           ('1963-11-24', '1965-01-29')],
 }
@@ -86,6 +92,19 @@ def signatures_from_frame(df):
                  zip(week['Rank'], week['Song'], week['Artist'])]
         out[str(date)] = hashlib.sha1('\n'.join(parts).encode()).hexdigest()
     return out
+
+
+# One-off dates a chart used that its own calendar does not generate. Billboard
+# dated the US Bicentennial week SUNDAY 1976-07-04 on both 1958 charts, between
+# the ordinary Saturdays 1976-06-26 and 1976-07-10. Requesting 1976-07-03 gets
+# 1976-07-04's content served under the wrong date, which the served-week guard
+# correctly rejects — so without this the week is simply lost. Note hot100 and
+# billboard200 serve 1976-07-03 normally; the Sunday date is specific to these
+# two genre charts.
+CHART_EXTRA_WEEKS = {
+    'country-songs':     ['1976-07-04'],
+    'r-b-hip-hop-songs': ['1976-07-04'],
+}
 
 
 def chart_weeks(slug, first_week, last_week=None):
@@ -118,7 +137,13 @@ def chart_weeks(slug, first_week, last_week=None):
 
     for gap_start, gap_end in CHART_GAPS.get(slug, []):
         out = [w for w in out if not gap_start <= w <= gap_end]
-    return out
+
+    extra = [w for w in CHART_EXTRA_WEEKS.get(slug, [])
+             if first_week <= w <= stop.strftime('%Y-%m-%d')]
+    # Sorted, not appended: the clamp guard compares each week against its
+    # predecessor in this list, so an out-of-order week would be checked
+    # against the wrong one.
+    return sorted(out + extra)
 
 
 def save(df, path):
