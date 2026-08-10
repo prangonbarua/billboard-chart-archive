@@ -94,11 +94,24 @@ automatically — expect genuine publication gaps to need
 - **dance-electronic-songs: DONE and SHIPPED** as chart 22 (commit 3fb69fa).
   30,300 rows / 647 weeks, 2014-03-22 to current, zero gaps, verify_charts
   clean. Wired and 139 tests pass.
-- **japan-hot-100**: backfill running 2026-08-09 to `data/japan_hot100.csv`.
-  Not wired yet. **After it completes, raise its floor in
-  `fast_billboard_scraper.py` from the backfill value 10 to the modern 25.**
-- The other eight: not started. Agreed order is cheapest-first — UK, Rock,
-  Gospel, Christian, then Top Album Sales, Latin, and the two 1958 charts.
+- **japan-hot-100: DONE and SHIPPED** as chart 23 (commit 7ebf41a). 19,590 rows
+  / 795 weeks. Floor already raised back to its modern 25. Six single weeks are
+  absent — four early-January — where Billboard repeated the previous week's
+  ranking and the clamp guard declined to store it twice. That is correct
+  behaviour, not data loss to chase.
+- **official-uk-songs**: backfill STARTED 2026-08-09 to `data/uk_songs.csv`,
+  running under nohup and resumable. Not wired yet. **When it finishes: wire
+  it (5 edits), then raise its floor from 10 to 20.** Expect rows/week to run
+  10 to 20 and expect gaps — check them the way Japan's were checked before
+  assuming anything is wrong.
+- The other seven: not started. Agreed order is cheapest-first — Rock (894 wks),
+  Gospel (1116), Christian (1207), Top Album Sales (1837), Latin (2083), then
+  country-songs and r-b-hip-hop-songs (3538 each). At ~2s/week that is roughly
+  7 hours for all seven.
+
+**Latin needs a floor of 1** to backfill (it serves 1 row/week in 1986), and
+that floor must be raised to 50 afterwards. It is the most dangerous of the
+seven for exactly that reason.
 
 ### The three suspect first weeks are now CONFIRMED (2026-08-09)
 
