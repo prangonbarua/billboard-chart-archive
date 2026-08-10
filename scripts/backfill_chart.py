@@ -32,6 +32,33 @@ CHECKPOINT_EVERY = 25
 MAX_ATTEMPTS = 3
 COLUMNS = ['Date', 'Rank', 'Song', 'Artist', 'Last Week', 'Peak Position', 'Weeks on Chart']
 
+# Billboard has not always dated every chart on a Saturday. country-songs and
+# r-b-hip-hop-songs were dated MONDAY from their 1958-10-20 launch through
+# 1961-12-25, and Saturday from 1962-01-06 onward. Measured against
+# billboard.com on 2026-08-10, boundary included: 1961-12-25 serves itself,
+# and the next real week is 1962-01-06, twelve days later.
+#
+# Walking Saturdays across the Monday era does not fail loudly. Billboard
+# clamps each date that never existed to a nearby real week, the scraper's
+# served-week guard rejects the mismatch, and 166 weeks land in the fail list
+# looking like network trouble — while the Monday weeks they stand for are
+# never requested at all. `find_chart_start.py` has the same blind spot, which
+# is why it reported these two launching on Saturday 1958-10-18.
+#
+# Each segment is (first week, last week or None for "run to the end"); the
+# weekday is taken from the segment's own start date and stepped by 7 days.
+CHART_CALENDARS = {
+    'country-songs':     [('1958-10-20', '1961-12-25'), ('1962-01-06', None)],
+    'r-b-hip-hop-songs': [('1958-10-20', '1961-12-25'), ('1962-01-06', None)],
+}
+
+# Weeks Billboard never published, as (first, last) inclusive. The R&B chart
+# was suspended after 1963-11-23 and resumed 1965-01-30 — 61 weeks that all
+# clamp forward to 1965-01-30 and cost a wasted round trip each.
+CHART_GAPS = {
+    'r-b-hip-hop-songs': [('1963-11-24', '1965-01-29')],
+}
+
 
 def ranking_signature(rows):
     """Hash a week's full ordering, so clamped repeats can be detected."""
@@ -53,18 +80,36 @@ def signatures_from_frame(df):
     return out
 
 
-def saturdays_from(first_week, last_week=None):
-    d = datetime.strptime(first_week, '%Y-%m-%d')
+def chart_weeks(slug, first_week, last_week=None):
+    """Every date this chart was actually published, in order.
+
+    Defaults to stepping 7 days from `first_week`, keeping whatever weekday
+    that date falls on. Charts in CHART_CALENDARS changed weekday partway
+    through and use their measured segments instead; CHART_GAPS weeks are
+    dropped because Billboard never published them.
+    """
     # Discontinued charts stop being published long before today. Without a
     # last week, every date after the final one is still requested, and each is
     # a clamped response that costs a round trip to reject — 1,000+ of them on
     # a chart that ended in 2007.
     stop = (datetime.strptime(last_week, '%Y-%m-%d') if last_week
             else datetime.now() + timedelta(days=6))
+    begin = datetime.strptime(first_week, '%Y-%m-%d')
+    segments = CHART_CALENDARS.get(slug) or [(first_week, None)]
+
     out = []
-    while d <= stop:
-        out.append(d.strftime('%Y-%m-%d'))
-        d += timedelta(days=7)
+    for seg_start, seg_end in segments:
+        d = datetime.strptime(seg_start, '%Y-%m-%d')
+        seg_stop = min(stop, datetime.strptime(seg_end, '%Y-%m-%d')) if seg_end else stop
+        while d <= seg_stop:
+            # `first_week` still bounds the run, so a calendared chart can be
+            # backfilled from a later date without hand-editing the segments.
+            if d >= begin:
+                out.append(d.strftime('%Y-%m-%d'))
+            d += timedelta(days=7)
+
+    for gap_start, gap_end in CHART_GAPS.get(slug, []):
+        out = [w for w in out if not gap_start <= w <= gap_end]
     return out
 
 
@@ -88,7 +133,7 @@ def main():
     df = pd.read_csv(csv_path, low_memory=False) if csv_path.exists() else pd.DataFrame(columns=COLUMNS)
     have = set(df['Date'].astype(str)) if len(df) else set()
 
-    wanted = saturdays_from(first_week, last_week)
+    wanted = chart_weeks(slug, first_week, last_week)
     missing = [w for w in wanted if w not in have]
     print(f'{slug}: {len(wanted)} weeks total, {len(have)} present, {len(missing)} to fetch', flush=True)
 

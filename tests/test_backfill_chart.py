@@ -92,3 +92,42 @@ def test_no_adjacent_week_repeats_a_ranking(run_backfill):
     dates = sorted(sigs)
     twins = [(a, b) for a, b in zip(dates, dates[1:]) if sigs[a] == sigs[b]]
     assert twins == [], f'adjacent weeks share a ranking: {twins}'
+
+
+# ── Week generation ─────────────────────────────────────────────────────────
+# Charts are not all Saturday-dated for their whole lives. Asking for a weekday
+# a chart never used is not a loud failure: Billboard clamps to a nearby real
+# week and the served-week guard rejects it, so the era is quietly never
+# fetched. These pin the measured calendars.
+
+def weekdays(weeks):
+    from datetime import datetime
+    return {datetime.strptime(w, '%Y-%m-%d').strftime('%a') for w in weeks}
+
+
+def test_uncalendared_chart_keeps_its_first_weeks_weekday():
+    weeks = backfill_chart.chart_weeks('gospel-songs', '2005-03-19', '2005-04-16')
+    assert weeks == ['2005-03-19', '2005-03-26', '2005-04-02',
+                     '2005-04-09', '2005-04-16']
+
+
+def test_country_switches_from_monday_to_saturday_dating():
+    """Measured: last Monday week 1961-12-25, first Saturday week 1962-01-06."""
+    weeks = backfill_chart.chart_weeks('country-songs', '1958-10-20', '1962-01-13')
+    assert weeks[0] == '1958-10-20'
+    assert weekdays(weeks) == {'Mon', 'Sat'}
+    boundary = weeks[weeks.index('1961-12-25'):]
+    assert boundary == ['1961-12-25', '1962-01-06', '1962-01-13'], \
+        'the 12-day gap across the dating change was not reproduced'
+
+
+def test_rnb_hiatus_weeks_are_never_requested():
+    """Suspended after 1963-11-23, resumed 1965-01-30. All 61 weeks clamp."""
+    weeks = backfill_chart.chart_weeks('r-b-hip-hop-songs', '1958-10-20', '1965-02-06')
+    assert '1963-11-23' in weeks and '1965-01-30' in weeks
+    assert [w for w in weeks if '1963-11-23' < w < '1965-01-30'] == []
+
+
+def test_first_week_argument_still_bounds_a_calendared_chart():
+    weeks = backfill_chart.chart_weeks('country-songs', '1962-01-06', '1962-01-20')
+    assert weeks == ['1962-01-06', '1962-01-13', '1962-01-20']
