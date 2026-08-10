@@ -198,6 +198,11 @@ ROCK_SONGS_DATA, ROCK_SONGS_AVAILABLE_DATES = _load_global_chart('rock_songs.csv
 # Hot Gospel Songs. Runs 2005-03-19 to date, 25 rows every week, no gaps.
 GOSPEL_DATA, GOSPEL_AVAILABLE_DATES = _load_global_chart('gospel_songs.csv')
 
+# Hot Christian Songs. Runs 2003-06-21 to date with no gaps, but it GREW: 30
+# rows for its first 148 weeks, then 40 for 165, and 50 since — so the
+# registry's 50 is the modern depth only, not a scrape threshold.
+CHRISTIAN_DATA, CHRISTIAN_AVAILABLE_DATES = _load_global_chart('christian_songs.csv')
+
 # ── Chart registry ──────────────────────────────────────────────────────────
 # Single source of truth for chart metadata. The nav is built by looping this,
 # so adding a chart cannot leave the nav out of sync — commit cd05690 had to
@@ -234,6 +239,7 @@ CHARTS = {
     'uk_songs':         dict(label='The Official U.K. Singles Chart', group='Songs', depth=20, kind='song'),
     'rock_songs':       dict(label='Hot Rock & Alternative Songs', group='Songs', depth=50, kind='song'),
     'gospel':           dict(label='Hot Gospel Songs', group='Songs', depth=25, kind='song'),
+    'christian':        dict(label='Hot Christian Songs', group='Songs', depth=50, kind='song'),
 
     'albums200':   dict(label='Billboard 200™', group='Albums & Artists', depth=200, kind='album'),
     'artist100':   dict(label='Artist 100',       group='Albums & Artists', depth=100, kind='artist'),
@@ -266,6 +272,7 @@ CHART_DATA = {
     'uk_songs':        (UK_SONGS_DATA,          UK_SONGS_AVAILABLE_DATES),
     'rock_songs':      (ROCK_SONGS_DATA,        ROCK_SONGS_AVAILABLE_DATES),
     'gospel':          (GOSPEL_DATA,            GOSPEL_AVAILABLE_DATES),
+    'christian':       (CHRISTIAN_DATA,         CHRISTIAN_AVAILABLE_DATES),
     'albums200':   (BILLBOARD_200_DATA,         ALBUMS200_AVAILABLE_DATES),
     'artist100':   (ARTIST100_DATA,             ARTIST100_AVAILABLE_DATES),
 }
@@ -1888,7 +1895,7 @@ def pop_airplay():
 for _key in ('adult_pop', 'adult_contemporary', 'rhythmic', 'country_airplay', 'alternative',
              'rnb_hiphop', 'dance_airplay', 'adult_rnb', 'heatseekers', 'dance_sales', 'bubbling',
              'canadian_hot100', 'dance_electronic', 'japan_hot100', 'uk_songs',
-             'rock_songs', 'gospel'):
+             'rock_songs', 'gospel', 'christian'):
     def _format_chart_page(key=_key):
         df, dates = CHART_DATA[key]
         if df is None:

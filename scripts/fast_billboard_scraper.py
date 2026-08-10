@@ -207,6 +207,10 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # in all 1117, measured across the completed CSVs. So these
                     # are modern depths and backfill floors at once.
                     'rock-songs': 50, 'gospel-songs': 25,
+                    # Christian grew 30 -> 40 -> 50 over its life and has run
+                    # 50 for its last 894 weeks, so 50 guards the weekly path
+                    # correctly. Its shallow era is already in the CSV.
+                    'christian-songs': 50,
                     # BACKFILL FLOOR, NOT A MODERN DEPTH — raise to 50 once
                     # data/latin_songs.csv is complete. Hot Latin Songs really
                     # does serve ONE row per week in 1986; the default floor of
@@ -369,6 +373,7 @@ def main():
     update_chart_data('official-uk-songs', 'data/uk_songs.csv', weeks_to_fetch=15)
     update_chart_data('rock-songs', 'data/rock_songs.csv', weeks_to_fetch=15)
     update_chart_data('gospel-songs', 'data/gospel_songs.csv', weeks_to_fetch=15)
+    update_chart_data('christian-songs', 'data/christian_songs.csv', weeks_to_fetch=15)
 
     print("\n" + "="*60)
     if success_hot100 and success_bb200:
