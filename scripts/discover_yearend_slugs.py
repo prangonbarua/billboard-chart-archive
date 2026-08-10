@@ -55,18 +55,42 @@ KNOWN = {
     'adult_contemporary': 'adult-contemporary-songs',
     'country_airplay': 'country-airplay-songs',
     'alternative': 'alternative-songs',
+    # Neither of these is reachable from the label. Measured 2026-08-10.
+    #   rock_songs - the year-end kept the chart's OLD name: the weekly is
+    #     "Hot Rock & Alternative Songs" but the year-end is 'hot-rock-songs'.
+    #     Every label-derived candidate returns 0 rows.
+    #   rnb_hiphop - the candidate rules turn '&' into 'and' and so can only
+    #     ever produce 'randb'; Billboard writes 'r-and-b'. This chart was
+    #     previously recorded as having NO year-end on the strength of two
+    #     other slugs, and that was wrong.
+    'rock_songs': 'hot-rock-songs',
+    'rnb_hiphop': 'r-and-b-hip-hop-airplay-songs',
 }
 
 # Charts with no year-end edition, each confirmed by hand because a plausible
 # near miss exists for every one of them:
-#   rnb_hiphop  - 'r-and-b-hip-hop-airplay' returns 10 rows of ARTISTS, and
-#                 'hot-r-and-b-hip-hop-songs' returns a mixed-decade list
-#                 sharing no titles with any single year's weekly data.
 #   heatseekers - every candidate falls through to the weekly chart.
 #   bubbling    - same; Billboard publishes no year-end Bubbling Under.
+#   rnb_songs   - the CONSUMPTION chart. 'hot-r-and-b-hip-hop-songs' looks
+#                 right and returns 200, but it is the weekly chart falling
+#                 through. The one 50-row list that does exist belongs to the
+#                 airplay chart, not this one: of the titles it shares with
+#                 exactly one of the two CSVs, 26 are airplay-only and 2 are
+#                 consumption-only.
+#   top_album_sales - 'top-album-sales' serves the weekly chart; three other
+#                 candidates return 0 rows.
+#   uk_songs    - 'official-uk-songs' serves the weekly chart; the rest 404.
+#   japan_hot100 - the dangerous one. 'japan-hot-100' returns 100 rows for
+#                 2018-2022 and looks genuine, but 2020, 2021 and 2022 are the
+#                 SAME 100 titles, and only 19% of them appear anywhere in the
+#                 2020 weekly data (52 weeks scraped, so this is not a coverage
+#                 gap). One list filed under several years, as with the
+#                 European Hot 100. The clamp rule would keep 2022 and store it
+#                 as genuine, so this chart must stay excluded by name.
 # The row-count test passes several of these, which is why acceptance is also
 # checked against the weekly page and the chart's own CSV.
-NO_YEAREND = {'rnb_hiphop', 'heatseekers', 'bubbling'}
+NO_YEAREND = {'heatseekers', 'bubbling', 'rnb_songs', 'top_album_sales',
+              'uk_songs', 'japan_hot100'}
 
 
 def candidates(key, label):

@@ -262,37 +262,64 @@ Two requests arrived after charts 22-31 shipped. Neither is started; both are
 multi-hour jobs. Charts 22-31 and the hover/credit fixes are all deployed and
 verified, so the tree is clean to pick up from.
 
-### 1. Year-end editions for charts 22-31
+### 1. Year-end editions for charts 22-31 — DISCOVERY DONE 2026-08-10
 
-`data/yearend.csv` still covers only the original 18 charts, so `?view=yearend`
-302s on all ten new ones and the toggle is hidden. That is correct behaviour,
-not a bug.
+The discovery run finished. Its output was diffed against
+`scripts/yearend_slugs.json.bak` and all 21 pre-existing entries survived
+byte-identical, including the four hand-corrected slugs. The file is trustworthy.
 
-**A discovery run was STARTED and left running** — `scripts/discover_yearend_slugs.py`,
-log `logs_yearend_discover.out`. It loops `app.CHARTS`, which is now all 31, so
-it probes the ten new charts as well as re-probing the original 21.
+**25 of 31 charts have a year-end edition.** Discovery itself said 23; two more
+were recovered by re-probing its negatives, because a label-derived slug cannot
+reach either one:
 
-**IT OVERWRITES `scripts/yearend_slugs.json` WHOLESALE.** A backup was taken
-first at `scripts/yearend_slugs.json.bak`. Before trusting the new file, diff
-it against the .bak and confirm these hand-corrected entries survived, because
-for each of them the OBVIOUS slug is the weekly one and the discovery heuristic
-has no way to know that:
+| chart | year-end slug | why discovery missed it |
+|---|---|---|
+| `rock_songs` | `hot-rock-songs` | the year-end kept the chart's OLD name. The weekly is "Hot Rock & Alternative Songs"; every label-derived candidate returns 0 rows |
+| `rnb_hiphop` | `r-and-b-hip-hop-airplay-songs` | the candidate rules turn `&` into `and`, so they can only ever produce `randb`. Billboard writes `r-and-b` |
 
-    digital             -> digital-songs
-    adult_contemporary  -> adult-contemporary-songs
-    country_airplay     -> country-airplay-songs
-    alternative         -> alternative-songs
+`rnb_hiphop` was previously recorded here as having NO year-end edition. **That
+was wrong** and the note has been removed. The earlier check rejected two other
+slugs and stopped.
 
-Also confirm `rnb_hiphop`, `heatseekers` and `bubbling` are still null. Each has
-a near miss that a row count accepts; they have NO year-end edition. Do not
-"fix" them.
+**A row count is not evidence.** Each recovered slug was accepted only after
+distinct years produced distinct ranking signatures AND its titles matched that
+chart's own weekly CSV. For `r-and-b-hip-hop-airplay-songs` the plain overlap
+was ambiguous — 90-96% against airplay, 82-91% against consumption, because the
+two charts share most titles. The discriminator was EXCLUSIVE matches: of the
+titles it shares with exactly one CSV, **26 are airplay-only and 2 are
+consumption-only**, so it belongs to `rnb_hiphop` and not `rnb_songs`. Filing it
+under `rnb_songs` would have put airplay data on the consumption chart.
 
-Then: backfill with `scripts/backfill_yearend.py`, which already carries the
-guards for all three fabrication modes (forward clamp, weekly fall-through,
-reverse redirect). Re-read the year-end trap section in the project notes before
-trusting any year's output — the pages state no year anywhere, so the only
-detection is that within a run of consecutive years sharing one ranking
-signature, ONLY THE LATEST is genuine.
+The six remaining nulls are measured, not assumed. `heatseekers`, `bubbling`,
+`uk_songs` and `top_album_sales` fall through to the weekly chart or 404.
+`rnb_songs` has no year-end of its own — the near-miss `hot-r-and-b-hip-hop-songs`
+is the weekly chart in disguise.
+
+**`japan_hot100` is the one to be careful with.** `japan-hot-100` returns a full
+100 rows for 2018-2022 and passes a row count easily, but **2020, 2021 and 2022
+are the same 100 titles**, and only 19% of them appear anywhere in the 2020
+weekly data — with 52 weeks scraped that year, so it is not a coverage gap. One
+list filed under several years, exactly like the European Hot 100. It defeats
+the clamp rule the same way: the rule would name 2022 genuine and store it. The
+chart is excluded by name in `NO_YEAREND` and must stay that way.
+
+Backfill for the seven charts that need one — the five discovery confirmed plus
+the two recovered — runs as:
+
+    python3 scripts/backfill_yearend.py dance_electronic gospel christian \
+        country_songs latin_songs rock_songs rnb_hiphop
+
+It checkpoints `data/yearend.csv` after every chart, so an interrupted run keeps
+its finished charts. **Back that file up first** — it holds 18 charts of good
+data and the script rewrites it in place.
+
+One thing to check in the output rather than assume: these charts all launched
+long after 1958, and the early years return a clamped copy of the first real
+year at full depth. The guard collapses a consecutive identical run to its last
+year, which is correct ONLY while the run stays byte-identical all the way to
+the real year. A single year that parses one row short breaks the run and leaves
+a fabricated year standing. Read the `dropped ...: duplicate of ...` lines and
+confirm the kept range starts at the chart's real launch year.
 
 ### 2. "All the airplay charts you can find"
 
