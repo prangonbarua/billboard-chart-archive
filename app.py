@@ -191,6 +191,13 @@ JAPAN_DATA, JAPAN_AVAILABLE_DATES = _load_global_chart('japan_hot100.csv')
 # rather than file one frozen chart under two dates.
 UK_SONGS_DATA, UK_SONGS_AVAILABLE_DATES = _load_global_chart('uk_songs.csv')
 
+# Hot Rock & Alternative Songs — Billboard's own <h1>, not "Rock Songs". Runs
+# 2009-06-20 to date, 50 rows every single week, no gaps.
+ROCK_SONGS_DATA, ROCK_SONGS_AVAILABLE_DATES = _load_global_chart('rock_songs.csv')
+
+# Hot Gospel Songs. Runs 2005-03-19 to date, 25 rows every week, no gaps.
+GOSPEL_DATA, GOSPEL_AVAILABLE_DATES = _load_global_chart('gospel_songs.csv')
+
 # ── Chart registry ──────────────────────────────────────────────────────────
 # Single source of truth for chart metadata. The nav is built by looping this,
 # so adding a chart cannot leave the nav out of sync — commit cd05690 had to
@@ -225,6 +232,8 @@ CHARTS = {
     'dance_electronic': dict(label='Hot Dance/Electronic Songs', group='Songs', depth=25, kind='song'),
     'japan_hot100':     dict(label='Billboard Japan Hot 100', group='Songs', depth=25, kind='song'),
     'uk_songs':         dict(label='The Official U.K. Singles Chart', group='Songs', depth=20, kind='song'),
+    'rock_songs':       dict(label='Hot Rock & Alternative Songs', group='Songs', depth=50, kind='song'),
+    'gospel':           dict(label='Hot Gospel Songs', group='Songs', depth=25, kind='song'),
 
     'albums200':   dict(label='Billboard 200™', group='Albums & Artists', depth=200, kind='album'),
     'artist100':   dict(label='Artist 100',       group='Albums & Artists', depth=100, kind='artist'),
@@ -255,6 +264,8 @@ CHART_DATA = {
     'dance_electronic': (DANCE_ELECTRONIC_DATA, DANCE_ELECTRONIC_AVAILABLE_DATES),
     'japan_hot100':    (JAPAN_DATA,             JAPAN_AVAILABLE_DATES),
     'uk_songs':        (UK_SONGS_DATA,          UK_SONGS_AVAILABLE_DATES),
+    'rock_songs':      (ROCK_SONGS_DATA,        ROCK_SONGS_AVAILABLE_DATES),
+    'gospel':          (GOSPEL_DATA,            GOSPEL_AVAILABLE_DATES),
     'albums200':   (BILLBOARD_200_DATA,         ALBUMS200_AVAILABLE_DATES),
     'artist100':   (ARTIST100_DATA,             ARTIST100_AVAILABLE_DATES),
 }
@@ -1876,7 +1887,8 @@ def pop_airplay():
 # that renders perfectly and is easy to miss.
 for _key in ('adult_pop', 'adult_contemporary', 'rhythmic', 'country_airplay', 'alternative',
              'rnb_hiphop', 'dance_airplay', 'adult_rnb', 'heatseekers', 'dance_sales', 'bubbling',
-             'canadian_hot100', 'dance_electronic', 'japan_hot100', 'uk_songs'):
+             'canadian_hot100', 'dance_electronic', 'japan_hot100', 'uk_songs',
+             'rock_songs', 'gospel'):
     def _format_chart_page(key=_key):
         df, dates = CHART_DATA[key]
         if df is None:

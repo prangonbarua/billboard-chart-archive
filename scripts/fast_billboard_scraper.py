@@ -201,7 +201,12 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # The UK chart's backfill is COMPLETE (811 weeks, 227 of
                     # them at its launch depth of 10), so this is back to its
                     # modern depth of 20 and guards the live weekly path.
-                    'official-uk-songs': 20}.get(chart_name, 20)
+                    'official-uk-songs': 20,
+                    # Neither of these ever ran shallow: rock-songs served 50
+                    # rows in all 895 weeks of its history and gospel-songs 25
+                    # in all 1117, measured across the completed CSVs. So these
+                    # are modern depths and backfill floors at once.
+                    'rock-songs': 50, 'gospel-songs': 25}.get(chart_name, 20)
         if len(entries) < expected:
             print(f"✗ Incomplete chart: {len(entries)}/{expected} rows — skipping (will retry next run)")
             time.sleep(1)
@@ -356,6 +361,8 @@ def main():
     update_chart_data('dance-electronic-songs', 'data/dance_electronic_songs.csv', weeks_to_fetch=15)
     update_chart_data('japan-hot-100', 'data/japan_hot100.csv', weeks_to_fetch=15)
     update_chart_data('official-uk-songs', 'data/uk_songs.csv', weeks_to_fetch=15)
+    update_chart_data('rock-songs', 'data/rock_songs.csv', weeks_to_fetch=15)
+    update_chart_data('gospel-songs', 'data/gospel_songs.csv', weeks_to_fetch=15)
 
     print("\n" + "="*60)
     if success_hot100 and success_bb200:
