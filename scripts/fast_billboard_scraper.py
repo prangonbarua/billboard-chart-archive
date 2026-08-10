@@ -182,7 +182,21 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     'bubbling-under-hot-100-singles': 25,
                     # Canadian Hot 100 has run 100 rows every week since
                     # Billboard's archive begins at 2007-03-31.
-                    'canadian-hot-100': 100}.get(chart_name, 20)
+                    'canadian-hot-100': 100,
+                    # BACKFILL FLOORS, NOT MODERN DEPTHS — raise these to the
+                    # modern depth (25 and 20) once each CSV is complete and
+                    # the chart joins the weekly path above.
+                    #
+                    # Both launched at 10 rows and grew, so the default floor
+                    # of 20 would reject every early week — and reject it
+                    # SILENTLY, leaving a CSV that looks finished but is
+                    # missing years. Verified at source: japan-hot-100's
+                    # 2011-04-09 first week and official-uk-songs' 2011-01-29
+                    # both serve 10 rows, and the week before each serves that
+                    # same first week's content under its own date, which is
+                    # the pre-launch clamp the served-week guard catches.
+                    'japan-hot-100': 10,
+                    'official-uk-songs': 10}.get(chart_name, 20)
         if len(entries) < expected:
             print(f"✗ Incomplete chart: {len(entries)}/{expected} rows — skipping (will retry next run)")
             time.sleep(1)
@@ -334,6 +348,7 @@ def main():
     update_chart_data('hot-dance-airplay', 'data/dance_airplay.csv', weeks_to_fetch=15)
     update_chart_data('bubbling-under-hot-100-singles', 'data/bubbling_under.csv', weeks_to_fetch=15)
     update_chart_data('canadian-hot-100', 'data/canadian_hot100.csv', weeks_to_fetch=15)
+    update_chart_data('dance-electronic-songs', 'data/dance_electronic_songs.csv', weeks_to_fetch=15)
 
     print("\n" + "="*60)
     if success_hot100 and success_bb200:
