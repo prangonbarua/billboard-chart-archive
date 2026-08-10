@@ -119,12 +119,16 @@ automatically — expect genuine publication gaps to need
   895 weeks, 50 rows every week, zero gaps. Floor set to 50.
 - **gospel-songs: DONE and SHIPPED** as chart 26 (commit 696fc7c). 27,925 rows
   / 1117 weeks, 25 rows every week, zero gaps. Floor set to 25.
-- **christian-songs: backfill DONE**, 1208 weeks, 2003-06-21 to 2026-08-08,
-  1 failed (2026-08-08 leading edge). **NOT WIRED YET** — this is chart 27.
-  Raise floor to 50 when wiring.
-- **country-songs / r-b-hip-hop-songs / top-album-sales: backfills DONE but
-  INCOMPLETE**, then re-run to recover. See the deploy warning below. None are
-  wired. Floors: 50 for all three when wired.
+- **christian-songs: DONE and SHIPPED** as chart 27 (commit 62a518b). 55,789
+  rows / 1208 weeks, no gaps, depth grew 30 -> 40 -> 50. Floor 50.
+- **country-songs / r-b-hip-hop-songs / top-album-sales: DONE and SHIPPED** as
+  charts 28-30 (commit 80fc752). 3521 / 3459 / 1837 weeks. Floors all 50. Each
+  needed two recovery runs after the deploy starved them — see below. The only
+  remaining failure on each is 2026-08-15, the leading edge Billboard has not
+  posted for these charts; the weekly path picks it up.
+
+**Charts 22-30 are wired, verified and committed. 22-26 are deployed; 27-30
+are NOT yet deployed.**
 - **latin-songs**: backfill STARTED 2026-08-10, log `logs_latin.out`, 2085
   weeks, running with **floor 1** (commit 98bf30f). Confirmed serving 1-row
   weeks in 1986. **Raise the floor to 50 once the CSV is complete.**
@@ -139,6 +143,14 @@ That upload saturated the connection and starved the running scrapers: country
 lost 46 weeks, r-b-hip-hop 51 and top-album-sales 34, all to read timeouts and
 one DNS resolution failure, in contiguous blocks that look like Billboard
 outages and are not. Pause backfills before deploying, or expect to re-run.
+
+A second-order effect to watch for after any such loss: `country_songs`
+1987-01-03 was written as a real week because its predecessor 1986-12-27 was
+missing to a timeout at the time, so the clamp guard had nothing to compare it
+against. The recovery run filled the predecessor and created a duplicate pair,
+which `verify_charts.py` caught and which was then dropped. **After recovering
+lost weeks, always re-run verify_charts** — the clamp guard cannot catch a
+clamped week whose predecessor was absent when it was fetched.
 
 Re-running to recover them IS safe. The `prev_sig` fabrication bug that the
 warning at the end of this file describes is fixed — `main()` looks each
