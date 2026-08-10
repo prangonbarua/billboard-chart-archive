@@ -47,8 +47,11 @@ Songs"). Depth is the CURRENT row count. First week from
 | `country-songs` | Hot Country Songs | 1958-10-18 | 50 | 3538 | 10.8h |
 | `r-b-hip-hop-songs` | Hot R&B/Hip-Hop Songs | 1958-10-18 | 50 | 3538 | 10.8h |
 
-**Total ~16,470 weeks, ~50 hours of scraping at ~11s/week.** That is the whole
-cost of the request and the reason this is staged rather than done in one go.
+**Total ~16,470 weeks.** The 11s/week figure from the Canadian Hot 100 backfill
+turned out to be far too pessimistic: Dance/Electronic did 647 weeks in about
+20 minutes, i.e. **~2s/week, so the whole set is closer to 9 hours than 50.**
+The per-chart hour estimates in the table above are the old pessimistic ones —
+divide by roughly five.
 
 None of these keys collide with the existing 21. The existing `country_airplay`
 and `rnb_hiphop` are the AIRPLAY charts; these are the consumption charts and
@@ -88,9 +91,24 @@ automatically — expect genuine publication gaps to need
 
 ## Status
 
-- **dance-electronic-songs**: backfill STARTED 2026-08-09 to
-  `data/dance_electronic_songs.csv`. Resumable — re-running continues it.
-- The other nine: not started.
+- **dance-electronic-songs: DONE and SHIPPED** as chart 22 (commit 3fb69fa).
+  30,300 rows / 647 weeks, 2014-03-22 to current, zero gaps, verify_charts
+  clean. Wired and 139 tests pass.
+- **japan-hot-100**: backfill running 2026-08-09 to `data/japan_hot100.csv`.
+  Not wired yet. **After it completes, raise its floor in
+  `fast_billboard_scraper.py` from the backfill value 10 to the modern 25.**
+- The other eight: not started. Agreed order is cheapest-first — UK, Rock,
+  Gospel, Christian, then Top Album Sales, Latin, and the two 1958 charts.
+
+### The three suspect first weeks are now CONFIRMED (2026-08-09)
+
+latin-songs 1986-09-06, japan-hot-100 2011-04-09 and official-uk-songs
+2011-01-29 are all correct. For each, the week BEFORE serves that first week's
+own content under the first week's date — the pre-launch clamp — and the week
+after has a distinct signature. The shallow row counts are real launch depths,
+not artifacts: Japan and the UK chart launched at 10 rows, and Hot Latin Songs
+genuinely serves **1 row** per week in 1986. Latin will therefore need a floor
+of 1 to backfill, and that floor must be raised afterwards.
 
 **Do NOT re-run `backfill_chart.py` over a partly-filled CSV to retry scattered
 stragglers** — the known `prev_sig` bug fabricates weeks. A retry is only safe
