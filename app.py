@@ -417,7 +417,24 @@ def safe_int(val, default=None):
 # these are aliases, not copies.
 primary_artist = versus.primary_artist
 artist_match_mask = versus.artist_match_mask
-_CREDIT_MARKER_RE = versus._CREDIT_MARKER_RE   # vectorized in _song_chart_page
+_CREDIT_MARKER_RE = versus._CREDIT_MARKER_RE
+
+
+def _primary_artist_col(credits):
+    """primary_artist over a whole credit column.
+
+    _song_chart_page used to inline the marker regex here as a vectorized
+    str.replace, which is exactly the copy the note above says must not exist,
+    and it drifted: the inline version never learned to split on commas, so
+    Billboard's two credits for 'Free' ('Rumi, JINU, EJAE & Andrew Choi' and
+    'Rumi & JINU: EJAE & Andrew Choi') keyed differently here than in the
+    scalar lookups a few lines below, and the song showed a 4-week run instead
+    of 20. Mapping per UNIQUE credit keeps the speed that motivated the inline
+    version — 1.5M rows resolve to ~30k distinct credits — without a copy.
+    """
+    stripped = credits.str.strip()
+    lookup = {c: primary_artist(c) for c in stripped.dropna().unique()}
+    return stripped.map(lookup)
 
 def check_download_limit(ip_address):
     """Rate limiting disabled - always allow downloads"""
@@ -1727,11 +1744,12 @@ def _song_chart_page(source_df, available_dates, endpoint, template):
         # Filter data up to selected date once
         historical_data = data[data['Date'] <= selected_date_dt].copy()
         historical_data['Song_Clean'] = historical_data['Song'].str.strip().str.casefold()
-        historical_data['Artist_Clean'] = historical_data['Artist'].str.strip().str.casefold().str.replace(_CREDIT_MARKER_RE, '', regex=True)
+        historical_data['Artist_Clean'] = _primary_artist_col(historical_data['Artist'])
 
         # Restrict history to the song/artist pairs actually on this chart, so the
         # lookups below materialize ~100 keys instead of one per pair that ever charted.
-        chart_pairs = set(zip(date_data['Song'].str.strip().str.casefold(), date_data['Artist'].str.strip().str.casefold().str.replace(_CREDIT_MARKER_RE, '', regex=True)))
+        chart_pairs = set(zip(date_data['Song'].str.strip().str.casefold(),
+                              _primary_artist_col(date_data['Artist'])))
         pair_index = pd.MultiIndex.from_frame(historical_data[['Song_Clean', 'Artist_Clean']])
         historical_data = historical_data[pair_index.isin(chart_pairs)].copy()
 

@@ -32,17 +32,50 @@ _BACKING_BAND_RE = re.compile(r'^the\s+(.+?)\s+band$')
 
 _PRIMARY_CREDIT_RE = re.compile(_CREDIT_MARKER_RE, re.I)
 
+# A comma separates one artist from the next exactly as ' & ' does, but unlike
+# the word markers it also appears INSIDE single-act names, so it cannot simply
+# join _CREDIT_MARKER_RE. These are the shapes where the comma belongs to the
+# name: a digit group ('10,000 Maniacs') and a generational suffix
+# ('Hank Williams, Jr.', which must not collapse onto his father).
+_NAME_COMMA_RE = re.compile(r'(?:\d,\d|,\s*(?:jr|sr|ii|iii|iv)\b)', re.I)
+
+
+def _lead_of(credit):
+    """The credit up to the first comma that separates two artists, skipping
+    commas that are part of a single act's name."""
+    for m in re.finditer(r',', credit):
+        if _NAME_COMMA_RE.search(credit[max(0, m.start() - 1):m.start() + 6]):
+            continue
+        return credit[:m.start()].strip()
+    return credit
+
 
 def primary_credit(name):
     """The credit's leading artist, keeping the scraped capitalization:
-    'David Guetta & Bebe Rexha' -> 'David Guetta'."""
+    'David Guetta & Bebe Rexha' -> 'David Guetta'.
+
+    Stops at the word markers only. It deliberately does NOT split on commas,
+    because this feeds display_name, where 'Tyler, The Creator' has to survive
+    as a name rather than be cut down to 'Tyler'."""
     return _PRIMARY_CREDIT_RE.sub('', str(name).strip()).strip()
 
 
 def primary_artist(name):
     """Normalize an artist credit to its primary artist so week-to-week credit
-    drift ('Weezer' vs 'Weezer Featuring Best Coast') keys the same."""
-    return primary_credit(name).casefold()
+    drift ('Weezer' vs 'Weezer Featuring Best Coast') keys the same.
+
+    Splits on commas as well, which primary_credit does not. Billboard moves a
+    collaborator across the comma/'&' boundary mid-run — 'Free' charted as both
+    'Rumi, JINU, EJAE & Andrew Choi' and 'Rumi & JINU: EJAE & Andrew Choi' —
+    and stopping at the first '&' alone keys those as two different songs,
+    because the first credit's '&' sits at the END of the artist list and the
+    second's sits at the START. Splitting at the comma too keys both on 'rumi'.
+
+    This is the GROUPING key, not a display value: reducing a comma-containing
+    act to its first name ('Tyler, The Creator' -> 'tyler') is fine here and is
+    in fact needed, since Billboard also credits that act without the comma.
+    display_name maps back through primary_credit for anything user-facing."""
+    return _lead_of(primary_credit(name)).casefold()
 
 
 def credit_query(artist_name):

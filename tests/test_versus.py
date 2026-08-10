@@ -19,6 +19,38 @@ def test_primary_artist_strips_featured_credits():
     assert versus.primary_artist('Future & Metro Boomin') == 'future'
 
 
+def test_primary_artist_splits_on_commas():
+    """Billboard moves a collaborator across the comma/'&' boundary mid-run.
+    'Free' charted 16 weeks as one credit and its last 4 as the other; stopping
+    at the first '&' alone keyed them as two different songs."""
+    assert (versus.primary_artist('Rumi, JINU, EJAE & Andrew Choi')
+            == versus.primary_artist('Rumi & JINU: EJAE & Andrew Choi')
+            == 'rumi')
+    assert versus.primary_artist('21 Savage, Offset & Metro Boomin') == '21 savage'
+    # Scraped credits vary in spacing around the comma; both must key alike.
+    assert (versus.primary_artist('Future , Metro Boomin & The Weeknd')
+            == versus.primary_artist('Future, Metro Boomin & The Weeknd')
+            == 'future')
+
+
+def test_primary_artist_keeps_commas_that_belong_to_a_name():
+    """A comma inside a single act's name is not a separator. Hank Williams Jr.
+    must not collapse onto his father, who is a different artist."""
+    assert versus.primary_artist('10,000 Maniacs') == '10,000 maniacs'
+    assert versus.primary_artist('Hank Williams, Jr.') == 'hank williams, jr.'
+    assert (versus.primary_artist('Grover Washington, Jr. Featuring Lalah Hathaway')
+            == 'grover washington, jr.')
+    assert versus.primary_artist('Hank Williams, Jr.') != versus.primary_artist('Hank Williams')
+
+
+def test_primary_credit_does_not_split_on_commas():
+    """primary_credit feeds display_name, so a comma-containing act has to
+    survive as a name even though the grouping key cuts it down."""
+    assert versus.primary_credit('Tyler, The Creator') == 'Tyler, The Creator'
+    assert versus.primary_credit('Tyler, The Creator Featuring 42 Dugg') == 'Tyler, The Creator'
+    assert versus.primary_artist('Tyler, The Creator') == 'tyler'
+
+
 def matches(credit, query):
     return versus.artist_match_mask(pd.Series([credit]), query).iloc[0]
 

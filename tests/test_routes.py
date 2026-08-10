@@ -329,3 +329,43 @@ def test_song_history_carries_the_crossover_field(client):
         assert set(x) == {'chart', 'label', 'debut', 'peak', 'weeks', 'later'}
         return
     pytest.fail('no crossover found')
+
+
+def test_primary_artist_col_matches_the_scalar_definition():
+    """_song_chart_page used to inline the credit regex instead of calling
+    primary_artist, and the copy drifted — it never learned to split on commas,
+    so the page keyed credits differently than the lookups beside it. Any future
+    divergence between the column and scalar forms fails here."""
+    import app
+    import pandas as pd
+
+    credits = pd.Series([
+        'Rumi, JINU, EJAE & Andrew Choi', 'Rumi & JINU: EJAE & Andrew Choi',
+        'Future , Metro Boomin & The Weeknd', 'Future, Metro Boomin & The Weeknd',
+        '10,000 Maniacs', 'Hank Williams, Jr.', 'Tyler, The Creator',
+        'Weezer Featuring Best Coast', '  Drake  ', None,
+    ])
+    got = app._primary_artist_col(credits)
+    want = credits.map(app.primary_artist, na_action='ignore')
+    assert list(got.fillna('<na>')) == list(want.fillna('<na>'))
+
+
+def test_credit_change_mid_run_keeps_one_week_count(client):
+    """Billboard re-credited 'Free' for the last 4 of its 20 Hot 100 weeks
+    ('Rumi, JINU, EJAE & Andrew Choi' -> 'Rumi & JINU: EJAE & Andrew Choi').
+    The page counted only the 4 weeks under the new credit and reported a peak
+    of #35 against the true #23."""
+    import app
+
+    rows = app.BILLBOARD_DATA
+    free = rows[rows['Song'].astype(str).str.strip().str.casefold() == 'free']
+    free = free[free['Artist'].astype(str).str.startswith('Rumi')]
+    assert free['Artist'].nunique() == 2, 'fixture assumes both stored credits'
+    total_weeks = free['Date'].nunique()
+
+    html = client.get('/top100', query_string={'date': '2025-11-22'}).get_data(as_text=True)
+    row = re.search(r'data-song="Free".*?</tr>', html, re.S)
+    assert row, 'Free not on the 2025-11-22 chart'
+    text = re.sub(r'<[^>]+>', ' ', row.group(0))
+    assert str(total_weeks) in text, f'expected the merged {total_weeks}-week run'
+    assert '#23' in text, 'expected the peak from the full run, not the recredited tail'
