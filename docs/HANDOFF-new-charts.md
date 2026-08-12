@@ -427,18 +427,55 @@ japan-hot-100 / official-uk-songs entries before running, and raise it to 40
 once the CSV is complete. Mainstream Rock needs no override: it serves 40 at
 every era probed, 1981 through 2026, with no clamping after launch.
 
-**BOTH BACKFILLS ARE RUNNING as of 2026-08-10, started detached.**
+**BOTH ARE DONE AND SHIPPED as charts 32 and 33 (2026-08-12), commits 1538a2b
++ 752a27e.** The floor has been raised: `triple-a` is 40, its modern depth.
 
-    mainstream_rock    -> data/mainstream_rock.csv     logs_mainstream_rock.out
-    adult_alternative  -> data/adult_alternative.csv   logs_adult_alternative.out
+    mainstream_rock    94,760 rows / 2,369 weeks  1981-03-21 -> 2026-08-15
+    adult_alternative  47,190 rows / 1,596 weeks  1996-01-20 -> 2026-08-15
 
-Check the logs before anything else: expect roughly 2,370 and 1,594 weeks
-kept. Early output confirmed 40 rows at 1981 and 20 at 1996, so the floors are
-holding.
+Both registered in the **Airplay** group, not Songs — Billboard's own h1 is
+"Mainstream Rock Airplay" / "Adult Alternative Airplay". verify_charts clean
+across all 33 charts, 149 tests pass.
 
-**Then raise `triple-a` from 15 to 40** in `fast_billboard_scraper.py`. It is
-set to 15 as a BACKFILL floor only; leaving it there weakens the guard on the
-live weekly path once the chart is wired.
+Adult Alternative came out spotless: no gaps, nothing flagged. Its finished
+depth runs 20 (538 weeks), 30 (589) and 40 (469) with **nothing partial in
+between**, which is what proves the backfill floor of 15 dropped no shallow
+week — the trap flagged above did not fire.
+
+### The distinction that settled Mainstream Rock's thirteen skipped weeks
+
+The backfill's clamp guard skipped 13 weeks. Re-fetching each one
+individually and reading its **served-week heading** split them cleanly, and
+this is the general rule for any chart, not a fact about this one:
+
+- **Twelve serve their OWN heading** at a full ~1.7 MB page with all 40 rows.
+  That is the FROZEN-week signature: Billboard published the week and simply
+  republished the prior ranking in it. They belong in the CSV, and are listed
+  in `known_clamped_weeks.json`. Ten are New Year weeks and nine of those
+  dates `top100` already carries; `1983-07-02` is the Independence Day week;
+  `1984-03-24` is the one freeze with no holiday behind it, but its evidence
+  is identical to the rest.
+- **One, `1984-12-29`, answers with a `1985-01-05` heading.** That is the
+  CLAMP signature: the chart never had that week. It stays OUT of the CSV and
+  went into `CHART_GAPS` instead, so a re-run no longer spends three attempts
+  on it and reports it as a failure indistinguishable from network trouble.
+
+A repeated ranking alone does not tell these two apart — only the heading
+does. Note this cuts against the reflex the earlier charts here established:
+japan, uk and latin each had repeats left OUT as "correct behaviour", while
+`top100` and `albums200` store theirs. The heading is what decides which is
+right, and it was never checked for those three.
+
+`1983-01-08` is in the accepted list too, for a different reason. It is the
+tail of a THREE-week freeze (1982-12-25 / 1983-01-01 / 1983-01-08): the guard
+skipped the middle week, which removed the predecessor the third would have
+been compared against, so the third was stored unnoticed. This is the
+predecessor-absent hole the Latin 2004 case predicted, caught here in a chart
+where the week was genuine — so the fix was to FILL the middle week, which
+makes both visible to the post-hoc check, not to drop the third.
+
+Both charts were missing `2026-08-15` only because Billboard had not posted
+it when the backfills ran. It is live and distinct now and was added to each.
 
 Order is DATA FIRST, as above — the route test requires 200 for every
 registered chart, so a chart registered before its CSV exists turns the suite
