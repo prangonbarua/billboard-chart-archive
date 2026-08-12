@@ -223,6 +223,21 @@ TOP_ALBUM_SALES_DATA, TOP_ALBUM_SALES_AVAILABLE_DATES = _load_global_chart('top_
 # 1998-10-24 at source). The registry's 50 is the modern depth only.
 LATIN_SONGS_DATA, LATIN_SONGS_AVAILABLE_DATES = _load_global_chart('latin_songs.csv')
 
+# Mainstream Rock Airplay. Runs 1981-03-21 to date at 40 rows, the same depth at
+# every era. Twelve weeks repeat the ranking of the week before them: Billboard
+# published each one under its own date — the pages are full size and carry a
+# matching 'Week of' heading — and simply froze the chart, mostly over New Year.
+# They are listed in scripts/known_clamped_weeks.json. The one real hole is
+# 1984-12-29, a week the chart skipped entirely; asking for it returns a page
+# headed 1985-01-05, so the 14-day step there is correct and not data loss.
+MAINSTREAM_ROCK_DATA, MAINSTREAM_ROCK_AVAILABLE_DATES = _load_global_chart('mainstream_rock.csv')
+
+# Adult Alternative Airplay — Billboard's slug is `triple-a`, and neither
+# `adult-alternative-songs` nor `adult-alternative-airplay` reaches it. Runs
+# 1996-01-20 to date with no gaps. Its depth GREW, 20 rows to 30 to 40, so the
+# registry's 40 is the modern value only and not a scrape threshold.
+ADULT_ALT_DATA, ADULT_ALT_AVAILABLE_DATES = _load_global_chart('adult_alternative.csv')
+
 # ── Chart registry ──────────────────────────────────────────────────────────
 # Single source of truth for chart metadata. The nav is built by looping this,
 # so adding a chart cannot leave the nav out of sync — commit cd05690 had to
@@ -249,6 +264,8 @@ CHARTS = {
     'rnb_hiphop':         dict(label='Mainstream R&B/Hip-Hop', group='Airplay', depth=40, kind='song'),
     'dance_airplay':      dict(label='Dance Airplay',        group='Airplay', depth=40, kind='song'),
     'adult_rnb':          dict(label='Adult R&B Airplay',    group='Airplay', depth=30, kind='song'),
+    'mainstream_rock':    dict(label='Mainstream Rock Airplay', group='Airplay', depth=40, kind='song'),
+    'adult_alternative':  dict(label='Adult Alternative Airplay', group='Airplay', depth=40, kind='song'),
 
     'heatseekers':   dict(label='Heatseekers Songs',   group='Songs', depth=25, kind='song'),
     'dance_sales':   dict(label='Dance Singles Sales', group='Songs', depth=25, kind='song'),
@@ -287,6 +304,8 @@ CHART_DATA = {
     'rnb_hiphop':  (RNB_HIPHOP_DATA,            RNB_HIPHOP_AVAILABLE_DATES),
     'dance_airplay': (DANCE_AIRPLAY_DATA,       DANCE_AIRPLAY_AVAILABLE_DATES),
     'adult_rnb':   (ADULT_RNB_DATA,             ADULT_RNB_AVAILABLE_DATES),
+    'mainstream_rock':   (MAINSTREAM_ROCK_DATA, MAINSTREAM_ROCK_AVAILABLE_DATES),
+    'adult_alternative': (ADULT_ALT_DATA,       ADULT_ALT_AVAILABLE_DATES),
     'heatseekers': (HEATSEEKERS_DATA,           HEATSEEKERS_AVAILABLE_DATES),
     'dance_sales': (DANCE_SALES_DATA,           DANCE_SALES_AVAILABLE_DATES),
     'bubbling':    (BUBBLING_DATA,              BUBBLING_AVAILABLE_DATES),
@@ -1939,7 +1958,8 @@ def pop_airplay():
 # make every one of these routes serve whichever chart the loop ended on — a bug
 # that renders perfectly and is easy to miss.
 for _key in ('adult_pop', 'adult_contemporary', 'rhythmic', 'country_airplay', 'alternative',
-             'rnb_hiphop', 'dance_airplay', 'adult_rnb', 'heatseekers', 'dance_sales', 'bubbling',
+             'rnb_hiphop', 'dance_airplay', 'adult_rnb', 'mainstream_rock', 'adult_alternative',
+             'heatseekers', 'dance_sales', 'bubbling',
              'canadian_hot100', 'dance_electronic', 'japan_hot100', 'uk_songs',
              'rock_songs', 'gospel', 'christian', 'country_songs', 'rnb_songs', 'latin_songs',
              # kind='album' renders correctly through chart.html, which only

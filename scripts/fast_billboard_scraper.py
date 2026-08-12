@@ -400,6 +400,8 @@ def main():
     update_chart_data('r-b-hip-hop-songs', 'data/rnb_hiphop_songs.csv', weeks_to_fetch=15)
     update_chart_data('top-album-sales', 'data/top_album_sales.csv', weeks_to_fetch=15)
     update_chart_data('latin-songs', 'data/latin_songs.csv', weeks_to_fetch=15)
+    update_chart_data('hot-mainstream-rock-tracks', 'data/mainstream_rock.csv', weeks_to_fetch=15)
+    update_chart_data('triple-a', 'data/adult_alternative.csv', weeks_to_fetch=15)
 
     print("\n" + "="*60)
     if success_hot100 and success_bb200:
