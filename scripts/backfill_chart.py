@@ -71,6 +71,13 @@ CHART_GAPS = {
                           ('1976-07-03', '1976-07-03'),
                           # Suspended after 1963-11-23, resumed 1965-01-30.
                           ('1963-11-24', '1965-01-29')],
+    # Mainstream Rock skipped the 1984 New Year week. Asking for 1984-12-29
+    # returns a page headed 1985-01-05, so the served-week guard rejects it and
+    # the week costs three attempts and lands in the fail list looking like
+    # network trouble. Every OTHER New Year on this chart was published (as a
+    # frozen repeat of the prior week — see known_clamped_weeks.json), so this
+    # is a one-off, not a yearly pattern.
+    'hot-mainstream-rock-tracks': [('1984-12-29', '1984-12-29')],
 }
 
 
