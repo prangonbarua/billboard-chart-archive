@@ -221,6 +221,13 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # rows at every era probed, 1981-03-21 through 2026, with
                     # no clamping after launch.
                     'hot-mainstream-rock-tracks': 40,
+                    # BACKFILL FLOOR, NOT A MODERN DEPTH — raise to 25 once the
+                    # CSV is complete. Latin Pop Airplay serves ONE row at its
+                    # 1994-10-08 launch and 25 by 2015, the same shape that
+                    # nearly cost Hot Latin Songs its entire 1986: at the
+                    # default floor of 20 every early week is rejected
+                    # SILENTLY, leaving a CSV that looks finished.
+                    'latin-pop-airplay': 1,
                     # Christian grew 30 -> 40 -> 50 over its life and has run
                     # 50 for its last 894 weeks, so 50 guards the weekly path
                     # correctly. Its shallow era is already in the CSV.

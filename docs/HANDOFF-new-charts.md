@@ -520,9 +520,52 @@ Started 2026-08-12, ~1.3 h at the measured ~2s/week. Expect year-end freezes to
 land in the clamped list — triage them by served-week heading, per the rule in
 section 1b, rather than assuming the guard was right.
 
-### 2. "All the airplay charts you can find"
+### 2. "All the airplay charts you can find" — SURVEYED 2026-08-12
 
-Not started, nothing probed. The registry currently holds nine airplay charts:
+The candidate list below was measured. Five are real and **all five backfills
+are RUNNING as of 2026-08-12**; three are unreachable under the names guessed.
+
+| key | slug | Billboard's own label | launch | depth at launch | weeks |
+|---|---|---|---|---|---|
+| `rock_airplay` | `rock-airplay` | Rock & Alternative Airplay | 2009-06-20 | 50 | ~894 |
+| `latin_airplay` | `latin-airplay` | Latin Airplay | 1994-11-12 | 40 | ~1,657 |
+| `latin_pop_airplay` | `latin-pop-airplay` | Latin Pop Airplay | 1994-10-08 | **1** | ~1,662 |
+| `christian_airplay` | `christian-airplay` | Christian Airplay | 2003-06-21 | 40 | ~1,208 |
+| `gospel_airplay` | `gospel-airplay` | Gospel Airplay | 2005-03-19 | 30 | ~1,117 |
+
+    logs_rock_airplay.out  logs_latin_airplay.out  logs_latin_pop_airplay.out
+    logs_christian_airplay.out  logs_gospel_airplay.out
+
+None collide with an existing key. `rock_airplay` is NOT the existing
+`alternative` (Alternative Airplay) nor `rock_songs` (the consumption chart);
+`christian_airplay`/`gospel_airplay` are NOT `christian`/`gospel`, which are the
+Hot Christian/Gospel Songs consumption charts.
+
+**`latin-pop-airplay` carries the Latin trap and needed a floor of 1**, set in
+`fast_billboard_scraper.py`. It serves ONE row at launch, so the default floor
+of 20 would have rejected its early era silently. Verified holding: the run is
+keeping 1-row and 15-row weeks with zero skips. **Raise it to 25 once the CSV
+is complete** — 25 is its modern depth, measured at 2015.
+
+The other four need no backfill floor (50/40/40/30 at launch, all above the
+default 20), but each should get its modern depth in the dict when wired.
+
+**Three are NOT reachable under these names** — 0 rows and no `Week of` heading
+at four spread dates (2015-01-10, 2018-06-02, 2005-06-04, 1998-06-06), which is
+the empty-page signature, not a 404: `tropical-airplay`,
+`regional-mexican-airplay`, `smooth-jazz-songs`. One date proves nothing here
+(that week may simply be absent), which is why all three were retried; four
+dates agreeing is what makes this a measurement. They may exist under other
+slugs — the correct name was unguessable for six of the charts already added —
+so this rules out the name, not the chart.
+
+`dance-mix-show-airplay` returns 200 with 10 rows but NO heading and an h1 of
+"Dance/Mix Show Airplay **Artists**" — an artist-ranked chart on a non-standard
+page. Not addable without the `kind='artist'` path and its own parsing; left
+alone.
+
+The registry held nine airplay charts before this work and eleven after
+Mainstream Rock and Adult Alternative:
 pop_airplay, adult_pop, adult_contemporary, rhythmic, country_airplay,
 alternative, rnb_hiphop, dance_airplay, adult_rnb.
 
