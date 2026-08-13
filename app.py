@@ -238,6 +238,19 @@ MAINSTREAM_ROCK_DATA, MAINSTREAM_ROCK_AVAILABLE_DATES = _load_global_chart('main
 # registry's 40 is the modern value only and not a scrape threshold.
 ADULT_ALT_DATA, ADULT_ALT_AVAILABLE_DATES = _load_global_chart('adult_alternative.csv')
 
+# Rock & Alternative Airplay. A THIRD rock chart, distinct from both
+# `alternative` (Alternative Airplay) and `rock_songs` (the consumption chart
+# Hot Rock & Alternative Songs). Runs 2009-06-20 to date at 50 rows.
+ROCK_AIRPLAY_DATA, ROCK_AIRPLAY_AVAILABLE_DATES = _load_global_chart('rock_airplay.csv')
+
+# Christian Airplay — the airplay chart, NOT `christian` (Hot Christian Songs,
+# the consumption chart already on the site). Runs 2003-06-21 to date.
+CHRISTIAN_AIRPLAY_DATA, CHRISTIAN_AIRPLAY_AVAILABLE_DATES = _load_global_chart('christian_airplay.csv')
+
+# Gospel Airplay — likewise distinct from `gospel` (Hot Gospel Songs). Runs
+# 2005-03-19 to date at 30 rows.
+GOSPEL_AIRPLAY_DATA, GOSPEL_AIRPLAY_AVAILABLE_DATES = _load_global_chart('gospel_airplay.csv')
+
 # ── Chart registry ──────────────────────────────────────────────────────────
 # Single source of truth for chart metadata. The nav is built by looping this,
 # so adding a chart cannot leave the nav out of sync — commit cd05690 had to
@@ -266,6 +279,9 @@ CHARTS = {
     'adult_rnb':          dict(label='Adult R&B Airplay',    group='Airplay', depth=30, kind='song'),
     'mainstream_rock':    dict(label='Mainstream Rock Airplay', group='Airplay', depth=40, kind='song'),
     'adult_alternative':  dict(label='Adult Alternative Airplay', group='Airplay', depth=40, kind='song'),
+    'rock_airplay':       dict(label='Rock & Alternative Airplay', group='Airplay', depth=50, kind='song'),
+    'christian_airplay':  dict(label='Christian Airplay',   group='Airplay', depth=40, kind='song'),
+    'gospel_airplay':     dict(label='Gospel Airplay',      group='Airplay', depth=30, kind='song'),
 
     'heatseekers':   dict(label='Heatseekers Songs',   group='Songs', depth=25, kind='song'),
     'dance_sales':   dict(label='Dance Singles Sales', group='Songs', depth=25, kind='song'),
@@ -306,6 +322,9 @@ CHART_DATA = {
     'adult_rnb':   (ADULT_RNB_DATA,             ADULT_RNB_AVAILABLE_DATES),
     'mainstream_rock':   (MAINSTREAM_ROCK_DATA, MAINSTREAM_ROCK_AVAILABLE_DATES),
     'adult_alternative': (ADULT_ALT_DATA,       ADULT_ALT_AVAILABLE_DATES),
+    'rock_airplay':      (ROCK_AIRPLAY_DATA,    ROCK_AIRPLAY_AVAILABLE_DATES),
+    'christian_airplay': (CHRISTIAN_AIRPLAY_DATA, CHRISTIAN_AIRPLAY_AVAILABLE_DATES),
+    'gospel_airplay':    (GOSPEL_AIRPLAY_DATA,  GOSPEL_AIRPLAY_AVAILABLE_DATES),
     'heatseekers': (HEATSEEKERS_DATA,           HEATSEEKERS_AVAILABLE_DATES),
     'dance_sales': (DANCE_SALES_DATA,           DANCE_SALES_AVAILABLE_DATES),
     'bubbling':    (BUBBLING_DATA,              BUBBLING_AVAILABLE_DATES),
@@ -1959,6 +1978,7 @@ def pop_airplay():
 # that renders perfectly and is easy to miss.
 for _key in ('adult_pop', 'adult_contemporary', 'rhythmic', 'country_airplay', 'alternative',
              'rnb_hiphop', 'dance_airplay', 'adult_rnb', 'mainstream_rock', 'adult_alternative',
+             'rock_airplay', 'christian_airplay', 'gospel_airplay',
              'heatseekers', 'dance_sales', 'bubbling',
              'canadian_hot100', 'dance_electronic', 'japan_hot100', 'uk_songs',
              'rock_songs', 'gospel', 'christian', 'country_songs', 'rnb_songs', 'latin_songs',

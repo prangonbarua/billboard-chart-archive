@@ -245,7 +245,18 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # 20 would have rejected its entire first era and left a CSV
                     # that looked finished and was missing years. It has run 50
                     # since 2005, so 50 guards the live weekly path correctly.
-                    'latin-songs': 50}.get(chart_name, 20)
+                    'latin-songs': 50,
+                    # The three airplay charts added 2026-08-12. None needed a
+                    # backfill floor — each launched at or above the default 20
+                    # — so these are modern depths guarding the weekly path.
+                    # Christian Airplay's depth is NOT monotonic — measured
+                    # across the finished CSV it runs 40 (2003-06-21, 165
+                    # weeks), 30 (2006-08-19, 148), 50 (2009-06-20, 749) and
+                    # 40 again from 2023-10-28. So 40 is the modern value and
+                    # must not be read as its historical depth; its 30-row era
+                    # is already in the CSV and sits above the default floor.
+                    'rock-airplay': 50, 'christian-airplay': 40,
+                    'gospel-airplay': 30}.get(chart_name, 20)
         if len(entries) < expected:
             print(f"✗ Incomplete chart: {len(entries)}/{expected} rows — skipping (will retry next run)")
             time.sleep(1)
@@ -409,6 +420,9 @@ def main():
     update_chart_data('latin-songs', 'data/latin_songs.csv', weeks_to_fetch=15)
     update_chart_data('hot-mainstream-rock-tracks', 'data/mainstream_rock.csv', weeks_to_fetch=15)
     update_chart_data('triple-a', 'data/adult_alternative.csv', weeks_to_fetch=15)
+    update_chart_data('rock-airplay', 'data/rock_airplay.csv', weeks_to_fetch=15)
+    update_chart_data('christian-airplay', 'data/christian_airplay.csv', weeks_to_fetch=15)
+    update_chart_data('gospel-airplay', 'data/gospel_airplay.csv', weeks_to_fetch=15)
 
     print("\n" + "="*60)
     if success_hot100 and success_bb200:
