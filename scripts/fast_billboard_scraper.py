@@ -221,13 +221,16 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # rows at every era probed, 1981-03-21 through 2026, with
                     # no clamping after launch.
                     'hot-mainstream-rock-tracks': 40,
-                    # BACKFILL FLOOR, NOT A MODERN DEPTH — raise to 25 once the
-                    # CSV is complete. Latin Pop Airplay serves ONE row at its
-                    # 1994-10-08 launch and 25 by 2015, the same shape that
-                    # nearly cost Hot Latin Songs its entire 1986: at the
-                    # default floor of 20 every early week is rejected
-                    # SILENTLY, leaving a CSV that looks finished.
-                    'latin-pop-airplay': 1,
+                    # Latin Pop Airplay's backfill is COMPLETE (1661 weeks), so
+                    # the floor of 1 it needed is gone and this is its modern
+                    # depth. The 1 was never a depth: the chart serves ONE row
+                    # a week at its 1994-10-08 launch, the same shape that
+                    # nearly cost Hot Latin Songs its entire 1986, and the
+                    # default floor of 20 would have rejected its early era
+                    # SILENTLY. Nothing was lost — the finished CSV runs 1 (4
+                    # weeks), 15 (72), 20 (165) and 25 (1420) with nothing
+                    # partial in between, and it has been 25 since 1999-06-05.
+                    'latin-pop-airplay': 25,
                     # Christian grew 30 -> 40 -> 50 over its life and has run
                     # 50 for its last 894 weeks, so 50 guards the weekly path
                     # correctly. Its shallow era is already in the CSV.
@@ -423,6 +426,7 @@ def main():
     update_chart_data('rock-airplay', 'data/rock_airplay.csv', weeks_to_fetch=15)
     update_chart_data('christian-airplay', 'data/christian_airplay.csv', weeks_to_fetch=15)
     update_chart_data('gospel-airplay', 'data/gospel_airplay.csv', weeks_to_fetch=15)
+    update_chart_data('latin-pop-airplay', 'data/latin_pop_airplay.csv', weeks_to_fetch=15)
 
     print("\n" + "="*60)
     if success_hot100 and success_bb200:

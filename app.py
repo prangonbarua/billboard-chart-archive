@@ -251,6 +251,15 @@ CHRISTIAN_AIRPLAY_DATA, CHRISTIAN_AIRPLAY_AVAILABLE_DATES = _load_global_chart('
 # 2005-03-19 to date at 30 rows.
 GOSPEL_AIRPLAY_DATA, GOSPEL_AIRPLAY_AVAILABLE_DATES = _load_global_chart('gospel_airplay.csv')
 
+# Latin Pop Airplay. Depth GREW 1 -> 15 -> 20 -> 25, so the registry's 25 is the
+# modern value only; the chart really does serve ONE row a week for its first
+# four weeks, the same shape as Hot Latin Songs in 1986. Two weeks are absent —
+# 1998-10-10 and 1998-10-17, which Billboard never published on any Latin chart,
+# leaving one 21-day step. Four weeks repeat the ranking before them and all four
+# serve their own 'Week of' heading, so they are frozen weeks, not clamps; they
+# are in scripts/known_clamped_weeks.json.
+LATIN_POP_AIRPLAY_DATA, LATIN_POP_AIRPLAY_AVAILABLE_DATES = _load_global_chart('latin_pop_airplay.csv')
+
 # ── Chart registry ──────────────────────────────────────────────────────────
 # Single source of truth for chart metadata. The nav is built by looping this,
 # so adding a chart cannot leave the nav out of sync — commit cd05690 had to
@@ -282,6 +291,7 @@ CHARTS = {
     'rock_airplay':       dict(label='Rock & Alternative Airplay', group='Airplay', depth=50, kind='song'),
     'christian_airplay':  dict(label='Christian Airplay',   group='Airplay', depth=40, kind='song'),
     'gospel_airplay':     dict(label='Gospel Airplay',      group='Airplay', depth=30, kind='song'),
+    'latin_pop_airplay':  dict(label='Latin Pop Airplay',   group='Airplay', depth=25, kind='song'),
 
     'heatseekers':   dict(label='Heatseekers Songs',   group='Songs', depth=25, kind='song'),
     'dance_sales':   dict(label='Dance Singles Sales', group='Songs', depth=25, kind='song'),
@@ -325,6 +335,7 @@ CHART_DATA = {
     'rock_airplay':      (ROCK_AIRPLAY_DATA,    ROCK_AIRPLAY_AVAILABLE_DATES),
     'christian_airplay': (CHRISTIAN_AIRPLAY_DATA, CHRISTIAN_AIRPLAY_AVAILABLE_DATES),
     'gospel_airplay':    (GOSPEL_AIRPLAY_DATA,  GOSPEL_AIRPLAY_AVAILABLE_DATES),
+    'latin_pop_airplay': (LATIN_POP_AIRPLAY_DATA, LATIN_POP_AIRPLAY_AVAILABLE_DATES),
     'heatseekers': (HEATSEEKERS_DATA,           HEATSEEKERS_AVAILABLE_DATES),
     'dance_sales': (DANCE_SALES_DATA,           DANCE_SALES_AVAILABLE_DATES),
     'bubbling':    (BUBBLING_DATA,              BUBBLING_AVAILABLE_DATES),
@@ -1978,7 +1989,7 @@ def pop_airplay():
 # that renders perfectly and is easy to miss.
 for _key in ('adult_pop', 'adult_contemporary', 'rhythmic', 'country_airplay', 'alternative',
              'rnb_hiphop', 'dance_airplay', 'adult_rnb', 'mainstream_rock', 'adult_alternative',
-             'rock_airplay', 'christian_airplay', 'gospel_airplay',
+             'rock_airplay', 'christian_airplay', 'gospel_airplay', 'latin_pop_airplay',
              'heatseekers', 'dance_sales', 'bubbling',
              'canadian_hot100', 'dance_electronic', 'japan_hot100', 'uk_songs',
              'rock_songs', 'gospel', 'christian', 'country_songs', 'rnb_songs', 'latin_songs',
