@@ -231,6 +231,10 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # weeks), 15 (72), 20 (165) and 25 (1420) with nothing
                     # partial in between, and it has been 25 since 1999-06-05.
                     'latin-pop-airplay': 25,
+                    # Latin Airplay ran 40 rows for its first 348 weeks and 50
+                    # since 2001-07-28; 50 is the modern depth and the weekly
+                    # path never looks back to the 40-row era.
+                    'latin-airplay': 50,
                     # Christian grew 30 -> 40 -> 50 over its life and has run
                     # 50 for its last 894 weeks, so 50 guards the weekly path
                     # correctly. Its shallow era is already in the CSV.
@@ -427,6 +431,7 @@ def main():
     update_chart_data('christian-airplay', 'data/christian_airplay.csv', weeks_to_fetch=15)
     update_chart_data('gospel-airplay', 'data/gospel_airplay.csv', weeks_to_fetch=15)
     update_chart_data('latin-pop-airplay', 'data/latin_pop_airplay.csv', weeks_to_fetch=15)
+    update_chart_data('latin-airplay', 'data/latin_airplay.csv', weeks_to_fetch=15)
 
     print("\n" + "="*60)
     if success_hot100 and success_bb200:

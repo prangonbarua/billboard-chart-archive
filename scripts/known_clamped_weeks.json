@@ -65,5 +65,10 @@
     "1994-10-29",
     "2004-10-02",
     "2004-10-09"
+  ],
+  "_latin_airplay": "The 2004 Latin freeze again \u2014 Billboard held one ranking across 09-25, 10-02 and 10-09, and all three serve their OWN 'Week of' heading at ~1.9 MB with 50 rows, so they were published rather than clamped. Hot Latin Songs and Latin Pop Airplay show the same three weeks, which is what makes this a Billboard-wide freeze and not a per-chart artifact. 10-02 was skipped by the backfill's clamp guard and filled afterwards, so 10-09 has the predecessor it needs to be checked against.",
+  "latin_airplay": [
+    "2004-10-02",
+    "2004-10-09"
   ]
 }
