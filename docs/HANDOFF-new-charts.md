@@ -481,6 +481,45 @@ Order is DATA FIRST, as above — the route test requires 200 for every
 registered chart, so a chart registered before its CSV exists turns the suite
 red.
 
+### 1c. Dance Club Songs — MEASURED 2026-08-12, backfill RUNNING
+
+Requested by name. Real and addable. Every line below is a dated fetch.
+
+| key | slug | Billboard's own label | first week | last week | weeks |
+|---|---|---|---|---|---|
+| `dance_club` | `dance-club-play-songs` | Dance Club Songs | **1976-08-28** | **2020-03-28** | 2,275 |
+
+**DISCONTINUED**, like heatseekers and dance_sales — 2020-04-04 and later return
+the ~897 KB empty page (0 rows, no heading), which is the absent-week signature,
+not a 404. So it must NOT get a line in `fast_billboard_scraper.py`'s weekly
+`update_chart_data` list, and it needs no floor entry there either.
+
+**The slug is not guessable.** `dance-club-songs`, `hot-dance-club-songs`,
+`hot-dance-club-play` and `club-play-singles` all 404 (~731 KB).
+
+**`dance-club-play` is a trap.** It returns 200 at ~2.03 MB with 55 rows and the
+correct h1, but it clamps EVERY date to 2020-03-28, the chart's final week. A
+row count, a page size and an h1 check all accept it; only the served-week
+heading rejects it. Backfilling from it would file one week under 2,275 dates.
+
+First week confirmed by clamp-forward: 1976-08-21, 1976-08-14 and 1976-07-03 all
+serve 1976-08-28's content byte-identically (1,434,150 B, 30 rows). Both ends of
+the run are Saturday-dated, and the chart starts after the Bicentennial week, so
+the 1976-07-04 Sunday anomaly that hit country-songs does not apply here.
+
+**Depth swings more than any chart on the site**, so do not read any single
+probe as the depth: 30 at launch (1976-08-28), 40 by 1976-10-30, **100** by
+1980-01-05, 80 through 1979-1985, and 55 from 1990 to the end. The minimum
+measured anywhere is 30, so the default scrape floor of 20 is safe and no
+override is needed. The registry `depth` should be **55**, its final value.
+
+    nohup python3 scripts/backfill_chart.py dance-club-play-songs \
+        data/dance_club_songs.csv 1976-08-28 2020-03-28 > logs_dance_club.out 2>&1 &
+
+Started 2026-08-12, ~1.3 h at the measured ~2s/week. Expect year-end freezes to
+land in the clamped list — triage them by served-week heading, per the rule in
+section 1b, rather than assuming the guard was right.
+
 ### 2. "All the airplay charts you can find"
 
 Not started, nothing probed. The registry currently holds nine airplay charts:
