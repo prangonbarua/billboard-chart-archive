@@ -520,10 +520,61 @@ Started 2026-08-12, ~1.3 h at the measured ~2s/week. Expect year-end freezes to
 land in the clamped list — triage them by served-week heading, per the rule in
 section 1b, rather than assuming the guard was right.
 
+**DONE, SHIPPED and DEPLOYED as chart 39 (2026-08-13), commit 88e2c82.**
+132,632 rows / 2,275 weeks — the chart's complete run, every date present and
+not one non-weekly step. Registry depth 55, no scraper line and no floor entry
+(discontinued). The freeze prediction held: 34 weeks repeat the ranking before
+them, every one fetched individually and every one serving its OWN heading at
+full size, so all 34 are frozen weeks and are in `known_clamped_weeks.json`.
+Thirty-two are New Year weeks (nine of those dates `top100` already carries);
+the other two are a September 1977 freeze with no holiday behind it.
+
+**Two of the 34 were invisible until their predecessors were filled** —
+1977-09-17 and 1994-01-01. The run reported 32 clamped; verify_charts found 34
+once the middle weeks were in. Same predecessor-absent hole as country_songs
+1987-01-03. The lesson is procedural: fill the frozen weeks FIRST, then run
+verify_charts, because the count the backfill reports is a floor, not the
+answer.
+
 ### 2. "All the airplay charts you can find" — SURVEYED 2026-08-12
 
-The candidate list below was measured. Five are real and **all five backfills
-are RUNNING as of 2026-08-12**; three are unreachable under the names guessed.
+The candidate list below was measured. Five are real, and **all five are now
+DONE, SHIPPED and DEPLOYED as charts 34-38 (2026-08-13)**, commits 0c26a43 /
+1e1d9a0 / be40043; three are unreachable under the names guessed.
+
+    rock_airplay        44,800 rows /   896 weeks  2009-06-20 -> 2026-08-15
+    christian_airplay   54,370 rows / 1,209 weeks  2003-06-21 -> 2026-08-15
+    gospel_airplay      33,540 rows / 1,118 weeks  2005-03-19 -> 2026-08-15
+    latin_pop_airplay   39,884 rows / 1,661 weeks  1994-10-08 -> 2026-08-15
+    latin_airplay       79,320 rows / 1,656 weeks  1994-11-12 -> 2026-08-15
+
+Every first pass left 24-36 scattered failures reporting "No chart date on
+page" after three attempts, and a resumable second run recovered essentially
+all of them. **Scattered failures at that rate are network noise, not absent
+weeks** — do not triage them as data until a second pass has run.
+
+Three corrections to what this section assumed:
+
+- **Christian Airplay's depth is not monotonic**: 40 from launch (165 weeks),
+  30 from 2006-08-19 (148), 50 from 2009-06-20 (749), 40 again from 2023-10-28.
+  The floor is 40, the modern value. A single launch probe would have set it
+  wrong in either direction.
+- **The 1998 and 2004 Latin anomalies are Billboard-wide, not per-chart.** All
+  three Latin charts fail to fetch 1998-10-10 and 1998-10-17 (never published
+  anywhere) and all three freeze across 2004-09-25 / 10-02 / 10-09. The handoff
+  had these filed as Hot Latin Songs facts; three charts agreeing makes them
+  Billboard's calendar.
+- **At depth 1 the duplicate-ranking guard is close to useless.** Latin Pop's
+  1994-10-15/22/29 all hold the same song because a 1-row chart repeats
+  whenever the #1 holds — ordinary chart behaviour, not a clamp signal. The
+  served-week heading is the only discriminator in a 1-row era.
+
+The predecessor-absent hole fired three times across this set (both Latin
+charts and Dance Club). Each time the guard skipped the middle week of a
+freeze, which removed the predecessor the third week would have been compared
+against, so the third was stored unchecked. Filling the middle week by hand —
+after confirming its heading — is what makes the pair visible to
+verify_charts at all.
 
 | key | slug | Billboard's own label | launch | depth at launch | weeks |
 |---|---|---|---|---|---|
@@ -541,11 +592,12 @@ None collide with an existing key. `rock_airplay` is NOT the existing
 `christian_airplay`/`gospel_airplay` are NOT `christian`/`gospel`, which are the
 Hot Christian/Gospel Songs consumption charts.
 
-**`latin-pop-airplay` carries the Latin trap and needed a floor of 1**, set in
+**`latin-pop-airplay` carried the Latin trap and needed a floor of 1**, set in
 `fast_billboard_scraper.py`. It serves ONE row at launch, so the default floor
-of 20 would have rejected its early era silently. Verified holding: the run is
-keeping 1-row and 15-row weeks with zero skips. **Raise it to 25 once the CSV
-is complete** — 25 is its modern depth, measured at 2015.
+of 20 would have rejected its early era silently. The floor is now back to 25,
+its modern depth, and nothing was lost to it: the finished CSV runs 1 row (4
+weeks), 15 (72), 20 (165) and 25 (1,420) with nothing partial in between,
+which is what proves no shallow week was dropped.
 
 The other four need no backfill floor (50/40/40/30 at launch, all above the
 default 20), but each should get its modern depth in the dict when wired.
