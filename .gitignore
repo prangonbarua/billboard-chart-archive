@@ -6,3 +6,4 @@ logs_*.out
 logs_*.seen
 *.bak
 .cache/
+start_*.out

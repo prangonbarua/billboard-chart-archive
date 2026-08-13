@@ -275,6 +275,32 @@ LATIN_AIRPLAY_DATA, LATIN_AIRPLAY_AVAILABLE_DATES = _load_global_chart('latin_ai
 # from 1999, so the registry's 55 is the final value and nothing else.
 DANCE_CLUB_DATA, DANCE_CLUB_AVAILABLE_DATES = _load_global_chart('dance_club_songs.csv')
 
+# Tropical Airplay and Regional Mexican Airplay. Billboard prefixes both slugs
+# `latin-`; the unprefixed names answer 200 with zero rows, which is why an
+# earlier sweep recorded them as unreachable. Both open at ONE row a week and
+# the registry depth is the modern value only. Both are missing 1998-10-10 and
+# 1998-10-17 — the gap every Latin chart has, where Billboard serves 1998-10-24
+# instead — and both carry two frozen weeks that repeat the ranking before them
+# under their own 'Week of' heading, listed in scripts/known_clamped_weeks.json.
+TROPICAL_AIRPLAY_DATA, TROPICAL_AIRPLAY_AVAILABLE_DATES = _load_global_chart('tropical_airplay.csv')
+REGIONAL_MEXICAN_DATA, REGIONAL_MEXICAN_AVAILABLE_DATES = _load_global_chart('regional_mexican_airplay.csv')
+
+# Latin Rhythm Airplay. Launched 2005-08-13 — every earlier date clamps forward
+# to it, which is how the launch was confirmed. Flat 25 rows for its whole life.
+LATIN_RHYTHM_DATA, LATIN_RHYTHM_AVAILABLE_DATES = _load_global_chart('latin_rhythm_airplay.csv')
+
+# Rap Airplay, whose slug is the historical `hot-rap-tracks`. It launched at
+# EXACTLY 20 rows, the scraper's default floor, so a week served one row short
+# would have been dropped silently and left a CSV that looked finished; it was
+# backfilled against a floor of 15 for that reason. Depth is 25 today.
+RAP_AIRPLAY_DATA, RAP_AIRPLAY_AVAILABLE_DATES = _load_global_chart('rap_airplay.csv')
+
+# R&B/Hip-Hop Airplay — a DIFFERENT, deeper chart than `rnb_hiphop` above, which
+# is Mainstream R&B/Hip-Hop at 40 rows and already owns data/rnb_hiphop_airplay.csv.
+# This one runs 50 and its file is deliberately data/rnb_hiphop_airplay_chart.csv
+# so neither can overwrite the other. Keep the two keys visibly distinct.
+HOT_RNB_AIRPLAY_DATA, HOT_RNB_AIRPLAY_AVAILABLE_DATES = _load_global_chart('rnb_hiphop_airplay_chart.csv')
+
 # ── Chart registry ──────────────────────────────────────────────────────────
 # Single source of truth for chart metadata. The nav is built by looping this,
 # so adding a chart cannot leave the nav out of sync — commit cd05690 had to
@@ -308,6 +334,11 @@ CHARTS = {
     'gospel_airplay':     dict(label='Gospel Airplay',      group='Airplay', depth=30, kind='song'),
     'latin_pop_airplay':  dict(label='Latin Pop Airplay',   group='Airplay', depth=25, kind='song'),
     'latin_airplay':      dict(label='Latin Airplay',       group='Airplay', depth=50, kind='song'),
+    'tropical_airplay':   dict(label='Tropical Airplay',    group='Airplay', depth=25, kind='song'),
+    'regional_mexican_airplay': dict(label='Regional Mexican Airplay', group='Airplay', depth=40, kind='song'),
+    'latin_rhythm_airplay':     dict(label='Latin Rhythm Airplay',     group='Airplay', depth=25, kind='song'),
+    'rap_airplay':        dict(label='Rap Airplay',         group='Airplay', depth=25, kind='song'),
+    'hot_rnb_hiphop_airplay':   dict(label='R&B/Hip-Hop Airplay',      group='Airplay', depth=50, kind='song'),
 
     'dance_club':    dict(label='Dance Club Songs',    group='Songs', depth=55, kind='song'),
     'heatseekers':   dict(label='Heatseekers Songs',   group='Songs', depth=25, kind='song'),
@@ -354,6 +385,11 @@ CHART_DATA = {
     'gospel_airplay':    (GOSPEL_AIRPLAY_DATA,  GOSPEL_AIRPLAY_AVAILABLE_DATES),
     'latin_pop_airplay': (LATIN_POP_AIRPLAY_DATA, LATIN_POP_AIRPLAY_AVAILABLE_DATES),
     'latin_airplay':     (LATIN_AIRPLAY_DATA,   LATIN_AIRPLAY_AVAILABLE_DATES),
+    'tropical_airplay':  (TROPICAL_AIRPLAY_DATA, TROPICAL_AIRPLAY_AVAILABLE_DATES),
+    'regional_mexican_airplay': (REGIONAL_MEXICAN_DATA, REGIONAL_MEXICAN_AVAILABLE_DATES),
+    'latin_rhythm_airplay':     (LATIN_RHYTHM_DATA,  LATIN_RHYTHM_AVAILABLE_DATES),
+    'rap_airplay':       (RAP_AIRPLAY_DATA,     RAP_AIRPLAY_AVAILABLE_DATES),
+    'hot_rnb_hiphop_airplay':   (HOT_RNB_AIRPLAY_DATA, HOT_RNB_AIRPLAY_AVAILABLE_DATES),
     'dance_club':        (DANCE_CLUB_DATA,      DANCE_CLUB_AVAILABLE_DATES),
     'heatseekers': (HEATSEEKERS_DATA,           HEATSEEKERS_AVAILABLE_DATES),
     'dance_sales': (DANCE_SALES_DATA,           DANCE_SALES_AVAILABLE_DATES),
@@ -2009,7 +2045,9 @@ def pop_airplay():
 for _key in ('adult_pop', 'adult_contemporary', 'rhythmic', 'country_airplay', 'alternative',
              'rnb_hiphop', 'dance_airplay', 'adult_rnb', 'mainstream_rock', 'adult_alternative',
              'rock_airplay', 'christian_airplay', 'gospel_airplay', 'latin_pop_airplay',
-             'latin_airplay', 'dance_club',
+             'latin_airplay', 'tropical_airplay', 'regional_mexican_airplay',
+             'latin_rhythm_airplay', 'rap_airplay', 'hot_rnb_hiphop_airplay',
+             'dance_club',
              'heatseekers', 'dance_sales', 'bubbling',
              'canadian_hot100', 'dance_electronic', 'japan_hot100', 'uk_songs',
              'rock_songs', 'gospel', 'christian', 'country_songs', 'rnb_songs', 'latin_songs',

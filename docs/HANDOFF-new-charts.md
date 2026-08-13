@@ -636,7 +636,46 @@ shallower era, which is the trap that nearly cost Latin its entire 1986. Note
 find_chart_start.py only tries Saturdays, so probe the launch weekday too for
 anything predating the mid-1960s.
 
-## 3. "Every airplay chart that exists" — DISCOVERED 2026-08-13, backfills RUNNING
+## 3. "Every airplay chart that exists" — SHIPPED 2026-08-13, all five wired
+
+All five backfilled to 2026-08-15, were triaged, wired and verified the same
+day. The site now serves 44 charts. Final shape:
+
+| key | CSV | weeks | rows |
+|---|---|---|---|
+| `tropical_airplay` | `tropical_airplay.csv` | 1,661 | 39,884 |
+| `regional_mexican_airplay` | `regional_mexican_airplay.csv` | 1,661 | 61,034 |
+| `latin_rhythm_airplay` | `latin_rhythm_airplay.csv` | 1,097 | 27,425 |
+| `rap_airplay` | `rap_airplay.csv` | 1,435 | 35,020 |
+| `hot_rnb_hiphop_airplay` | `rnb_hiphop_airplay_chart.csv` | 1,794 | 89,230 |
+
+The R&B key is `hot_rnb_hiphop_airplay`, NOT `rnb_hiphop_airplay` — that reads
+like the existing `rnb_hiphop`'s CSV and is exactly the confusion to avoid.
+
+**The three backfill floors are now raised** to 25 / 40 / 25, and the other two
+charts got explicit entries at 25 and 50 rather than leaning on the default 20.
+
+**"Failed" was not recoverable and needed no recovery pass.** Tropical and
+Regional Mexican each lost 1998-10-10 and 1998-10-17, and all three attempts on
+both charts got 1998-10-24 back. That is the Latin-wide gap every other Latin
+chart already has, not a network failure; retrying only re-serves 1998-10-24.
+The other three charts finished 0 failed, 0 clamped.
+
+### The clamp guard's blind spot repeated exactly as documented
+
+Four weeks were flagged clamped. Every one served its OWN 'Week of' heading at
+full page size, so all four were genuine freezes and were written in. Filling
+them then exposed two MORE repeats — 1994-10-22 and 2004-10-09 on Tropical —
+because the guard skipping a middle week removes the predecessor its successor
+would have been compared against. This is the same cascade `_latin_pop_airplay`
+describes. **Expect it every time: filling a skipped freeze can surface the next
+week, so re-run `verify_charts.py` after filling, never before.**
+
+At ONE row deep, where both Latin charts open, a repeated ranking carries no
+information at all — it just means a song held #1. The heading is the only
+discriminator there, and the row-count and h1 checks both accept a clamp.
+
+### Original discovery notes
 
 The previous sweep guessed slugs. This one read Billboard's own `/charts/`
 index (248 slugs) instead, which is what found the charts recall could not.

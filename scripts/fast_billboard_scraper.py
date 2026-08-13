@@ -235,17 +235,22 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # since 2001-07-28; 50 is the modern depth and the weekly
                     # path never looks back to the 40-row era.
                     'latin-airplay': 50,
-                    # BACKFILL FLOORS, NOT MODERN DEPTHS — raise each to the
-                    # modern depth (25, 40 and 25) once its CSV is complete.
-                    # Tropical and Regional Mexican both serve ONE row at their
-                    # 1994-10-08 launch, the Latin trap again. Rap Airplay is the
-                    # subtler case: it launches at EXACTLY 20, the default floor,
-                    # so any week Billboard serves one row short would be dropped
-                    # SILENTLY, leaving a CSV that looks finished — the same trap
-                    # Adult Alternative had, which is why 15 rather than 20.
-                    'latin-tropical-airplay': 1,
-                    'latin-regional-mexican-airplay': 1,
-                    'hot-rap-tracks': 15,
+                    # Backfills COMPLETE 2026-08-13, so the floors of 1, 1 and 15
+                    # these needed during the backfill are gone and each is back
+                    # to its modern depth, which is what guards the weekly path.
+                    # Tropical and Regional Mexican both served ONE row a week at
+                    # their 1994-10-08 launch, the Latin trap again, and Rap
+                    # Airplay launched at EXACTLY 20 — the default floor — so a
+                    # week served one row short would have been dropped SILENTLY
+                    # and left a CSV that looked finished. Their shallow eras are
+                    # already in the CSVs; the weekly path never looks back.
+                    'latin-tropical-airplay': 25,
+                    'latin-regional-mexican-airplay': 40,
+                    'hot-rap-tracks': 25,
+                    # The other two launched at or above the default floor of 20
+                    # (25 and 40), so neither needed one. Both run deeper today.
+                    'latin-rhythm-airplay': 25,
+                    'hot-r-and-b-hip-hop-airplay': 50,
                     # Christian grew 30 -> 40 -> 50 over its life and has run
                     # 50 for its last 894 weeks, so 50 guards the weekly path
                     # correctly. Its shallow era is already in the CSV.
