@@ -635,3 +635,71 @@ BEFORE backfilling — the scrape floor defaults to 20 and silently rejects any
 shallower era, which is the trap that nearly cost Latin its entire 1986. Note
 find_chart_start.py only tries Saturdays, so probe the launch weekday too for
 anything predating the mid-1960s.
+
+## 3. "Every airplay chart that exists" — DISCOVERED 2026-08-13, backfills RUNNING
+
+The previous sweep guessed slugs. This one read Billboard's own `/charts/`
+index (248 slugs) instead, which is what found the charts recall could not.
+
+**Section 2's three "unreachable" charts were ruled out under the WRONG NAMES.**
+Billboard prefixes them `latin-`. All three are real, 200 at every date probed,
+with correct headings and full row counts:
+
+| guessed, 0 rows | Billboard's actual slug | its own h1 |
+|---|---|---|
+| `tropical-airplay` | `latin-tropical-airplay` | Tropical Airplay |
+| `regional-mexican-airplay` | `latin-regional-mexican-airplay` | Regional Mexican Airplay |
+| `smooth-jazz-songs` | not in the index — still unfound | — |
+
+The lesson generalises past this repo: an empty page rules out the NAME, never
+the chart, and the index is cheap to read. Two more airplay charts nobody had
+listed came out of the same fetch — `latin-rhythm-airplay` and `hot-rap-tracks`.
+
+### The five now backfilling
+
+| key | slug | Billboard's h1 | launch | launch depth | modern | weeks |
+|---|---|---|---|---|---|---|
+| `tropical_airplay` | `latin-tropical-airplay` | Tropical Airplay | 1994-10-08 | **1** | 25 | ~1,662 |
+| `regional_mexican_airplay` | `latin-regional-mexican-airplay` | Regional Mexican Airplay | 1994-10-08 | **1** | 40 | ~1,662 |
+| `latin_rhythm_airplay` | `latin-rhythm-airplay` | Latin Rhythm Airplay | 2005-08-13 | 25 | 25 | ~1,096 |
+| `rap_airplay` | `hot-rap-tracks` | Rap Airplay | 1999-02-20 | **20** | 25 | ~1,435 |
+| `rnb_hiphop_airplay_chart` | `hot-r-and-b-hip-hop-airplay` | R&B/Hip-Hop Airplay | 1992-04-04 | 40 | 50 | ~1,793 |
+
+    logs_tropical_airplay.out  logs_regional_mexican_airplay.out
+    logs_latin_rhythm_airplay.out  logs_rap_airplay.out
+    logs_rnb_hiphop_airplay_chart.out
+
+~7,650 weeks, roughly 1.5-2 h wall clock running concurrently.
+
+**Backfill floors are already set** in `fast_billboard_scraper.py` — 1, 1 and 15
+respectively. Tropical and Regional Mexican are the Latin trap again. **Rap
+Airplay is the subtler one**: it launches at EXACTLY 20, the default floor, so
+any week Billboard serves one row short would be dropped SILENTLY and leave a
+CSV that looks finished. That is Adult Alternative's trap, which is why 15.
+Raise all three to their modern depths (25 / 40 / 25) once each CSV is complete.
+
+**Watch the key collision on the R&B one.** `rnb_hiphop` is already taken by
+`mainstream-r-and-b-hip-hop` (Mainstream R&B/Hip-Hop), and its CSV is
+`data/rnb_hiphop_airplay.csv` — a name that does NOT belong to this chart. The
+new chart is a different, deeper chart (50 rows against 40) and its CSV is
+deliberately `data/rnb_hiphop_airplay_chart.csv` to avoid overwriting it.
+Pick a registry key that cannot be confused with the existing one.
+
+`latin-rhythm-airplay` clamps 2005-06-04 forward to 2005-08-13, which is how
+its launch was confirmed.
+
+### Not addable
+
+- `warm-global-dance-radio` — real and 40 deep, but it clamps EVERY date to
+  2026-03-14 and returns the empty page at 2026-08-15. It is a brand-new chart
+  with almost no archive; a row count and an h1 both accept it, only the
+  heading rejects it. Probe its actual range before believing any of it.
+- `dance-mix-show-airplay` — still artist-ranked, still needs `kind='artist'`.
+- `smooth-jazz-songs` — absent from the index under any name containing jazz
+  that is a weekly airplay chart. `contemporary-jazz` and `jazz-songs` are in
+  the index and were NOT probed; try those before concluding anything.
+
+Remaining after these five: wire each (5 edits), `verify_charts.py`, triage
+clamped weeks BY SERVED-WEEK HEADING, tests, commit, deploy. Do not deploy
+while a backfill runs — or SIGSTOP the scrapers first, SIGCONT after the
+upload, which worked cleanly on 2026-08-13 and cost zero weeks.
