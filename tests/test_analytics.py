@@ -49,6 +49,27 @@ def test_salt_change_is_what_resets_uniques(db, monkeypatch):
     assert analytics.summary()['lifetime_uniques'] == 2
 
 
+def test_monthly_counts_a_repeat_visitor_once_per_month(db):
+    # The trap: one person on many days of a month is ONE person that month.
+    # COUNT(*) over visitor_days would say three here.
+    for d in ('2026-07-01', '2026-07-15', '2026-07-31'):
+        analytics.record_visit('/top100', '1.1.1.1', 'UA', day=d)
+    analytics.record_visit('/top100', '2.2.2.2', 'UA', day='2026-08-02')
+    by_month = {r['month']: r for r in analytics.summary()['monthly']}
+    assert by_month['2026-07']['uniques'] == 1
+    assert by_month['2026-07']['views'] == 3
+    assert by_month['2026-08']['uniques'] == 1
+
+
+def test_monthly_is_empty_not_missing_when_counting_is_off(monkeypatch):
+    monkeypatch.delenv('ANALYTICS_DB', raising=False)
+    monkeypatch.setattr(analytics, 'DEFAULT_DB', '/nonexistent-mount/a.db')
+    analytics.init_db()
+    assert analytics.summary()['monthly'] == []
+    monkeypatch.undo()
+    analytics.init_db()
+
+
 def test_top_paths_ranks_by_views(db):
     for _ in range(3):
         analytics.record_visit('/rap_airplay', '1.1.1.1', 'UA')

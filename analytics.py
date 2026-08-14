@@ -146,7 +146,8 @@ def record_visit(path, ip, user_agent, day=None):
 def summary(days=30, top=10):
     """Everything the admin page shows. Never raises; returns zeros on failure."""
     empty = dict(lifetime_uniques=0, total_views=0, today_uniques=0,
-                 today_views=0, recent=[], top_paths=[], available=False)
+                 today_views=0, recent=[], monthly=[], top_paths=[],
+                 available=False)
     if _disabled:
         return empty
     today = _today()
@@ -175,6 +176,21 @@ def summary(days=30, top=10):
                 for d in sorted(set(views_by_day) | set(uniq_by_day), reverse=True)
             ]
 
+            # Months use COUNT(DISTINCT visitor_hash), NOT COUNT(*): one person
+            # visiting on twelve days of a month is one person that month, and
+            # COUNT(*) would report twelve. The daily figures above can use
+            # COUNT(*) safely only because (visitor_hash, day) is unique.
+            m_views = dict(conn.execute(
+                "SELECT substr(day, 1, 7) AS m, SUM(views) FROM visits "
+                "GROUP BY m").fetchall())
+            m_uniq = dict(conn.execute(
+                "SELECT substr(day, 1, 7) AS m, COUNT(DISTINCT visitor_hash) "
+                "FROM visitor_days GROUP BY m").fetchall())
+            monthly = [
+                dict(month=m, views=m_views.get(m, 0), uniques=m_uniq.get(m, 0))
+                for m in sorted(set(m_views) | set(m_uniq), reverse=True)
+            ]
+
             top_paths = [
                 dict(path=p, views=v) for p, v in conn.execute(
                     'SELECT path, SUM(views) AS v FROM visits '
@@ -182,7 +198,8 @@ def summary(days=30, top=10):
             ]
         return dict(lifetime_uniques=lifetime, total_views=total,
                     today_uniques=today_u, today_views=today_v,
-                    recent=recent, top_paths=top_paths, available=True)
+                    recent=recent, monthly=monthly, top_paths=top_paths,
+                    available=True)
     except Exception as exc:
         log.warning('analytics: summary failed: %s', exc)
         return empty

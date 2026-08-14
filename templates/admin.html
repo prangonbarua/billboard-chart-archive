@@ -119,6 +119,22 @@
     {% else %}<p class="empty">No visits recorded yet.</p>{% endif %}
     </div>
 
+    <h2>By month</h2>
+    <div class="scroll">
+    {% if stats.monthly %}
+    <table>
+        <thead><tr><th>Month</th><th class="num">People</th><th class="num">Pageviews</th></tr></thead>
+        <tbody>
+        {% for row in stats.monthly %}
+            <tr><td>{{ row.month }}</td>
+                <td class="num">{{ '{:,}'.format(row.uniques) }}</td>
+                <td class="num">{{ '{:,}'.format(row.views) }}</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}<p class="empty">No visits recorded yet.</p>{% endif %}
+    </div>
+
     <h2>Most visited</h2>
     <div class="scroll">
     {% if stats.top_paths %}
