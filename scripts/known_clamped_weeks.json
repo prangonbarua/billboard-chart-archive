@@ -108,16 +108,19 @@
     "2009-01-10",
     "2010-01-02"
   ],
-  "_tropical_airplay": "Two freezes, each week fetched individually on 2026-08-13 and each serving its OWN 'Week of' heading at full page size. 1994-10-15/22 hold 'Quien Eres Tu' on a chart that was ONE row deep then — at that depth an identical ranking is just a song holding #1 and proves nothing either way, so the heading is the only discriminator, exactly as on latin_pop_airplay. 2004-10-02/10-09 is the Billboard-wide 2004 Latin freeze that Hot Latin Songs, Latin Airplay and Latin Pop Airplay all show at the same dates. Both middle weeks (1994-10-15, 2004-10-02) were skipped by the backfill's clamp guard, which removed the predecessor the following week would have been compared against and let it through unnoticed; both were filled afterwards, which is what made 1994-10-22 and 2004-10-09 visible to this check at all.",
+  "_tropical_airplay": "Two freezes, each week fetched individually on 2026-08-13 and each serving its OWN 'Week of' heading at full page size. 1994-10-15/22 hold 'Quien Eres Tu' on a chart that was ONE row deep then \u2014 at that depth an identical ranking is just a song holding #1 and proves nothing either way, so the heading is the only discriminator, exactly as on latin_pop_airplay. 2004-10-02/10-09 is the Billboard-wide 2004 Latin freeze that Hot Latin Songs, Latin Airplay and Latin Pop Airplay all show at the same dates. Both middle weeks (1994-10-15, 2004-10-02) were skipped by the backfill's clamp guard, which removed the predecessor the following week would have been compared against and let it through unnoticed; both were filled afterwards, which is what made 1994-10-22 and 2004-10-09 visible to this check at all.",
   "tropical_airplay": [
     "1994-10-15",
     "1994-10-22",
     "2004-10-02",
     "2004-10-09"
   ],
-  "_regional_mexican_airplay": "Same 2026-08-13 pass, same heading test. 1994-10-15 holds 'La Nina Fresa' at ONE row deep, so the heading is again the only evidence. 1996-10-26 repeats the full 20-row ordering of 1996-10-19 under its own heading at ~1.31 MB. This chart does NOT carry the 2004 Latin freeze and its 1994-10-22 differs from 1994-10-15, so neither is listed — the guard is discriminating here, not waved through.",
+  "_regional_mexican_airplay": "Same 2026-08-13 pass, same heading test. 1994-10-15 holds 'La Nina Fresa' at ONE row deep, so the heading is again the only evidence. 1996-10-26 repeats the full 20-row ordering of 1996-10-19 under its own heading at ~1.31 MB. This chart does NOT carry the 2004 Latin freeze and its 1994-10-22 differs from 1994-10-15, so neither is listed \u2014 the guard is discriminating here, not waved through.",
   "regional_mexican_airplay": [
     "1994-10-15",
     "1996-10-26"
+  ],
+  "argentina_hot100": [
+    "2019-01-26"
   ]
 }
