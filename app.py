@@ -18,6 +18,8 @@ import sys
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import versus
+import analytics
+from flask import session
 
 # Load environment variables from .env file
 load_dotenv()
@@ -40,6 +42,35 @@ limiter = Limiter(
     default_limits=["200 per day", "50 per hour"],
     storage_uri="memory://"
 )
+
+# ── Visitor counting ────────────────────────────────────────────────────────
+# Feeds the private /admin page. init_db() turns counting OFF rather than
+# raising if the Railway volume is not attached, so a missing volume costs the
+# numbers and nothing else. See docs/superpowers/specs/ for the design.
+analytics.init_db()
+
+# Paths that are not people: static assets, the favicon, machine traffic on the
+# API, and /admin itself — which must not inflate the numbers it reports.
+_UNCOUNTED_PREFIXES = ('/static/', '/api/', '/admin')
+
+
+@app.before_request
+def _count_visit():
+    if request.method != 'GET':
+        return
+    path = request.path
+    if path == '/favicon.ico' or path.startswith(_UNCOUNTED_PREFIXES):
+        return
+    try:
+        # get_remote_address is the same resolver Flask-Limiter uses above, so
+        # both agree on who a visitor is behind Railway's proxy.
+        analytics.record_visit(path, get_remote_address(),
+                               request.headers.get('User-Agent'))
+    except Exception:
+        # record_visit already swallows its own failures; this catches the case
+        # it cannot — the call itself blowing up. A before_request that raises
+        # 500s the page, so counting would be able to take the site down.
+        pass
 
 # Spotify API setup (using environment variables for credentials)
 # Set SPOTIPY_CLIENT_ID and SPOTIPY_CLIENT_SECRET in environment
@@ -2498,6 +2529,33 @@ def download_excel(artist_name, report_type='songs'):
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ── Private admin page ──────────────────────────────────────────────────────
+# Deliberately absent from _nav.html and marked noindex. The session flag is
+# signed with app.secret_key, which falls back to a RANDOM value when SECRET_KEY
+# is unset — set it in Railway or every restart signs you out.
+@app.route('/admin', methods=['GET', 'POST'])
+@limiter.limit('20 per hour', methods=['POST'])
+def admin():
+    error = None
+    if request.method == 'POST':
+        if analytics.check_password(request.form.get('password')):
+            session['admin'] = True
+            return redirect(url_for('admin'))
+        error = 'Incorrect password.'
+    if not session.get('admin'):
+        # 200 rather than 401: no WWW-Authenticate, so browsers render the form
+        # instead of their own credential dialog.
+        return render_template('admin.html', authed=False, error=error), 200
+    return render_template('admin.html', authed=True, stats=analytics.summary())
+
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin', None)
+    return redirect(url_for('admin'))
+
 
 if __name__ == '__main__':
     print("\n" + "="*60)

@@ -76,7 +76,7 @@ img {
 
 /* The page scrollbar is the exception: visible, and drawn as the last column of
    the dithered rail it sits against rather than a control bolted to the edge.
-   Same #0fbf74 as the rail's ink and its inner rule, a white gutter, a hairline
+   Same #0fbf74 as the rail's ink, a white gutter, a hairline
    against the rail, and the square corners the rest of the site uses.
    Firefox has no scrollbar pseudo-elements, so it gets the nearest thing its
    two standard properties can express. */
@@ -135,14 +135,15 @@ html {
     background-size: 180px auto;
     image-rendering: pixelated;
   }
+  /* The rails carried a 1px #0fbf74 inner rule. Removed 2026-08-13 — against
+     the dense outer edge of the dither it read as one thick dark-green bar
+     rather than a hairline. The dithered texture itself is unchanged. */
   body::before {
     left: 0;
-    border-right: 1px solid #0fbf74;
     background-image: url('/static/dither-left.png');
   }
   body::after {
     right: 0;
-    border-left: 1px solid #0fbf74;
     background-image: url('/static/dither-right.png');
   }
 }
