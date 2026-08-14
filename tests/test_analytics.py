@@ -75,6 +75,19 @@ def test_unopenable_database_disables_counting_instead_of_raising(monkeypatch):
     analytics.init_db()  # leave the module enabled for other tests
 
 
+def test_missing_volume_disables_counting_rather_than_faking_it(monkeypatch):
+    # Regression: init_db used to makedirs() the default path, so with no volume
+    # attached it created /data on the container disk, reported itself healthy,
+    # and lost every number on the next deploy. A silent reset is worse than
+    # not counting, so an unmounted default path must disable the module.
+    monkeypatch.delenv('ANALYTICS_DB', raising=False)
+    monkeypatch.setattr(analytics, 'DEFAULT_DB', '/nonexistent-mount/a.db')
+    assert analytics.init_db() is False
+    assert analytics.summary()['available'] is False
+    monkeypatch.undo()
+    analytics.init_db()
+
+
 def test_check_password_rejects_when_unset(monkeypatch):
     monkeypatch.delenv('ADMIN_PASSWORD', raising=False)
     assert analytics.check_password('anything') is False

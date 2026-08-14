@@ -90,8 +90,18 @@ def init_db():
     try:
         path = db_path()
         parent = os.path.dirname(path)
-        if parent:
+        if parent and 'ANALYTICS_DB' in os.environ:
+            # An explicit path is a test or a local run: create it freely.
             os.makedirs(parent, exist_ok=True)
+        elif parent and not os.path.isdir(parent):
+            # The DEFAULT path must NOT be created. makedirs would happily make
+            # /data on the container's own disk, counting would report itself
+            # healthy, and Railway would wipe every number on the next deploy —
+            # a silent reset, which is worse than not counting. Railway creates
+            # this directory only when a volume is mounted there, so its absence
+            # is the signal, and the admin page says so rather than showing a
+            # zero that looks like real data.
+            raise RuntimeError(f'{parent} is not a mounted volume')
         with _connect() as conn:
             conn.executescript(SCHEMA)
         _disabled = False
