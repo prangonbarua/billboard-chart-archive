@@ -279,7 +279,16 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # must not be read as its historical depth; its 30-row era
                     # is already in the CSV and sits above the default floor.
                     'rock-airplay': 50, 'christian-airplay': 40,
-                    'gospel-airplay': 30}.get(chart_name, 20)
+                    'gospel-airplay': 30,
+                    # Same failure the latin-songs note above describes, and it
+                    # already cost this chart six years. Hot Dance Singles Sales
+                    # runs 30 rows to 2007-02-24, then 15, then 10 from 2010 to
+                    # its final week 2013-11-30 — so the default floor of 20
+                    # rejected EVERY week after Feb 2007 as "incomplete" and the
+                    # CSV stopped there looking finished. Measured at source, not
+                    # inferred. 10 is the true minimum depth; the chart is
+                    # discontinued, so this floor guards a backfill only.
+                    'hot-dance-singles-sales': 10}.get(chart_name, 20)
         if len(entries) < expected:
             print(f"✗ Incomplete chart: {len(entries)}/{expected} rows — skipping (will retry next run)")
             time.sleep(1)
