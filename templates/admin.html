@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <title>Admin — US Top Charts</title>
-    {# Paxel supplies the palette, the square corners and Space Grotesk; the
-       layout below is this page's own, the same split about.html uses. This
-       page is intentionally absent from _nav.html and stays unlisted. #}
-    <link rel="stylesheet" href="/static/paxel.css">
     {# _nav.html styles itself with the CSS variables declared here, so this
        include is required for the nav to render correctly, not optional. #}
     {% include '_head_styles.html' %}
@@ -54,9 +50,56 @@
         .foot { margin-top: 3rem; font-size: 0.8125rem; color: #6b6b6b; }
         .foot a { color: #0c492c; }
         .empty { color: #6b6b6b; font-size: 0.875rem; }
+
+        /* ---- Rounded surfaces, this page only ---------------------------
+           paxel.css carries `* { border-radius: 0 !important }` — that reset is
+           what gives the whole site its square edges, so lifting it would
+           reshape all seven templates at once. Instead each rule below
+           re-rounds one element and is scoped to body.admin, and nothing
+           outside /admin moves. The `!important` answers paxel's; the class
+           selectors outrank its bare `*` on specificity, so this holds
+           whichever order the two sheets load in. */
+        body.admin .headline,
+        body.admin .scroll { border-radius: 14px !important; }
+        body.admin input[type=password],
+        body.admin button,
+        body.admin .warn { border-radius: 8px !important; }
+
+        /* .headline is a hairline grid — 1px flex gaps over a green backing —
+           so its corners only read as round once the tiles are clipped to it. */
+        body.admin .headline { overflow: hidden; }
+
+        /* Each table becomes one card. .scroll is already overflow-x:auto,
+           which clips the corners on its own; adding overflow:hidden here
+           would take the horizontal scrolling with it. */
+        body.admin .scroll { border: 1px solid var(--border); }
+        body.admin .scroll .empty { padding: 1rem 1.25rem; margin: 0; }
+        body.admin th,
+        body.admin td { padding: 0.75rem 1rem; }
+        body.admin thead th { background: #fafaf9; }
+        /* Card edge already draws this line; without it the two double up. */
+        body.admin tbody tr:last-child td { border-bottom: none; }
+
+        /* The nav ships its own 6px/10px radii in templates/_nav.html, which
+           paxel squares off. On this page they come back. */
+        body.admin .nav a,
+        body.admin .nav-dd > summary { border-radius: 6px !important; }
+        body.admin .nav-dd-panel { border-radius: 10px !important; }
+        /* Nav links sat on the muted grey; take them to ink. */
+        body.admin .nav a { color: #000000; }
+
+        body.admin input[type=password]:focus-visible,
+        body.admin button:focus-visible { outline: 2px solid #0c492c;
+                                          outline-offset: 2px; }
     </style>
+    {# paxel.css MUST come after _head_styles, not before: both declare
+       :root { --text-muted } and friends at equal specificity, so source order
+       decides. Loading it first — as this page used to — left /admin on the
+       legacy #71717a grey for its nav links and the wrong --border, while every
+       other template links paxel last and gets #333333. #}
+    <link rel="stylesheet" href="/static/paxel.css">
 </head>
-<body>
+<body class="admin">
 {# The site's shared nav. Its data comes from the inject_nav context processor,
    so no route change is needed. Including it here does NOT list /admin in it —
    the admin page stays absent from _nav.html itself. #}
