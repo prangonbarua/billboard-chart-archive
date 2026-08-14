@@ -440,6 +440,72 @@ CHART_DATA = {
     'artist100':   (ARTIST100_DATA,             ARTIST100_AVAILABLE_DATES),
 }
 
+# ── Charts added as a batch (genre albums, international, Hits of the World) ──
+# These get a table rather than the module globals above. Fifty charts through
+# that pattern would be a hundred lines of near-identical boilerplate, and every
+# one of them is reached through CHART_DATA anyway — nothing outside this file
+# refers to a chart frame by its global name.
+#
+# Archive starts and depths here are MEASURED, never assumed. The depth in the
+# registry is the chart's current depth (what the page renders); the scraper's
+# floor is its historical MINIMUM, which is a different number and lives in
+# fast_billboard_scraper.py. Conflating the two is what truncated Dance Singles
+# Sales at 2007 for six years.
+BATCH_CHARTS = {
+    # key: (label, group, current depth, kind, csv)
+    'country_albums':     ('Top Country Albums',      'Albums & Artists', 50, 'album', 'country_albums.csv'),
+    'rnb_hiphop_albums':  ('Top R&B/Hip-Hop Albums',  'Albums & Artists', 50, 'album', 'rnb_hiphop_albums.csv'),
+    'christian_albums':   ('Top Christian Albums',    'Albums & Artists', 50, 'album', 'christian_albums.csv'),
+    'gospel_albums':      ('Top Gospel Albums',       'Albums & Artists', 25, 'album', 'gospel_albums.csv'),
+    'latin_albums':       ('Top Latin Albums',        'Albums & Artists', 50, 'album', 'latin_albums.csv'),
+    'canadian_albums':    ('Canadian Albums',         'Albums & Artists', 100, 'album', 'canadian_albums.csv'),
+    'independent_albums': ('Independent Albums',      'Albums & Artists', 50, 'album', 'independent_albums.csv'),
+
+    'argentina_hot100':   ('Billboard Argentina Hot 100',   'International', 25, 'song', 'argentina_hot100.csv'),
+    'brasil_hot100':      ('Billboard Brasil Hot 100',      'International', 25, 'song', 'brasil_hot100.csv'),
+    'italy_hot100':       ('Billboard Italy Hot 100',       'International', 25, 'song', 'italy_hot100.csv'),
+    'philippines_hot100': ('Billboard Philippines Hot 100', 'International', 25, 'song', 'philippines_hot100.csv'),
+    'china_tme':          ('China TME Uni Songs',           'International', 50, 'song', 'china_tme.csv'),
+}
+
+# Hits of the World: 38 national charts that share one shape entirely — same
+# 2022-02-19 launch, same 25 rows, same columns. Listing them by hand would be
+# 38 lines differing only in a country name. Billboard titles them '<Country>
+# Songs', not 'Billboard <Country>', because they are its own Luminate-tracked
+# series rather than licensed local editions.
+HOTW_COUNTRIES = [
+    ('australia', 'Australia'), ('austria', 'Austria'), ('belgium', 'Belgium'),
+    ('bolivia', 'Bolivia'), ('chile', 'Chile'), ('croatia', 'Croatia'),
+    ('czech-republic', 'Czech Republic'), ('denmark', 'Denmark'),
+    ('ecuador', 'Ecuador'), ('finland', 'Finland'), ('france', 'France'),
+    ('germany', 'Germany'), ('greece', 'Greece'), ('hungary', 'Hungary'),
+    ('iceland', 'Iceland'), ('india', 'India'), ('indonesia', 'Indonesia'),
+    ('ireland', 'Ireland'), ('luxembourg', 'Luxembourg'), ('malaysia', 'Malaysia'),
+    ('mexico', 'Mexico'), ('netherlands', 'Netherlands'),
+    ('new-zealand', 'New Zealand'), ('norway', 'Norway'), ('peru', 'Peru'),
+    ('poland', 'Poland'), ('portugal', 'Portugal'), ('romania', 'Romania'),
+    ('singapore', 'Singapore'), ('slovakia', 'Slovakia'),
+    ('south-africa', 'South Africa'), ('spain', 'Spain'), ('sweden', 'Sweden'),
+    ('switzerland', 'Switzerland'), ('taiwan', 'Taiwan'), ('thailand', 'Thailand'),
+    ('turkey', 'Turkey'),
+    # Luminate's measurement of the UK market, which is NOT the same chart as
+    # uk_songs above — that one is the Official Charts Company's, licensed.
+    # The two disagree in places and both are correct; the labels have to keep
+    # them apart in the nav.
+    ('u-k', 'U.K.'),
+]
+for _stem, _country in HOTW_COUNTRIES:
+    BATCH_CHARTS[f"{_stem.replace('-', '_')}_hotw"] = (
+        f'{_country} Songs', 'Hits of the World', 25, 'song',
+        f"{_stem.replace('-', '_')}_hotw.csv")
+
+for _key, (_label, _group, _depth, _kind, _csv) in BATCH_CHARTS.items():
+    CHARTS[_key] = dict(label=_label, group=_group, depth=_depth, kind=_kind)
+    # A missing CSV loads as None, and available_charts() drops dataless charts
+    # from the nav. That is what makes it safe to register all fifty before any
+    # of them has been backfilled — each appears the week its data lands.
+    CHART_DATA[_key] = _load_global_chart(_csv)
+
 # Dates parsed once at startup. Every request previously re-parsed the whole
 # Date column (123k rows on Adult Contemporary); the versus feature would have
 # multiplied that per artist compared. Index-aligned to each frame so callers
@@ -2093,6 +2159,21 @@ for _key in ('adult_pop', 'adult_contemporary', 'rhythmic', 'country_airplay', '
         return _song_chart_page(df, dates, key, 'chart.html')
 
     app.add_url_rule(f'/{_key}', _key, limiter.exempt(_format_chart_page))
+del _key
+
+# The batch charts route identically — same template, same handler shape. They
+# are registered from BATCH_CHARTS rather than being spelled into the tuple
+# above so that adding a country to HOTW_COUNTRIES is a one-line change in one
+# place. `key=key` for the same late-binding reason documented above.
+for _key in BATCH_CHARTS:
+    def _batch_chart_page(key=_key):
+        df, dates = CHART_DATA[key]
+        if df is None:
+            flash(f"{CHARTS[key]['label']} data is not available", 'error')
+            return redirect(url_for('top100'))
+        return _song_chart_page(df, dates, key, 'chart.html')
+
+    app.add_url_rule(f'/{_key}', _key, limiter.exempt(_batch_chart_page))
 del _key
 
 @app.route('/albums200')

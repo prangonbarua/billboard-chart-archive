@@ -288,7 +288,46 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # CSV stopped there looking finished. Measured at source, not
                     # inferred. 10 is the true minimum depth; the chart is
                     # discontinued, so this floor guards a backfill only.
-                    'hot-dance-singles-sales': 10}.get(chart_name, 20)
+                    'hot-dance-singles-sales': 10,
+                    # ── Batch added 2026-08-14: genre albums, international,
+                    # Hits of the World. Every floor below is the MINIMUM depth
+                    # measured across five samples spanning each chart's whole
+                    # archive, not its current depth — the two differ on most of
+                    # them, and it is the minimum that decides whether a backfill
+                    # completes or stops early looking finished.
+                    #
+                    # r-b-hip-hop-albums is the one that proves the point: it
+                    # reproduced the Dance Singles Sales failure on the very
+                    # first test scrape, rejecting 1965-01-30 as "10/20 rows"
+                    # under the default floor. It runs 10 rows in 1965, 100 in
+                    # the 1990s and 50 today, so only 10 admits its full span.
+                    'country-albums': 20, 'r-b-hip-hop-albums': 10,
+                    'christian-albums': 27, 'gospel-albums': 15,
+                    'latin-albums': 50, 'independent-albums': 50,
+                    # Canadian Albums' earliest served week returns a single row.
+                    # A floor of 1 would admit anything, so this keeps a real
+                    # guard and the backfill starts from the first week that
+                    # actually carries a ranking — see the CANADIAN_ALBUMS_START
+                    # note in the backfill runner.
+                    'canadian-albums': 10,
+                    # International editions, all flat-depth since launch.
+                    'billboard-argentina-hot-100': 25, 'billboard-brasil-hot-100': 25,
+                    'billboard-italy-hot-100': 25, 'billboard-philippines-hot-100': 25,
+                    'china-tme-uni-songs': 50,
+                    # All 38 Hits of the World charts launched together on
+                    # 2022-02-19 at 25 rows and have never varied, so they share
+                    # one floor rather than getting 38 identical lines.
+                    **{f'{c}-songs-hotw': 25 for c in (
+                        'australia', 'austria', 'belgium', 'bolivia', 'chile',
+                        'croatia', 'czech-republic', 'denmark', 'ecuador',
+                        'finland', 'france', 'germany', 'greece', 'hungary',
+                        'iceland', 'india', 'indonesia', 'ireland', 'luxembourg',
+                        'malaysia', 'mexico', 'netherlands', 'new-zealand',
+                        'norway', 'peru', 'poland', 'portugal', 'romania',
+                        'singapore', 'slovakia', 'south-africa', 'spain',
+                        'sweden', 'switzerland', 'taiwan', 'thailand', 'turkey',
+                        'u-k')},
+                    }.get(chart_name, 20)
         if len(entries) < expected:
             print(f"✗ Incomplete chart: {len(entries)}/{expected} rows — skipping (will retry next run)")
             time.sleep(1)
@@ -457,6 +496,38 @@ def main():
     update_chart_data('gospel-airplay', 'data/gospel_airplay.csv', weeks_to_fetch=15)
     update_chart_data('latin-pop-airplay', 'data/latin_pop_airplay.csv', weeks_to_fetch=15)
     update_chart_data('latin-airplay', 'data/latin_airplay.csv', weeks_to_fetch=15)
+
+    # ── Batch added 2026-08-14 ────────────────────────────────────────────────
+    # All 50 are live charts, so every one needs a weekly line or its CSV freezes
+    # at whatever the backfill left and quietly rots. The genre album charts and
+    # international editions are spelled out; Hits of the World is a loop because
+    # 38 identical lines differing only in a country name is worse to read and
+    # worse to keep in step with HOTW_COUNTRIES in app.py.
+    for _slug, _csv in (('country-albums', 'country_albums'),
+                        ('r-b-hip-hop-albums', 'rnb_hiphop_albums'),
+                        ('christian-albums', 'christian_albums'),
+                        ('gospel-albums', 'gospel_albums'),
+                        ('latin-albums', 'latin_albums'),
+                        ('canadian-albums', 'canadian_albums'),
+                        ('independent-albums', 'independent_albums'),
+                        ('billboard-argentina-hot-100', 'argentina_hot100'),
+                        ('billboard-brasil-hot-100', 'brasil_hot100'),
+                        ('billboard-italy-hot-100', 'italy_hot100'),
+                        ('billboard-philippines-hot-100', 'philippines_hot100'),
+                        ('china-tme-uni-songs', 'china_tme')):
+        update_chart_data(_slug, f'data/{_csv}.csv', weeks_to_fetch=15)
+
+    for _country in ('australia', 'austria', 'belgium', 'bolivia', 'chile',
+                     'croatia', 'czech-republic', 'denmark', 'ecuador',
+                     'finland', 'france', 'germany', 'greece', 'hungary',
+                     'iceland', 'india', 'indonesia', 'ireland', 'luxembourg',
+                     'malaysia', 'mexico', 'netherlands', 'new-zealand',
+                     'norway', 'peru', 'poland', 'portugal', 'romania',
+                     'singapore', 'slovakia', 'south-africa', 'spain', 'sweden',
+                     'switzerland', 'taiwan', 'thailand', 'turkey', 'u-k'):
+        update_chart_data(f'{_country}-songs-hotw',
+                          f"data/{_country.replace('-', '_')}_hotw.csv",
+                          weeks_to_fetch=15)
 
     print("\n" + "="*60)
     if success_hot100 and success_bb200:
