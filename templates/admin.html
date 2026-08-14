@@ -9,9 +9,12 @@
        layout below is this page's own, the same split about.html uses. This
        page is intentionally absent from _nav.html and stays unlisted. #}
     <link rel="stylesheet" href="/static/paxel.css">
+    {# _nav.html styles itself with the CSS variables declared here, so this
+       include is required for the nav to render correctly, not optional. #}
+    {% include '_head_styles.html' %}
     <style>
         body { background: #ffffff; color: #000000; margin: 0; }
-        .wrap { max-width: 900px; margin: 0 auto; padding: 4rem 2rem; }
+        .wrap { max-width: 900px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
         h1 { font-size: 1.75rem; margin: 0 0 0.25rem; letter-spacing: -0.02em; }
         .sub { color: #6b6b6b; font-size: 0.875rem; margin: 0 0 2.5rem; }
 
@@ -54,6 +57,10 @@
     </style>
 </head>
 <body>
+{# The site's shared nav. Its data comes from the inject_nav context processor,
+   so no route change is needed. Including it here does NOT list /admin in it —
+   the admin page stays absent from _nav.html itself. #}
+{% include '_nav.html' %}
 <div class="wrap">
 {% if not authed %}
     <h1>Admin</h1>

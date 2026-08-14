@@ -132,6 +132,25 @@ def test_admin_is_not_counted_in_its_own_stats(client):
                    for p in analytics.summary()['top_paths'])
 
 
+def test_admin_shows_the_site_nav_when_signed_out(client):
+    # The nav needs inject_nav's data and _head_styles.html's CSS variables; a
+    # missing include shows up here as the nav's links being absent.
+    body = client.get('/admin').get_data(as_text=True)
+    assert 'Dropouts' in body and 'Versus' in body
+
+
+def test_admin_shows_the_site_nav_when_signed_in(client):
+    r = client.post('/admin', data={'password': 'hunter2'}, follow_redirects=True)
+    assert 'Dropouts' in r.get_data(as_text=True)
+
+
+def test_nav_does_not_link_to_admin(client):
+    # Adding the nav TO /admin must not add /admin to the nav — the page stays
+    # unlisted. The sign-out link is /admin/logout, so an exact match is used.
+    body = client.get('/top100').get_data(as_text=True)
+    assert 'href="/admin"' not in body
+
+
 def test_a_chart_page_is_counted(client):
     before = analytics.summary()['total_views']
     client.get('/top100')
