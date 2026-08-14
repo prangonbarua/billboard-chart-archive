@@ -1,0 +1,17 @@
+# `railway up` uploads this directory and HONORS this file, so anything listed
+# here is absent from the deployed image as well as the build context. That cuts
+# both ways: an earlier untracked .dockerignore listing two CSVs kept them out of
+# production while git showed them present, and the file — not git — was the gate.
+#
+# So: only paths the running app provably does not read belong here. Never add
+# anything under data/ — the Dockerfile's `COPY . .` is how the CSVs reach the
+# image, and the site serves them at runtime.
+
+# 260M of history. Nothing at runtime reads it; the only subprocess call in
+# app.py is commented out. Halves a ~542M upload that was timing out.
+.git
+
+.cache
+__pycache__/
+*.pyc
+.pytest_cache/
