@@ -71,20 +71,31 @@
            one column continues into the next one rather than starting a row
            below. Do not put `display: flex` back here. */
         display: block;
-        width: min(94vw, 1180px);
+        /* Sized to its own content, not to a fixed cap. The old 1180px cap was
+           the root of a long chain: six even columns landed at ~178px, labels
+           wrapped, so the columns were switched to natural width, which pushed
+           the row past the panel, which needed a wheel handler to reach the
+           overflow, which could not drive two scroll axes from one gesture. A
+           panel that grows to fit its columns ends the chain — there is no
+           sideways overflow left to reach.
+
+           max-content and not a fixed width because dropouts.html reuses this
+           panel with only three groups: a fixed six-column width would stretch
+           those three to ~450px each. The 3rem is the nav's own left padding
+           plus a matching gap on the right — the panel is anchored at left: 0,
+           so this is what keeps it on screen. */
+        width: max-content;
+        max-width: calc(100vw - 3rem);
         /* The cap and the columns are on DIFFERENT boxes on purpose. A
            multi-column box with a capped height does not scroll down — it lays
            out more columns to the right and overflows sideways. So the panel
            owns the cap and the scroll, and .nav-dd-flow inside it owns the
            columns, balancing to its own natural height. */
         max-height: 82vh;
+        /* Vertical only. The columns are 1fr, so the row can never be wider
+           than the panel and there is nothing to scroll sideways to. Do not add
+           overflow-x back without also giving the wheel a way to reach it. */
         overflow-y: auto;
-        /* The row of columns is wider than the panel now that columns keep
-           their natural width, so it scrolls sideways. The wheel handler at the
-           bottom of this file is what makes that reachable — a trackpad's
-           vertical scroll would otherwise do nothing here. */
-        overflow-x: auto;
-        overscroll-behavior-x: contain;
         padding: 0.75rem 1rem;
         background: var(--bg);
         border: 1px solid var(--border);
@@ -106,15 +117,29 @@
     .nav-dd-flow {
         display: grid;
         grid-auto-flow: column;
-        /* Natural width per column, not an even share: squeezing seven
-           groups into the panel is what forced the labels to wrap. They keep
-           their own width and the panel scrolls horizontally instead. */
-        grid-auto-columns: minmax(180px, max-content);
+        /* Every column the SAME width. Under the panel's max-content sizing all
+           the fr tracks resolve to the widest column's contribution — currently
+           'The Official U.K. Singles Chart' at ~211px — so no name wraps and the
+           headings line up on an even grid instead of each column setting its
+           own width.
+
+           minmax(0, ...) rather than a fixed 225px on purpose: once the viewport
+           is too narrow for the whole row, the columns give width back and a few
+           long names wrap. Wrapping on a small screen is the acceptable failure
+           here; a row wider than the panel is not, because reaching it is what
+           needed the wheel hijack. */
+        grid-auto-columns: minmax(0, 1fr);
         gap: 1rem;
         align-items: start;
     }
 
-    .nav-dd-group { display: block; }
+    /* A floor, not the real column width — the fr tracks above normally settle
+       at the widest label (~211px). This only matters if the panel's max-content
+       sizing ever resolves those tracks small; without it the panel would
+       collapse onto its 460px min-width and every column would be unreadable.
+       180px is the width the columns used to have, so the floor is never worse
+       than what shipped before. */
+    .nav-dd-group { display: block; min-width: 180px; }
     .nav-dd-label {
         font-size: 0.6875rem;
         font-weight: 600;
@@ -129,14 +154,17 @@
            uneven in the first place. */
         white-space: nowrap;
     }
-    /* The links WRAP now. Six even columns are about 180px wide and the longest
-       chart names run past 200px, so nowrap would push them into the next
-       column. The indent on a wrapped line keeps the second line reading as a
+    /* At the full panel width nothing wraps — the columns are wider than the
+       longest name. Wrapping is kept as the small-screen fallback: nowrap would
+       spill a long name into the next column once the columns start shrinking.
+       The indent on a wrapped line keeps the second line reading as a
        continuation rather than as another chart. */
     .nav-dd-group a {
         display: block;
         padding: 0.1875rem 0.5rem;
-        white-space: nowrap;
+        white-space: normal;
+        text-indent: -0.5rem;
+        padding-left: 1rem;
     }
 
     @media (max-width: 640px) {
@@ -145,13 +173,17 @@
             left: 0.75rem;
             right: 0.75rem;
             min-width: 0;
-            /* left+right pin the width here; the desktop width would override
-               them and push the panel off the right edge again. */
+            /* left+right pin the width here; the desktop width and its
+               max-content max-width would both fight them and push the panel
+               off the right edge again. */
             width: auto;
+            max-width: none;
             max-height: 70vh;
         }
         /* Stack the groups on a phone; the panel above already scrolls. */
         .nav-dd-flow { grid-auto-flow: row; gap: 0.75rem; }
+        /* The desktop floor is wider than a phone; let the stack fit instead. */
+        .nav-dd-group { min-width: 0; }
     }
 </style>
 
@@ -211,27 +243,3 @@
     <a href="{{ url_for('search') }}"
        class="{{ 'active' if request.endpoint == 'search' else '' }}">Reports</a>
 </nav>
-<script>
-// Turn a vertical wheel/trackpad gesture into horizontal scrolling inside the
-// chart panel. Delegated because dropouts.html builds a second panel further
-// down the page that does not exist when this runs. passive: false so
-// preventDefault sticks — without it the page scrolls behind the open panel.
-document.addEventListener('wheel', function (e) {
-    var panel = e.target.closest('.nav-dd-panel');
-    if (!panel || panel.scrollWidth <= panel.clientWidth) return;
-    // A real horizontal gesture is already going the right way; leave it alone.
-    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-    // Vertical scrolling wins while there is any left — hijacking it outright
-    // is what made the panel feel stuck: the tall column could not be reached.
-    var vRoom = panel.scrollHeight - panel.clientHeight;
-    if (vRoom > 1) {
-        var down = e.deltaY > 0;
-        if ((down && panel.scrollTop < vRoom - 1) || (!down && panel.scrollTop > 1)) return;
-    }
-    var before = panel.scrollLeft;
-    panel.scrollLeft += e.deltaY;
-    // Only swallow the event if it actually moved, so the panel does not trap
-    // the wheel once it is scrolled to either end.
-    if (panel.scrollLeft !== before) e.preventDefault();
-}, {passive: false});
-</script>
