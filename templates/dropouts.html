@@ -72,9 +72,12 @@
         <details class="nav-dd">
             <summary>{{ report.label }} <span class="chev">&#9660;</span></summary>
             <div class="nav-dd-panel">
+              {# The .nav-dd-flow wrapper is what carries the column layout —
+                 without it these groups stack into one tall single column. #}
+              <div class="nav-dd-flow">
                 {% for group in ['Songs', 'Airplay', 'Albums & Artists'] %}
                     {% if charts.get(group) %}
-                    <div class="nav-dd-group">
+                    <div class="nav-dd-group{{ ' nav-dd-group-small' if charts[group]|length <= 6 else '' }}">
                         <div class="nav-dd-label">{{ 'Albums' if group == 'Albums & Artists' else group }}</div>
                         {% for c in charts[group] %}
                             <a href="{{ url_for('dropouts_page', chart=c.key) }}"
@@ -83,6 +86,7 @@
                     </div>
                     {% endif %}
                 {% endfor %}
+              </div>
             </div>
         </details>
 

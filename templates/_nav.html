@@ -63,33 +63,22 @@
         top: calc(100% + 0.375rem);
         left: 0;
         min-width: 460px;
-        /* Six groups totalling 94 charts no longer fit on one row at any
-           sensible column width, so the panel wraps and is capped just inside
-           the viewport. Without the cap the last group is simply unreachable —
-           it renders past the right edge with nothing to scroll. */
-        max-width: min(94vw, 1180px);
-        flex-wrap: wrap;
-        /* width, not just max-width: the panel is absolutely positioned inside
-           .nav-dd, whose box is only as wide as the summary button, so its
-           shrink-to-fit width had nothing to fill and a WRAPPING flex container
-           collapses to its widest single group — a tall narrow stack. Asking
-           for max-content makes it want one row of every group and the
-           max-width above clamps that to the viewport, so it wraps at full
-           width instead. Groups with little content (dropouts' 3-group picker)
-           still size to themselves, since max-content is a request, not a
-           floor. */
-        width: max-content;
-        /* Two full-width rows are short enough to fit, but keep a cap so a
-           narrower window scrolls instead of running the last group off the
-           bottom of the screen where nothing can reach it. */
+        /* ONE newspaper flow, not one flex column per group. Six groups and 119
+           links cannot sit side by side as whole columns at any width a screen
+           has — that layout is what pushed Hits of the World onto a second row
+           underneath everything else. Flowing the groups through balanced
+           columns keeps every chart inside the same block: a group too long for
+           one column continues into the next one rather than starting a row
+           below. Do not put `display: flex` back here. */
+        display: block;
+        width: min(94vw, 1180px);
+        /* The cap and the columns are on DIFFERENT boxes on purpose. A
+           multi-column box with a capped height does not scroll down — it lays
+           out more columns to the right and overflows sideways. So the panel
+           owns the cap and the scroll, and .nav-dd-flow inside it owns the
+           columns, balancing to its own natural height. */
         max-height: 82vh;
         overflow-y: auto;
-        display: flex;
-        /* Each column is as wide as its longest link, so a short entry beside a
-           long one already leaves a ragged edge — worst where Airplay's
-           'Mainstream R&B/Hip-Hop' meets the two-item Albums & Artists column.
-           1rem keeps the columns legibly apart without adding to that. */
-        gap: 1rem;
         padding: 0.75rem 1rem;
         background: var(--bg);
         border: 1px solid var(--border);
@@ -97,11 +86,19 @@
         box-shadow: 0 8px 28px rgba(0, 0, 0, 0.10);
         z-index: 200;
     }
-    /* No min-width: every group but Albums & Artists has links wider than any
-       floor worth setting, so a floor only ever padded that one column with
-       dead space and left a visibly wider gap before Year-End. Columns size to
-       their own content and the flex gap does the spacing. */
-    .nav-dd-group { display: flex; flex-direction: column; gap: 0; }
+    /* Wide enough for the longest label — 'The Official U.K. Singles Chart' is
+       about 214px at this size — plus its 0.5rem of side padding. The links are
+       nowrap, so a narrower column would spill them into the gap. The browser
+       fits as many columns as the width allows, which is what keeps this
+       working as the chart count grows. */
+    .nav-dd-flow { column-width: 230px; column-gap: 1rem; }
+
+    /* display: block, NOT flex — a flex container is monolithic to the column
+       flow above, so a 38-chart group would refuse to split and force every
+       column as tall as itself. As a block its links fragment one row at a
+       time. The margin is what separates one group from the next now that
+       there is no flex gap. */
+    .nav-dd-group { display: block; margin-bottom: 0.75rem; }
     .nav-dd-label {
         font-size: 0.6875rem;
         font-weight: 600;
@@ -115,52 +112,38 @@
            that way: a heading longer than its links is what made the spacing
            uneven in the first place. */
         white-space: nowrap;
+        /* A heading is never left stranded at the foot of a column with its
+           charts in the next one. */
+        break-after: avoid;
     }
-    .nav-dd-group a { padding: 0.1875rem 0.5rem; white-space: nowrap; }
-
-    /* Year-End lists 18 charts against 10 in the longest weekly group, so it
-       runs in two balanced columns instead of making the panel twice as tall
-       as the rest of it. column-count balances itself, which matters because
-       the count is data-driven — it changes the day a chart gains an edition. */
-    .nav-dd-group-yearend { min-width: 280px; }
-    .nav-dd-cols { column-count: 2; column-gap: 0.75rem; }
-    .nav-dd-cols a { display: block; break-inside: avoid; }
-
-    /* Hits of the World is 38 charts — half again as many as Year-End — so it
-       takes three columns rather than two. At two it ran 19 rows deep and put
-       the panel back over the viewport height that the tighter row spacing
-       above was added to fix. */
-    .nav-dd-group-hotw { min-width: 300px; }
-    .nav-dd-group-hotw .nav-dd-cols { column-count: 3; }
-
-    /* Albums, International and Hits of the World stack into one flex item so
-       the short two live above the wide one instead of beside it. The gap
-       matches the panel's own so the vertical rhythm between groups reads the
-       same as the horizontal one. align-items: start keeps each group's width
-       its own — stretched, Albums' two links would sit under a box as wide as
-       Hits of the World and its heading would float away from them. */
-    .nav-dd-stack {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
+    .nav-dd-group a {
+        display: block;
+        padding: 0.1875rem 0.5rem;
+        white-space: nowrap;
+        break-inside: avoid;
     }
+
+    /* Only the SHORT groups are held together. Applied to all of them, an
+       unbreakable 38-chart group would set the height of every column and the
+       panel would be as tall as the flow was supposed to stop it being — so
+       the long ones split and the two- or three-link ones, which look broken
+       when split, do not. The class is driven by the chart count, not by name,
+       so a group that grows past the threshold starts splitting on its own. */
+    .nav-dd-group-small { break-inside: avoid; }
 
     @media (max-width: 640px) {
-        .nav-dd-cols { column-count: 1; }
         .nav-dd-panel {
             position: fixed;
             left: 0.75rem;
             right: 0.75rem;
             min-width: 0;
-            /* left+right pin the width here; max-content would override them
-               and push the panel off the right edge again. */
+            /* left+right pin the width here; the desktop width would override
+               them and push the panel off the right edge again. */
             width: auto;
-            flex-direction: column;
-            gap: 0.75rem;
             max-height: 70vh;
-            overflow-y: auto;
         }
+        /* One column on a phone; the panel above already scrolls. */
+        .nav-dd-flow { column-width: auto; column-count: 1; }
     }
 </style>
 
@@ -175,54 +158,44 @@
             {{ nav_charts[request.endpoint].label if request.endpoint in nav_charts else 'Charts' }}{% if nav_is_yearend %} &middot; Year-End{% endif %}
             <span class="chev">&#9660;</span>
         </summary>
-        {# One group renders the same whether it sits in the panel's top row or
-           inside the stacked column, so it is a macro rather than two copies of
-           the markup. nav_is_yearend is passed in, not read from the context,
-           so the macro doesn't depend on where it is called from. #}
+        {# Every group renders identically now that the panel is one column flow,
+           so it is a macro rather than repeated markup. nav_is_yearend is passed
+           in, not read from the context, so the macro doesn't depend on where it
+           is called from. #}
         {% macro nav_group(group, is_yearend_view) %}
             {% if nav_groups.get(group) %}
-            {# Hits of the World alone is big enough to need the Year-End
-               column treatment; the rest are single columns. #}
-            {% set is_hotw = group == 'Hits of the World' %}
-            <div class="nav-dd-group{{ ' nav-dd-group-hotw' if is_hotw else '' }}">
+            {# Six charts is the point where splitting a group across a column
+               break stops looking like a mistake. #}
+            <div class="nav-dd-group{{ ' nav-dd-group-small' if nav_groups[group]|length <= 6 else '' }}">
                 {# Shown as 'Albums' because the full name is wider than
                    both links under it, and a heading wider than its column
                    either pads the column out or spills into the gap —
                    either way the spacing stops matching the other groups. #}
                 <div class="nav-dd-label">{{ 'Albums' if group == 'Albums & Artists' else group }}</div>
-                {% if is_hotw %}<div class="nav-dd-cols">{% endif %}
                 {% for c in nav_groups[group] %}
                     <a href="{{ url_for(c.key) }}"
                        class="{{ 'active' if request.endpoint == c.key and not is_yearend_view else '' }}">{{ c.label }}</a>
                 {% endfor %}
-                {% if is_hotw %}</div>{% endif %}
             </div>
             {% endif %}
         {% endmacro %}
         <div class="nav-dd-panel">
+          <div class="nav-dd-flow">
             {{ nav_group('Songs', nav_is_yearend) }}
             {{ nav_group('Airplay', nav_is_yearend) }}
-            {# Albums and International are 3 and 5 charts against Airplay's 21,
-               so as siblings in the flex row they left a column of dead space
-               that ran the height of the panel. Stacked, the three of them
-               together are about one Airplay tall and Hits of the World fills
-               that space instead of wrapping onto a row of its own. #}
-            <div class="nav-dd-stack">
-                {{ nav_group('Albums & Artists', nav_is_yearend) }}
-                {{ nav_group('International', nav_is_yearend) }}
-                {{ nav_group('Hits of the World', nav_is_yearend) }}
-            </div>
+            {{ nav_group('Albums & Artists', nav_is_yearend) }}
+            {{ nav_group('International', nav_is_yearend) }}
+            {{ nav_group('Hits of the World', nav_is_yearend) }}
             {% if nav_yearend %}
-            <div class="nav-dd-group nav-dd-group-yearend">
+            <div class="nav-dd-group">
                 <div class="nav-dd-label">Year-End</div>
-                <div class="nav-dd-cols">
-                    {% for c in nav_yearend %}
-                        <a href="{{ url_for(c.key, view='yearend') }}"
-                           class="{{ 'active' if request.endpoint == c.key and nav_is_yearend else '' }}">{{ c.label }}</a>
-                    {% endfor %}
-                </div>
+                {% for c in nav_yearend %}
+                    <a href="{{ url_for(c.key, view='yearend') }}"
+                       class="{{ 'active' if request.endpoint == c.key and nav_is_yearend else '' }}">{{ c.label }}</a>
+                {% endfor %}
             </div>
             {% endif %}
+          </div>
         </div>
     </details>
     <a href="{{ url_for('versus_page') }}"
