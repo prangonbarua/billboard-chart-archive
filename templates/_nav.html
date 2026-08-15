@@ -86,19 +86,26 @@
         box-shadow: 0 8px 28px rgba(0, 0, 0, 0.10);
         z-index: 200;
     }
-    /* Wide enough for the longest label — 'The Official U.K. Singles Chart' is
-       about 214px at this size — plus its 0.5rem of side padding. The links are
-       nowrap, so a narrower column would spill them into the gap. The browser
-       fits as many columns as the width allows, which is what keeps this
-       working as the chart count grows. */
-    .nav-dd-flow { column-width: 230px; column-gap: 1rem; }
+    /* One group per column, so every heading sits on the same line. A column
+       flow was tried instead and rejected: it packs tighter, but a group starts
+       wherever the previous one ran out of column, which scatters the headings
+       down the panel.
 
-    /* display: block, NOT flex — a flex container is monolithic to the column
-       flow above, so a 38-chart group would refuse to split and force every
-       column as tall as itself. As a block its links fragment one row at a
-       time. The margin is what separates one group from the next now that
-       there is no flex gap. */
-    .nav-dd-group { display: block; margin-bottom: 0.75rem; }
+       grid-auto-flow: column puts every group in ONE row — grid does not wrap,
+       which is the point: nothing can end up in a second row underneath. The
+       columns share the width evenly (1fr), so adding a group narrows them all
+       rather than pushing one out of the panel. minmax(0, ...) lets a column go
+       narrower than its longest label, which is what stops a long chart name
+       from widening the panel past the viewport. */
+    .nav-dd-flow {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
+        gap: 1rem;
+        align-items: start;
+    }
+
+    .nav-dd-group { display: block; }
     .nav-dd-label {
         font-size: 0.6875rem;
         font-weight: 600;
@@ -112,24 +119,18 @@
            that way: a heading longer than its links is what made the spacing
            uneven in the first place. */
         white-space: nowrap;
-        /* A heading is never left stranded at the foot of a column with its
-           charts in the next one. */
-        break-after: avoid;
     }
+    /* The links WRAP now. Six even columns are about 180px wide and the longest
+       chart names run past 200px, so nowrap would push them into the next
+       column. The indent on a wrapped line keeps the second line reading as a
+       continuation rather than as another chart. */
     .nav-dd-group a {
         display: block;
         padding: 0.1875rem 0.5rem;
-        white-space: nowrap;
-        break-inside: avoid;
+        white-space: normal;
+        text-indent: -0.5rem;
+        padding-left: 1rem;
     }
-
-    /* Only the SHORT groups are held together. Applied to all of them, an
-       unbreakable 38-chart group would set the height of every column and the
-       panel would be as tall as the flow was supposed to stop it being — so
-       the long ones split and the two- or three-link ones, which look broken
-       when split, do not. The class is driven by the chart count, not by name,
-       so a group that grows past the threshold starts splitting on its own. */
-    .nav-dd-group-small { break-inside: avoid; }
 
     @media (max-width: 640px) {
         .nav-dd-panel {
@@ -142,8 +143,8 @@
             width: auto;
             max-height: 70vh;
         }
-        /* One column on a phone; the panel above already scrolls. */
-        .nav-dd-flow { column-width: auto; column-count: 1; }
+        /* Stack the groups on a phone; the panel above already scrolls. */
+        .nav-dd-flow { grid-auto-flow: row; gap: 0.75rem; }
     }
 </style>
 
@@ -164,9 +165,7 @@
            is called from. #}
         {% macro nav_group(group, is_yearend_view) %}
             {% if nav_groups.get(group) %}
-            {# Six charts is the point where splitting a group across a column
-               break stops looking like a mistake. #}
-            <div class="nav-dd-group{{ ' nav-dd-group-small' if nav_groups[group]|length <= 6 else '' }}">
+            <div class="nav-dd-group">
                 {# Shown as 'Albums' because the full name is wider than
                    both links under it, and a heading wider than its column
                    either pads the column out or spills into the gap —
