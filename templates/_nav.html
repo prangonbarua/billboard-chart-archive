@@ -221,6 +221,13 @@ document.addEventListener('wheel', function (e) {
     if (!panel || panel.scrollWidth <= panel.clientWidth) return;
     // A real horizontal gesture is already going the right way; leave it alone.
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    // Vertical scrolling wins while there is any left — hijacking it outright
+    // is what made the panel feel stuck: the tall column could not be reached.
+    var vRoom = panel.scrollHeight - panel.clientHeight;
+    if (vRoom > 1) {
+        var down = e.deltaY > 0;
+        if ((down && panel.scrollTop < vRoom - 1) || (!down && panel.scrollTop > 1)) return;
+    }
     var before = panel.scrollLeft;
     panel.scrollLeft += e.deltaY;
     // Only swallow the event if it actually moved, so the panel does not trap
