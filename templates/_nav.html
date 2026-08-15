@@ -133,13 +133,14 @@
         align-items: start;
     }
 
-    /* A floor, not the real column width — the fr tracks above normally settle
-       at the widest label (~211px). This only matters if the panel's max-content
-       sizing ever resolves those tracks small; without it the panel would
-       collapse onto its 460px min-width and every column would be unreadable.
-       180px is the width the columns used to have, so the floor is never worse
-       than what shipped before. */
-    .nav-dd-group { display: block; min-width: 180px; }
+    /* NO min-width here. A 180px floor was tried as a fallback against the fr
+       tracks resolving small, and it set a hard ~1192px minimum on the panel
+       (6 x 180 + gaps + padding). Once the viewport was narrower than that the
+       panel could no longer shrink to its max-width, so it overflowed the
+       viewport and scrolled THE PAGE sideways — the whole chart moved, not the
+       menu. The fr tracks settle at the widest label on their own; let them
+       shrink when there is no room. */
+    .nav-dd-group { display: block; min-width: 0; }
     .nav-dd-label {
         font-size: 0.6875rem;
         font-weight: 600;
