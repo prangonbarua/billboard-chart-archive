@@ -376,15 +376,15 @@ CHARTS = {
     'dance_sales':   dict(label='Dance Singles Sales', group='Songs', depth=25, kind='song'),
     'bubbling':      dict(label='Bubbling Under Hot 100', group='Songs', depth=25, kind='song'),
     'canadian_hot100': dict(label='Canadian Hot 100', group='Songs', depth=100, kind='song'),
-    'dance_electronic': dict(label='Hot Dance/Electronic Songs', group='Songs', depth=25, kind='song'),
+    'dance_electronic': dict(label='Hot Dance/Electronic Songs', group='Genre Songs', depth=25, kind='song'),
     'japan_hot100':     dict(label='Billboard Japan Hot 100', group='Songs', depth=25, kind='song'),
     'uk_songs':         dict(label='The Official U.K. Singles Chart', group='Songs', depth=20, kind='song'),
-    'rock_songs':       dict(label='Hot Rock & Alternative Songs', group='Songs', depth=50, kind='song'),
-    'gospel':           dict(label='Hot Gospel Songs', group='Songs', depth=25, kind='song'),
-    'christian':        dict(label='Hot Christian Songs', group='Songs', depth=50, kind='song'),
-    'country_songs':    dict(label='Hot Country Songs', group='Songs', depth=50, kind='song'),
-    'rnb_songs':        dict(label='Hot R&B/Hip-Hop Songs', group='Songs', depth=50, kind='song'),
-    'latin_songs':      dict(label='Hot Latin Songs', group='Songs', depth=50, kind='song'),
+    'rock_songs':       dict(label='Hot Rock & Alternative Songs', group='Genre Songs', depth=50, kind='song'),
+    'gospel':           dict(label='Hot Gospel Songs', group='Genre Songs', depth=25, kind='song'),
+    'christian':        dict(label='Hot Christian Songs', group='Genre Songs', depth=50, kind='song'),
+    'country_songs':    dict(label='Hot Country Songs', group='Genre Songs', depth=50, kind='song'),
+    'rnb_songs':        dict(label='Hot R&B/Hip-Hop Songs', group='Genre Songs', depth=50, kind='song'),
+    'latin_songs':      dict(label='Hot Latin Songs', group='Genre Songs', depth=50, kind='song'),
 
     'albums200':   dict(label='Billboard 200™', group='Albums & Artists', depth=200, kind='album'),
     'artist100':   dict(label='Artist 100',       group='Albums & Artists', depth=100, kind='artist'),
@@ -465,7 +465,7 @@ BATCH_CHARTS = {
     # Hot Hard Rock Songs is a much younger chart than the albums one: its
     # archive begins 2020-06-13 and every earlier date clamps to that week, so
     # it carries ~320 weeks against the albums chart's ~995 from 2007.
-    'hard_rock_songs':    ('Hot Hard Rock Songs',     'Songs', 25, 'song', 'hard_rock_songs.csv'),
+    'hard_rock_songs':    ('Hot Hard Rock Songs',     'Genre Songs', 25, 'song', 'hard_rock_songs.csv'),
 
     'argentina_hot100':   ('Billboard Argentina Hot 100',   'International', 25, 'song', 'argentina_hot100.csv'),
     'brasil_hot100':      ('Billboard Brasil Hot 100',      'International', 25, 'song', 'brasil_hot100.csv'),
@@ -586,6 +586,11 @@ def available_charts():
         if df is None or not len(df):
             continue
         groups.setdefault(meta['group'], []).append(dict(meta, key=key))
+    # Alphabetical inside each group. Registry order is the order charts were
+    # added over months, which reads as no order at all once a group runs past
+    # a dozen entries — the nav is the only place that order is seen.
+    for _entries in groups.values():
+        _entries.sort(key=lambda c: c['label'].lower())
     return groups
 
 def yearend_charts():
