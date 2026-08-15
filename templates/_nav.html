@@ -81,11 +81,25 @@
 
            max-content and not a fixed width because dropouts.html reuses this
            panel with only three groups: a fixed six-column width would stretch
-           those three to ~450px each. The 3rem is the nav's own left padding
-           plus a matching gap on the right — the panel is anchored at left: 0,
-           so this is what keeps it on screen. */
+           those three to ~450px each.
+
+           WHAT THE CAP IS MEASURED FROM is the part three separate fixes got
+           wrong. They all tuned how wide the panel wants to be; none of them
+           checked where it starts. paxel.css insets <body> by --page-inset on
+           each side for the dithered rails (200px at >=1100px), so the panel's
+           left edge is a rail plus the nav's 1.5rem padding in from the
+           viewport — not 1.5rem. Budgeting `100vw - 3rem` from a left edge
+           224px in put the right edge at 100vw + 176px on EVERY desktop
+           window. The panel is abspos and nothing above it clips, so that
+           overflow does not scroll the panel, it scrolls the whole page
+           sideways: the reported bug, and the reason it never reproduced under
+           1100px, where there are no rails. Subtract both rails (the left one
+           moves the panel in, the right one it must stop before) plus the
+           nav's padding on each side. Read the inset from the variable, never
+           a literal — the two numbers live in different files and have to
+           agree. tests/test_nav_panel_width.py holds them together. */
         width: max-content;
-        max-width: calc(100vw - 3rem);
+        max-width: calc(100vw - 2 * var(--page-inset, 0px) - 3rem);
         /* The cap and the columns are on DIFFERENT boxes on purpose. A
            multi-column box with a capped height does not scroll down — it lays
            out more columns to the right and overflows sideways. So the panel
