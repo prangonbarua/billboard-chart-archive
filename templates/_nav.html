@@ -79,6 +79,12 @@
            columns, balancing to its own natural height. */
         max-height: 82vh;
         overflow-y: auto;
+        /* The row of columns is wider than the panel now that columns keep
+           their natural width, so it scrolls sideways. The wheel handler at the
+           bottom of this file is what makes that reachable — a trackpad's
+           vertical scroll would otherwise do nothing here. */
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
         padding: 0.75rem 1rem;
         background: var(--bg);
         border: 1px solid var(--border);
@@ -100,7 +106,10 @@
     .nav-dd-flow {
         display: grid;
         grid-auto-flow: column;
-        grid-auto-columns: minmax(0, 1fr);
+        /* Natural width per column, not an even share: squeezing seven
+           groups into the panel is what forced the labels to wrap. They keep
+           their own width and the panel scrolls horizontally instead. */
+        grid-auto-columns: minmax(180px, max-content);
         gap: 1rem;
         align-items: start;
     }
@@ -127,9 +136,7 @@
     .nav-dd-group a {
         display: block;
         padding: 0.1875rem 0.5rem;
-        white-space: normal;
-        text-indent: -0.5rem;
-        padding-left: 1rem;
+        white-space: nowrap;
     }
 
     @media (max-width: 640px) {
@@ -204,3 +211,20 @@
     <a href="{{ url_for('search') }}"
        class="{{ 'active' if request.endpoint == 'search' else '' }}">Reports</a>
 </nav>
+<script>
+// Turn a vertical wheel/trackpad gesture into horizontal scrolling inside the
+// chart panel. Delegated because dropouts.html builds a second panel further
+// down the page that does not exist when this runs. passive: false so
+// preventDefault sticks — without it the page scrolls behind the open panel.
+document.addEventListener('wheel', function (e) {
+    var panel = e.target.closest('.nav-dd-panel');
+    if (!panel || panel.scrollWidth <= panel.clientWidth) return;
+    // A real horizontal gesture is already going the right way; leave it alone.
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    var before = panel.scrollLeft;
+    panel.scrollLeft += e.deltaY;
+    // Only swallow the event if it actually moved, so the panel does not trap
+    // the wheel once it is scrolled to either end.
+    if (panel.scrollLeft !== before) e.preventDefault();
+}, {passive: false});
+</script>
