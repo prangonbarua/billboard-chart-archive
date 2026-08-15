@@ -102,9 +102,19 @@
            moves the panel in, the right one it must stop before) plus the
            nav's padding on each side. Read the inset from the variable, never
            a literal — the two numbers live in different files and have to
-           agree. tests/test_nav_panel_width.py holds them together. */
+           agree. tests/test_nav_panel_width.py holds them together.
+
+           ONE inset, not two. The left one is mandatory: it moved the panel's
+           start to 224px and not subtracting it is the overflow bug. The right
+           one is not, and reserving it cost 200px of column width for nothing —
+           the rails are decorative, pointer-events: none, and sit at z-index 1
+           under .nav's z-index 100, so the panel already paints over them. It
+           is opaque, so it covers the rail cleanly while open. What must stay
+           subtracted on the right is a real gutter, hence the 3rem: 1.5rem for
+           the nav padding the panel starts at, 1.5rem to keep its right edge
+           off the viewport edge and clear of the scrollbar. */
         width: max-content;
-        max-width: calc(100vw - 2 * var(--page-inset, 0px) - 3rem);
+        max-width: calc(100vw - var(--page-inset, 0px) - 3rem);
         /* The cap and the columns are on DIFFERENT boxes on purpose. A
            multi-column box with a capped height does not scroll down — it lays
            out more columns to the right and overflows sideways. So the panel
@@ -136,18 +146,26 @@
     .nav-dd-flow {
         display: grid;
         grid-auto-flow: column;
-        /* Every column the SAME width. Under the panel's max-content sizing all
-           the fr tracks resolve to the widest column's contribution — currently
-           'The Official U.K. Singles Chart' at ~211px — so no name wraps and the
-           headings line up on an even grid instead of each column setting its
-           own width.
+        /* Each column as wide as its OWN longest name, not an equal share.
+           Equal shares (1fr) only avoid wrapping while the panel is sized to
+           max-content; once the viewport caps it, every column is averaged to
+           the same width and the ones with long names wrap while Albums sits on
+           three short labels holding width it does not need. Content sizing
+           spends the width where the names are: Albums settles near 130px and
+           gives ~100px back to Songs and Year-End, which is what stops
+           'Bubbling Under Hot 100' and 'Hot Rock & Alternative Songs' breaking
+           over two lines.
 
-           minmax(0, ...) rather than a fixed 225px on purpose: once the viewport
-           is too narrow for the whole row, the columns give width back and a few
-           long names wrap. Wrapping on a small screen is the acceptable failure
-           here; a row wider than the panel is not, because reaching it is what
-           needed the wheel hijack. */
-        grid-auto-columns: minmax(0, 1fr);
+           The headings still line up — they are the first row of the grid, so
+           they share a baseline regardless of how wide each column is. Uneven
+           WIDTHS were never the objection; headings landing at scattered
+           HEIGHTS was, and that was the column-flow layout, not this.
+
+           minmax(0, ...) keeps the shrink path: below the width the full row
+           needs, tracks give width back and a few long names wrap. Wrapping on
+           a narrow window is the acceptable failure; a row wider than the panel
+           is not, because reaching it is what needed the wheel hijack. */
+        grid-auto-columns: minmax(0, max-content);
         gap: 1rem;
         align-items: start;
     }

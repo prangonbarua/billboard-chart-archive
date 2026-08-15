@@ -70,20 +70,18 @@ def test_page_inset_defaults_to_zero_below_the_rail_breakpoint():
     )
 
 
-def test_panel_max_width_subtracts_both_rails():
-    """The panel's budget must account for the rail on BOTH sides.
+def test_panel_max_width_accounts_for_the_left_rail():
+    """The left rail is what moves the panel's start, so it must be subtracted.
 
-    Left rail, because it pushes the panel's left edge inward; right rail,
-    because the panel must stop before it.
+    Only the left one. The right rail is decorative and sits under the panel,
+    so reserving it just costs column width — see the panel's own comment. The
+    right edge is still checked against the viewport below, which is the
+    property that actually matters.
     """
-    panel = _rule(NAV, '.nav-dd-panel')
-    max_width = _decl(panel, 'max-width')
+    max_width = _decl(_rule(NAV, '.nav-dd-panel'), 'max-width')
     assert 'var(--page-inset' in max_width, (
         'panel max-width does not reference --page-inset, so it is budgeting '
         f'from the raw viewport edge again: {max_width!r}'
-    )
-    assert re.search(r'2\s*\*\s*var\(--page-inset', max_width), (
-        f'panel max-width must subtract the inset twice, once per rail: {max_width!r}'
     )
 
 
