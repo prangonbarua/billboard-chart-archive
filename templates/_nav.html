@@ -133,6 +133,19 @@
     .nav-dd-group-hotw { min-width: 300px; }
     .nav-dd-group-hotw .nav-dd-cols { column-count: 3; }
 
+    /* Albums, International and Hits of the World stack into one flex item so
+       the short two live above the wide one instead of beside it. The gap
+       matches the panel's own so the vertical rhythm between groups reads the
+       same as the horizontal one. align-items: start keeps each group's width
+       its own — stretched, Albums' two links would sit under a box as wide as
+       Hits of the World and its heading would float away from them. */
+    .nav-dd-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
     @media (max-width: 640px) {
         .nav-dd-cols { column-count: 1; }
         .nav-dd-panel {
@@ -162,27 +175,43 @@
             {{ nav_charts[request.endpoint].label if request.endpoint in nav_charts else 'Charts' }}{% if nav_is_yearend %} &middot; Year-End{% endif %}
             <span class="chev">&#9660;</span>
         </summary>
+        {# One group renders the same whether it sits in the panel's top row or
+           inside the stacked column, so it is a macro rather than two copies of
+           the markup. nav_is_yearend is passed in, not read from the context,
+           so the macro doesn't depend on where it is called from. #}
+        {% macro nav_group(group, is_yearend_view) %}
+            {% if nav_groups.get(group) %}
+            {# Hits of the World alone is big enough to need the Year-End
+               column treatment; the rest are single columns. #}
+            {% set is_hotw = group == 'Hits of the World' %}
+            <div class="nav-dd-group{{ ' nav-dd-group-hotw' if is_hotw else '' }}">
+                {# Shown as 'Albums' because the full name is wider than
+                   both links under it, and a heading wider than its column
+                   either pads the column out or spills into the gap —
+                   either way the spacing stops matching the other groups. #}
+                <div class="nav-dd-label">{{ 'Albums' if group == 'Albums & Artists' else group }}</div>
+                {% if is_hotw %}<div class="nav-dd-cols">{% endif %}
+                {% for c in nav_groups[group] %}
+                    <a href="{{ url_for(c.key) }}"
+                       class="{{ 'active' if request.endpoint == c.key and not is_yearend_view else '' }}">{{ c.label }}</a>
+                {% endfor %}
+                {% if is_hotw %}</div>{% endif %}
+            </div>
+            {% endif %}
+        {% endmacro %}
         <div class="nav-dd-panel">
-            {% for group in ['Songs', 'Airplay', 'Albums & Artists', 'International', 'Hits of the World'] %}
-                {% if nav_groups.get(group) %}
-                {# Hits of the World alone is big enough to need the Year-End
-                   column treatment; the rest are single columns. #}
-                {% set is_hotw = group == 'Hits of the World' %}
-                <div class="nav-dd-group{{ ' nav-dd-group-hotw' if is_hotw else '' }}">
-                    {# Shown as 'Albums' because the full name is wider than
-                       both links under it, and a heading wider than its column
-                       either pads the column out or spills into the gap —
-                       either way the spacing stops matching the other groups. #}
-                    <div class="nav-dd-label">{{ 'Albums' if group == 'Albums & Artists' else group }}</div>
-                    {% if is_hotw %}<div class="nav-dd-cols">{% endif %}
-                    {% for c in nav_groups[group] %}
-                        <a href="{{ url_for(c.key) }}"
-                           class="{{ 'active' if request.endpoint == c.key and not nav_is_yearend else '' }}">{{ c.label }}</a>
-                    {% endfor %}
-                    {% if is_hotw %}</div>{% endif %}
-                </div>
-                {% endif %}
-            {% endfor %}
+            {{ nav_group('Songs', nav_is_yearend) }}
+            {{ nav_group('Airplay', nav_is_yearend) }}
+            {# Albums and International are 3 and 5 charts against Airplay's 21,
+               so as siblings in the flex row they left a column of dead space
+               that ran the height of the panel. Stacked, the three of them
+               together are about one Airplay tall and Hits of the World fills
+               that space instead of wrapping onto a row of its own. #}
+            <div class="nav-dd-stack">
+                {{ nav_group('Albums & Artists', nav_is_yearend) }}
+                {{ nav_group('International', nav_is_yearend) }}
+                {{ nav_group('Hits of the World', nav_is_yearend) }}
+            </div>
             {% if nav_yearend %}
             <div class="nav-dd-group nav-dd-group-yearend">
                 <div class="nav-dd-label">Year-End</div>
