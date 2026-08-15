@@ -460,6 +460,12 @@ BATCH_CHARTS = {
     'latin_albums':       ('Top Latin Albums',        'Albums & Artists', 50, 'album', 'latin_albums.csv'),
     'canadian_albums':    ('Canadian Albums',         'Albums & Artists', 100, 'album', 'canadian_albums.csv'),
     'independent_albums': ('Independent Albums',      'Albums & Artists', 50, 'album', 'independent_albums.csv'),
+    'hard_rock_albums':   ('Hard Rock Albums',        'Albums & Artists', 25, 'album', 'hard_rock_albums.csv'),
+
+    # Hot Hard Rock Songs is a much younger chart than the albums one: its
+    # archive begins 2020-06-13 and every earlier date clamps to that week, so
+    # it carries ~320 weeks against the albums chart's ~995 from 2007.
+    'hard_rock_songs':    ('Hot Hard Rock Songs',     'Songs', 25, 'song', 'hard_rock_songs.csv'),
 
     'argentina_hot100':   ('Billboard Argentina Hot 100',   'International', 25, 'song', 'argentina_hot100.csv'),
     'brasil_hot100':      ('Billboard Brasil Hot 100',      'International', 25, 'song', 'brasil_hot100.csv'),

@@ -207,6 +207,16 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # in all 1117, measured across the completed CSVs. So these
                     # are modern depths and backfill floors at once.
                     'rock-songs': 50, 'gospel-songs': 25,
+                    # Both hard rock charts run 25 rows in every era measured —
+                    # albums at 2007, 2010, 2014, 2018, 2022 and its 2007-07-28
+                    # launch week, songs at 2020, 2021, 2023, 2025, 2026 — so 25
+                    # is modern depth and backfill floor at once. Measure depth
+                    # with THIS FILE'S parser, not by counting
+                    # 'o-chart-results-list-row' in the raw HTML: that string
+                    # appears twice per rank, so a hand probe reports exactly
+                    # double and sets the floor at 50, which rejects every week
+                    # of both charts.
+                    'hard-rock-albums': 25, 'hot-hard-rock-songs': 25,
                     # Adult Alternative's backfill is COMPLETE (1596 weeks), so
                     # the floor of 15 it needed is gone and this is back to its
                     # modern depth. The 15 was a backfill floor only: the chart
@@ -514,7 +524,9 @@ def main():
                         ('billboard-brasil-hot-100', 'brasil_hot100'),
                         ('billboard-italy-hot-100', 'italy_hot100'),
                         ('billboard-philippines-hot-100', 'philippines_hot100'),
-                        ('china-tme-uni-songs', 'china_tme')):
+                        ('china-tme-uni-songs', 'china_tme'),
+                        ('hard-rock-albums', 'hard_rock_albums'),
+                        ('hot-hard-rock-songs', 'hard_rock_songs')):
         update_chart_data(_slug, f'data/{_csv}.csv', weeks_to_fetch=15)
 
     for _country in ('australia', 'austria', 'belgium', 'bolivia', 'chile',
