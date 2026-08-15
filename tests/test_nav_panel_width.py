@@ -125,3 +125,17 @@ def test_open_panel_right_edge_stays_inside_the_viewport(viewport):
         f'{right_edge - viewport}px — the page scrolls sideways'
     )
 
+
+
+def test_panel_has_no_min_width_floor():
+    """A min-width floor outranks max-width and re-creates the overflow.
+
+    This has now happened twice (a 180px floor on .nav-dd-group, a 460px floor
+    here). Both times the panel could no longer shrink to its cap and pushed
+    the page sideways instead.
+    """
+    panel = _rule(NAV, '.nav-dd-panel')
+    assert not re.search(r'(?<![\w-])min-width\s*:\s*[1-9]', panel), (
+        'a min-width floor is back on .nav-dd-panel; min-width beats max-width, '
+        'so the panel can no longer shrink to fit the viewport'
+    )

@@ -62,7 +62,12 @@
         position: absolute;
         top: calc(100% + 0.375rem);
         left: 0;
-        min-width: 460px;
+        /* NO min-width. A floor outranks max-width, so the panel stops being
+           able to shrink to the cap above and pushes the page sideways again —
+           the same failure the 180px floor on .nav-dd-group caused. The 460px
+           one that used to sit here never bound, because the cap is wider than
+           it at every width the panel is drawn at; it was a loaded gun, not a
+           bug. The grid's fr tracks settle at the widest label on their own. */
         /* ONE newspaper flow, not one flex column per group. Six groups and 119
            links cannot sit side by side as whole columns at any width a screen
            has — that layout is what pushed Hits of the World onto a second row
@@ -187,7 +192,6 @@
             position: fixed;
             left: 0.75rem;
             right: 0.75rem;
-            min-width: 0;
             /* left+right pin the width here; the desktop width and its
                max-content max-width would both fight them and push the panel
                off the right edge again. */
@@ -197,8 +201,6 @@
         }
         /* Stack the groups on a phone; the panel above already scrolls. */
         .nav-dd-flow { grid-auto-flow: row; gap: 0.75rem; }
-        /* The desktop floor is wider than a phone; let the stack fit instead. */
-        .nav-dd-group { min-width: 0; }
     }
 </style>
 
