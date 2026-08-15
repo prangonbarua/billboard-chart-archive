@@ -69,10 +69,19 @@
            it renders past the right edge with nothing to scroll. */
         max-width: min(94vw, 1180px);
         flex-wrap: wrap;
-        /* Wrapping to a second row made the panel taller than the screen, and
-           the height cap only existed under 640px — so on a desktop the last
-           group ran off the bottom with no way to reach it. Cap and scroll at
-           every width; the mobile block below only narrows the columns now. */
+        /* width, not just max-width: the panel is absolutely positioned inside
+           .nav-dd, whose box is only as wide as the summary button, so its
+           shrink-to-fit width had nothing to fill and a WRAPPING flex container
+           collapses to its widest single group — a tall narrow stack. Asking
+           for max-content makes it want one row of every group and the
+           max-width above clamps that to the viewport, so it wraps at full
+           width instead. Groups with little content (dropouts' 3-group picker)
+           still size to themselves, since max-content is a request, not a
+           floor. */
+        width: max-content;
+        /* Two full-width rows are short enough to fit, but keep a cap so a
+           narrower window scrolls instead of running the last group off the
+           bottom of the screen where nothing can reach it. */
         max-height: 82vh;
         overflow-y: auto;
         display: flex;
@@ -131,6 +140,9 @@
             left: 0.75rem;
             right: 0.75rem;
             min-width: 0;
+            /* left+right pin the width here; max-content would override them
+               and push the panel off the right edge again. */
+            width: auto;
             flex-direction: column;
             gap: 0.75rem;
             max-height: 70vh;
