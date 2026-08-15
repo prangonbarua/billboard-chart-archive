@@ -69,6 +69,12 @@
            it renders past the right edge with nothing to scroll. */
         max-width: min(94vw, 1180px);
         flex-wrap: wrap;
+        /* Wrapping to a second row made the panel taller than the screen, and
+           the height cap only existed under 640px — so on a desktop the last
+           group ran off the bottom with no way to reach it. Cap and scroll at
+           every width; the mobile block below only narrows the columns now. */
+        max-height: 82vh;
+        overflow-y: auto;
         display: flex;
         /* Each column is as wide as its longest link, so a short entry beside a
            long one already leaves a ragged edge — worst where Airplay's
