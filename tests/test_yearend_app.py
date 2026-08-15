@@ -28,12 +28,34 @@ def test_years_match_the_frame(mod):
 
 
 def test_hot100_has_no_fabricated_years(mod):
+    """No stored Hot 100 year may repeat another year's ranking.
+
+    This used to assert that 1958-1969 and 1991-2005 were ABSENT. billboard.com
+    answers those URLs with 1970's and 2006's rankings, so the guard dropped
+    them and the chart began at 1970. They are now filled from Wikipedia's
+    transcription of the printed charts, each verified against that year's own
+    weekly Hot 100 data before being stored -- see
+    scripts/backfill_yearend_wikipedia.py.
+
+    So their absence is no longer the invariant; it was only ever a proxy for
+    one. What still has to hold is what that absence protected against: a
+    clamped copy IS a year that repeats another year's ranking, and two
+    orderings of a hundred songs do not coincide by accident. Asserting that
+    directly keeps the protection and no longer forbids the real years.
+    """
     if 'top100' not in mod.YEAREND_YEARS:
         pytest.skip('year-end data not loaded')
     years = set(mod.YEAREND_YEARS['top100'])
-    assert not (years & set(range(1991, 2006))), 'fabricated years present'
-    assert not (years & set(range(1958, 1970))), 'fabricated years present'
-    assert 2006 in years and 1970 in years
+    # Not a hardcoded end year: next year's chart must not fail this.
+    assert min(years) == 1958, 'Hot 100 year-end should start at 1958'
+    assert years == set(range(min(years), max(years) + 1)), 'year-end has gaps'
+
+    seen = {}
+    for year, rows in mod.YEAREND_DATA['top100'].groupby('Year'):
+        rows = rows.sort_values('Rank')
+        sig = tuple(zip(rows['Rank'], rows['Song'], rows['Artist']))
+        assert sig not in seen, f'{year} repeats {seen[sig]}: clamped copy'
+        seen[sig] = year
 
 
 def test_no_chart_without_an_edition_has_data(mod):

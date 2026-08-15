@@ -39,11 +39,23 @@ def test_specific_year_renders(client, mod):
     assert b'Blinding Lights' in r.data
 
 
-def test_fabricated_year_redirects(client, mod):
-    """2000 is a year Billboard fabricates. It must never render."""
+def test_year_without_a_chart_redirects(client, mod):
+    """A year the site holds no chart for must redirect, never render.
+
+    This used to ask for 2000, picked because billboard.com answers that URL
+    with 2006's ranking and the guard dropped the copy. 2000 is now stored: it
+    was backfilled from Wikipedia's transcription of the printed chart and
+    checked against the 2000 weekly Hot 100 before being kept, so it renders
+    and should. See scripts/backfill_yearend_wikipedia.py.
+
+    The invariant was never about that particular year, so it is anchored to
+    one that cannot be filled instead: the Hot 100 began in August 1958, so
+    1957 has no year-end chart to find.
+    """
     if 'top100' not in mod.YEAREND_YEARS:
         pytest.skip('year-end data not loaded')
-    r = client.get('/top100?view=yearend&year=2000')
+    assert 1957 not in mod.YEAREND_YEARS['top100']
+    r = client.get('/top100?view=yearend&year=1957')
     assert r.status_code == 302
 
 

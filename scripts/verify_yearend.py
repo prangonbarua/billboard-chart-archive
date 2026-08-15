@@ -29,6 +29,14 @@ YEAREND = ROOT / 'data' / 'yearend.csv'
 
 MIN_WEEKS = 20
 MIN_OVERLAP = 60
+# The overlap bar is scaled by how much of the year the weekly CSV holds, so a
+# year is only judged on weeks that exist. top100 1958 is the case: the Hot 100
+# began on 1958-08-09, so 31 of that year's weeks were never published, and its
+# year-end chart is largely built from songs no Hot 100 week can confirm. It
+# scores 49% against a flat 60% bar while matching 1958 four times better than
+# any other year, so the flat bar fails a chart that is demonstrably genuine.
+# Scaling does not let a wrong year through: a misfiled list scores near zero.
+FULL_YEAR_WEEKS = 52
 
 # Chart key -> the weekly CSV it is compiled from. Charts absent here are not
 # checked: artist100 and albums200 rank artists and albums, so their year-end
@@ -117,12 +125,13 @@ def main():
             continue
         have = songs.get(str(year), set())
         pct = 100 * len(ye_titles & have) // max(1, len(ye_titles))
-        if pct < MIN_OVERLAP:
-            failures.append((chart, year, nweeks, pct))
+        bar = MIN_OVERLAP * min(1.0, nweeks / FULL_YEAR_WEEKS)
+        if pct < bar:
+            failures.append((chart, year, nweeks, pct, bar))
 
-    for chart, year, nweeks, pct in failures:
+    for chart, year, nweeks, pct, bar in failures:
         print(f'FAIL {chart} {year}: only {pct}% of its titles appear in the '
-              f'{year} weekly data ({nweeks} weeks scraped)')
+              f'{year} weekly data ({nweeks} weeks scraped, needed {bar:.0f}%)')
     for chart, year, nweeks in untested:
         print(f'WARN {chart} {year}: {nweeks} weeks of weekly data, cannot be '
               f'checked. Triage it and add it to UNTESTABLE_OK.')

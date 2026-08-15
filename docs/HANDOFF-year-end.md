@@ -93,16 +93,32 @@ count alone passes it.
 | radio | 20 | 2006-2025 | 1499 |
 | rhythmic | 20 | 2006-2025 | 954 |
 | streaming | 13 | 2013-2025 | 975 |
-| top100 | 41 | 1970-2025 | 3753 |
+| top100 | 68 | 1958-2025 | 6405 |
 | artist100 | 30 | 1979-2025 | 2269 |
 
 ## Gaps, and which ones are real
 
-**1991-2005 is missing from every chart old enough to have it** — top100,
+**1991-2005 is missing from every chart old enough to have it** —
 adult_contemporary, alternative, artist100, dance_sales. That is a hole in
 Billboard's own year-end archive, not a scrape failure, and it is why those
 fifteen years clamp forward to 2006 on every one of those charts. The Hot 100
 sweep recorded in the design spec found the same boundary independently.
+
+**top100 is the exception: it is now complete, 1958-2025.** Billboard has no
+online year-end Hot 100 before 1970 or across 1991-2005 — those 27 URLs serve
+1970's and 2006's rankings — but it did publish the charts, and Wikipedia
+transcribes each one. `scripts/backfill_yearend_wikipedia.py` reads them from
+there. It is a different source in the same file, so it verifies before it
+writes: a year is kept only if its titles appear in that year's own weekly Hot
+100 (data/hot100.csv) AND match that year better than any other year. A
+misfiled or clamped list matches some other year and is rejected.
+
+1958 is the one year that needs care. The Hot 100 began on 1958-08-09, so 31
+of its weeks never existed and only 53% of its year-end titles can be found in
+weekly data. Both the backfill and `verify_yearend.py` scale the overlap bar by
+how many weeks the year actually has, rather than failing a genuine chart for
+missing weeks nobody has. The year is real: it matches 1958 at 53% and every
+other year at 12% or less.
 
 Other gaps: `adult_contemporary` also lacks 2010, `albums200` lacks 1984,
 `artist100` lacks 1980 and 1989. Each is a single year that clamped to its
@@ -156,7 +172,11 @@ Verify the Hot 100 afterwards — it is the chart with a known-good answer:
     assert t.get(1970) == 'Bridge Over Troubled Water'
     assert t.get(2006) == 'Bad Day'
     assert t.get(2025) == 'Die With A Smile'
-    assert not any(y in t.index for y in range(1991, 2006))
+    # 1991-2005 and 1958-1969 come from the Wikipedia backfill, not from
+    # billboard.com. If a Billboard scrape ever writes them they will hold
+    # 2006's and 1970's rankings instead, so check the content, not absence.
+    assert t.get(2000) == 'Breathe'
+    assert t.get(1958) == 'Volare (Nel blu dipinto di blu)'
     print('ok')
     "
 
