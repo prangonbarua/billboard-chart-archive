@@ -75,7 +75,7 @@
               {# The .nav-dd-flow wrapper is what carries the column layout —
                  without it these groups stack into one tall single column. #}
               <div class="nav-dd-flow">
-                {% for group in ['Songs', 'Genre Songs', 'Airplay', 'Albums & Artists'] %}
+                {% for group in ['Songs', 'Airplay', 'Albums & Artists'] %}
                     {% if charts.get(group) %}
                     <div class="nav-dd-group">
                         <div class="nav-dd-label">{{ 'Albums' if group == 'Albums & Artists' else group }}</div>
