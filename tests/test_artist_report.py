@@ -1,5 +1,7 @@
 """Wiring tests for the all-charts artist report. These import app, which
 loads every CSV — slow by design. Fixture artists are real rows in data/."""
+import re
+
 import pytest
 
 
@@ -162,6 +164,30 @@ def test_analyze_defaults_to_the_most_charted_chart(application):
     c = application.app.test_client()
     body = c.post('/analyze', data={'artist_name': 'Aaron Watson'}).get_data(as_text=True)
     assert 'data-selected-chart="country_airplay"' in body
+
+
+@pytest.mark.parametrize('artist', ['Aaron Watson', 'Taylor Swift', 'The Supremes'])
+def test_analyze_defaults_to_the_chart_with_the_most_weeks(application, artist):
+    """Weeks, not entries — stated generally so new data cannot quietly move it.
+
+    The named-chart assertion above only catches this for one artist on the
+    data of the day: it passed for years, then the album backfill gave Aaron
+    Watson 8 short Independent Albums entries against 6 long Country Airplay
+    ones and the page opened on the chart with a quarter of the weeks. This
+    asserts the rule itself against whatever is in data/.
+    """
+    c = application.app.test_client()
+    body = c.post('/analyze', data={'artist_name': artist}).get_data(as_text=True)
+    m = re.search(r'data-selected-chart="([^"]*)"', body)
+    assert m, f'no coverage table rendered for {artist}'
+
+    charts = application.artist_chart_summaries(artist)['charts']
+    best = max(c['total_weeks_charted'] for c in charts)
+    picked = next(c for c in charts if c['key'] == m.group(1))
+    assert picked['total_weeks_charted'] == best, (
+        f"{artist} opened on {picked['key']} ({picked['total_weeks_charted']} weeks) "
+        f'when a chart with {best} weeks was available'
+    )
 
 
 def test_analyze_still_redirects_for_an_unknown_artist(application):

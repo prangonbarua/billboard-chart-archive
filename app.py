@@ -900,10 +900,20 @@ def analyze():
             return redirect(url_for('search'))
 
         # Default to where they charted most, not always the Hot 100 — a
-        # country act should not open on a chart they barely touched. entries
-        # is None on artist charts, hence the `or 0`.
-        selected = max(summary['charts'], key=lambda c: (c['entries'] or 0,
-                                                         c['total_weeks_charted']))
+        # country act should not open on a chart they barely touched.
+        #
+        # Weeks first, entries second. Entries first measures how many times an
+        # artist appeared, not how much they charted, and the album charts turn
+        # a lot of one-week debuts into a high count: Aaron Watson has 8 entries
+        # worth 21 weeks on Independent Albums against 6 worth 91 on Country
+        # Airplay, and ranking by entries opened him on the 21. That is the
+        # exact chart-they-barely-touched case this rule exists to avoid. It
+        # only surfaced once the album charts were backfilled — before them
+        # nothing outscored an airplay chart on count alone.
+        #
+        # entries is None on artist charts, hence the `or 0`.
+        selected = max(summary['charts'], key=lambda c: (c['total_weeks_charted'],
+                                                         c['entries'] or 0))
         detail = artist_chart_detail(artist_name, selected['key'])
 
         return render_template(
