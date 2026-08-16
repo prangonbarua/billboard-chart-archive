@@ -122,5 +122,19 @@
   ],
   "argentina_hot100": [
     "2019-01-26"
+  ],
+  "_christian_albums": "Three holiday weeks that repeat the ranking before them. All three were fetched individually on 2026-08-16 and every one serves its OWN 'Week of' heading at full page size with its full row count (1983-12-17 and 1984-01-07 at 27 rows / ~1.40 MB, 1991-12-28 at 40 rows / ~1.65 MB) — the frozen-week signature, not the clamp signature. 1991-12-28 is a date top100, albums200, radio, mainstream_rock and dance_club already carry, which is what makes it a Billboard-wide New Year republication rather than a per-chart artifact. Note this chart published roughly monthly through the 1980s, so its 28-day steps are normal and the repeated ranking spans a month, not a week.",
+  "christian_albums": [
+    "1983-12-17",
+    "1984-01-07",
+    "1991-12-28"
+  ],
+  "_gospel_albums": "Same 2026-08-16 pass, same heading test: each of the five serves its own 'Week of' heading at full page size (1983-12-24 at 15 rows / ~1.18 MB, the other four at 25 rows / ~1.36 MB). Four are New Year weeks and 1988-12-31, 1990-12-29 and 1991-12-28 are dates top100 and albums200 already list. Like christian_albums this chart ran roughly monthly in the 1980s, so the 28-day steps are the chart's real cadence.",
+  "gospel_albums": [
+    "1983-12-24",
+    "1988-12-31",
+    "1989-12-30",
+    "1990-12-29",
+    "1991-12-28"
   ]
 }
