@@ -320,6 +320,15 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                     # actually carries a ranking — see the CANADIAN_ALBUMS_START
                     # note in the backfill runner.
                     'canadian-albums': 10,
+                    # Vinyl Albums, added 2026-08-15. Runs 15 rows from its
+                    # 2011-01-22 launch through late 2014 and 25 from 2015 on —
+                    # measured at source across eleven samples, not inferred.
+                    # The default floor of 20 rejected all four early years as
+                    # "15/20 rows" on the first backfill attempt, which is the
+                    # Dance Singles Sales failure again: the CSV would have
+                    # started at 2015 and looked complete. 15 is the true
+                    # minimum, so it is the floor.
+                    'vinyl-albums': 15,
                     # International editions, all flat-depth since launch.
                     'billboard-argentina-hot-100': 25, 'billboard-brasil-hot-100': 25,
                     'billboard-italy-hot-100': 25, 'billboard-philippines-hot-100': 25,

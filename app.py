@@ -246,6 +246,13 @@ RNB_SONGS_DATA, RNB_SONGS_AVAILABLE_DATES = _load_global_chart('rnb_hiphop_songs
 # 1991 through at least 2015, 50 today — so the registry's 50 is modern only.
 TOP_ALBUM_SALES_DATA, TOP_ALBUM_SALES_AVAILABLE_DATES = _load_global_chart('top_album_sales.csv')
 
+# Vinyl Albums. Runs 2011-01-22 to date. Depth GREW: 15 rows through late 2014,
+# 25 since 2015, so the registry's 25 is modern only and the scraper carries a
+# floor of 15 for the backfill. Billboard publishes no chart called "Physical
+# Sales" — this is the only physical-format chart it has, which is what that
+# request resolves to.
+VINYL_ALBUMS_DATA, VINYL_ALBUMS_AVAILABLE_DATES = _load_global_chart('vinyl_albums.csv')
+
 # Hot Latin Songs. Runs 1986-09-06 to date. Its early depth is the shallowest
 # on the site — Billboard published ONE row a week for much of 1986 — before
 # settling at 40 through the 1990s and 50 since 2005. Eleven weeks are absent:
@@ -389,6 +396,7 @@ CHARTS = {
     'albums200':   dict(label='Billboard 200™', group='Albums & Artists', depth=200, kind='album'),
     'artist100':   dict(label='Artist 100',       group='Albums & Artists', depth=100, kind='artist'),
     'top_album_sales': dict(label='Top Album Sales', group='Albums & Artists', depth=50, kind='album'),
+    'vinyl_albums': dict(label='Vinyl Albums',    group='Albums & Artists', depth=25, kind='album'),
 }
 
 # Frame + available dates per chart key. Keyed to the module globals above so
@@ -436,6 +444,7 @@ CHART_DATA = {
     'rnb_songs':       (RNB_SONGS_DATA,         RNB_SONGS_AVAILABLE_DATES),
     'latin_songs':     (LATIN_SONGS_DATA,       LATIN_SONGS_AVAILABLE_DATES),
     'top_album_sales': (TOP_ALBUM_SALES_DATA,   TOP_ALBUM_SALES_AVAILABLE_DATES),
+    'vinyl_albums': (VINYL_ALBUMS_DATA,         VINYL_ALBUMS_AVAILABLE_DATES),
     'albums200':   (BILLBOARD_200_DATA,         ALBUMS200_AVAILABLE_DATES),
     'artist100':   (ARTIST100_DATA,             ARTIST100_AVAILABLE_DATES),
 }
@@ -2166,7 +2175,7 @@ for _key in ('adult_pop', 'adult_contemporary', 'rhythmic', 'country_airplay', '
              'rock_songs', 'gospel', 'christian', 'country_songs', 'rnb_songs', 'latin_songs',
              # kind='album' renders correctly through chart.html, which only
              # special-cases 'artist'; the album title takes the song slot.
-             'top_album_sales'):
+             'top_album_sales', 'vinyl_albums'):
     def _format_chart_page(key=_key):
         df, dates = CHART_DATA[key]
         if df is None:
