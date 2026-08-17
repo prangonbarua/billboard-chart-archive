@@ -501,7 +501,16 @@ HOTW_COUNTRIES = [
     ('poland', 'Poland'), ('portugal', 'Portugal'), ('romania', 'Romania'),
     ('singapore', 'Singapore'), ('slovakia', 'Slovakia'),
     ('south-africa', 'South Africa'), ('spain', 'Spain'), ('sweden', 'Sweden'),
-    ('switzerland', 'Switzerland'), ('taiwan', 'Taiwan'), ('thailand', 'Thailand'),
+    ('switzerland', 'Switzerland'), ('taiwan', 'Taiwan'),
+    # Thailand has NO weekly archive on billboard.com, unlike every other
+    # country here. Measured 2026-08-16: every historical date requested for
+    # thailand-songs-hotw comes back clamped to 'Week of August 1, 2026' at a
+    # full 25 rows, while taiwan, malaysia and singapore all serve their true
+    # heading for the same dates. So its history starts 2026-08-01 and grows
+    # one week at a time from the weekly scrape. Do not try to backfill it —
+    # the served-week guard correctly rejects all ~232 earlier weeks and the
+    # run writes nothing.
+    ('thailand', 'Thailand'),
     ('turkey', 'Turkey'),
     # Luminate's measurement of the UK market, which is NOT the same chart as
     # uk_songs above — that one is the Official Charts Company's, licensed.
