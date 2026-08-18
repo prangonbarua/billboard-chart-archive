@@ -352,6 +352,74 @@ def scrape_billboard_chart(chart_name='hot-100', date=None, min_rows=None):
                         'singapore', 'slovakia', 'south-africa', 'spain',
                         'sweden', 'switzerland', 'taiwan', 'thailand', 'turkey',
                         'u-k')},
+                    # ── Batch added 2026-08-17 ─────────────────────
+                    # BACKFILL FLOORS, NOT MODERN DEPTHS. Each is the
+                    # MINIMUM depth measured across the chart's life:
+                    # launch week, sampled eras, and current depth.
+                    # Twenty-one of these run below the default 20, and
+                    # six of those look fine at current depth and only
+                    # ran shallow in an earlier era — world-albums
+                    # registers 25 today and served 15 in every era
+                    # sampled. Raise each to its modern depth once that
+                    # chart's CSV is complete and it joins the weekly
+                    # path, the same way japan-hot-100 and the Latin
+                    # charts above were raised.
+                    'alternative-albums': 25,
+                    'alternative-streaming-songs': 25,
+                    'americana-folk-albums': 15,
+                    'australian-albums': 10,
+                    'billboard-italy-albums-top-100': 25,
+                    'billboard-philippines-top-philippine-songs': 25,
+                    'billboard-u-s-afrobeats-songs': 50,
+                    'bluegrass-albums': 15,
+                    'blues-albums': 15,
+                    'cast-albums': 15,
+                    'christian-streaming-songs': 25,
+                    'classical-albums': 25,
+                    'classical-crossover-albums': 1,
+                    'comedy-albums': 10,
+                    'contemporary-jazz': 15,
+                    'country-streaming-songs': 25,
+                    'dance-electronic-albums': 15,
+                    'dance-electronic-streaming-songs': 15,
+                    'emerging-artists': 50,
+                    'gospel-streaming-songs': 15,
+                    'greece-albums': 10,
+                    'hard-rock-streaming-songs': 25,
+                    'hot-alternative-songs': 25,
+                    'hot-christian-adult-contemporary': 30,
+                    'hot-rock-songs': 25,
+                    'indie-store-album-sales': 15,
+                    'jazz-albums': 1,
+                    'jazz-songs': 30,
+                    'kids-albums': 25,
+                    'latin-pop-albums': 15,
+                    'latin-rhythm-albums': 15,
+                    'latin-streaming-songs': 25,
+                    'lyricfind-global': 25,
+                    'lyricfind-us': 25,
+                    'new-age-albums': 1,
+                    'official-uk-albums': 10,
+                    'r-and-b-albums': 25,
+                    'r-and-b-hip-hop-streaming-songs': 25,
+                    'r-and-b-songs': 25,
+                    'r-and-b-streaming-songs': 15,
+                    'rap-albums': 25,
+                    'rap-song': 25,
+                    'rap-streaming-songs': 15,
+                    'reggae-albums': 10,
+                    'regional-mexican-albums': 15,
+                    'rock-albums': 25,
+                    'rock-streaming-songs': 25,
+                    'soundtracks': 25,
+                    'the-arabic-hot-100': 25,
+                    'top-arabic-artist-100': 25,
+                    'top-rock-alternative-albums': 25,
+                    'top-streaming-albums': 50,
+                    'traditional-classic-albums': 1,
+                    'traditional-jazz-albums': 15,
+                    'tropical-albums': 15,
+                    'world-albums': 15,
                     }.get(chart_name, 20)
         if min_rows is not None:
             expected = min_rows
