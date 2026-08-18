@@ -32,6 +32,25 @@
        Scoped to .nav-dd-panel deliberately: the bar itself (Versus, Dropouts,
        Reports) keeps the larger type. */
     .nav-dd-panel a { font-size: 0.8125rem; line-height: 1.35; }
+    /* EVERY CHART NAME ON ONE LINE, AT EVERY WIDTH THE GRID IS USED AT.
+       The row of 7 columns is as wide as the sum of each column's longest name,
+       which is fixed by the content: ~1231px of text at 13px, plus 134px of
+       padding, gaps and border. That needs a 1413px window, so on a 1440 or a
+       1366 the old rules gave the width back by wrapping the longest two or
+       three names onto a second line.
+
+       Type size is the only lever left that costs nothing else. Solving
+       `text * size/13 + 134 <= 100vw - 3rem` for size gives 1.056vw - 1.92px;
+       shipped a touch under that (1.03vw - 1.95px) so the fit survives the ~1%
+       that browser kerning and hinting move real text against the metrics the
+       test measures from. Above 1402px it pins at 13px with width to spare;
+       11px is the floor, reached at 1240px, which is where the grid gives out
+       and the flow stacks instead. tests/test_nav_panel_width.py measures every
+       shipped chart name against this and fails if one no longer fits.
+
+       Scoped to .nav: dropouts.html reuses this panel with 3 groups, nowhere
+       near the cap, so shrinking its type on a narrow window buys nothing. */
+    .nav .nav-dd-panel a { font-size: clamp(0.6875rem, calc(1.03vw - 1.95px), 0.8125rem); }
 
     .nav a:hover,
     .nav-dd-panel a:hover { color: var(--text); background: var(--surface); }
@@ -130,7 +149,9 @@
            than the panel and there is nothing to scroll sideways to. Do not add
            overflow-x back without also giving the wheel a way to reach it. */
         overflow-y: auto;
-        padding: 0.75rem 1rem;
+        /* 0.75rem all round rather than 1rem on the sides: the 8px is column
+           width, and the columns are what the one-line rule spends it on. */
+        padding: 0.75rem;
         background: var(--bg);
         border: 1px solid var(--border);
         border-radius: 10px;
@@ -201,17 +222,17 @@
            WIDTHS were never the objection; headings landing at scattered
            HEIGHTS was, and that was the column-flow layout, not this.
 
-           minmax(0, ...) keeps the shrink path: below the width the full row
-           needs, tracks give width back and a few long names wrap. Wrapping on
-           a narrow window is the acceptable failure; a row wider than the panel
-           is not, because reaching it is what needed the wheel hijack. */
+           minmax(0, ...) keeps the shrink path as a backstop. It should never
+           be taken now: the type size above is solved so the row fits the cap
+           at every width this flow is used at, and below 1240px the flow stacks
+           rather than shrinking further. */
         grid-auto-columns: minmax(0, max-content);
-        /* 0.5rem, not 1rem. At 154 charts the row wants more width than the cap
-           allows, and every rem of gap is width taken from the columns — six
-           gaps at 1rem cost 48px, which is about one wrapped label. The gap
-           only has to keep adjacent columns from reading as one list; the
+        /* 0.25rem. Every rem of gap is width taken from the columns, and with
+           the names now unwrappable that width has to come from somewhere: six
+           gaps went 48px -> 24px -> 24px more into the type-size budget. The
+           gap only has to keep adjacent columns from reading as one list; the
            columns are max-content and take the freed space themselves. */
-        gap: 0.5rem;
+        gap: 0.25rem;
         align-items: start;
     }
 
@@ -230,24 +251,47 @@
         letter-spacing: 0.06em;
         color: var(--text-muted);
         opacity: 0.7;
-        padding: 0 0.5rem 0.25rem;
+        /* Matched to the links' 0.375rem. Headings do not scale with the fluid
+           type above, so at the 11px floor 'HITS OF THE WORLD' is within a few
+           px of being the widest thing in its column — the tighter padding is
+           what keeps the links, not the heading, deciding the column width. */
+        padding: 0 0.375rem 0.25rem;
         /* Every heading is now shorter than the shortest link under it, so none
            of them drives a column's width and no width hack is needed. Keep it
            that way: a heading longer than its links is what made the spacing
            uneven in the first place. */
         white-space: nowrap;
     }
-    /* At the full panel width nothing wraps — the columns are wider than the
-       longest name. Wrapping is kept as the small-screen fallback: nowrap would
-       spill a long name into the next column once the columns start shrinking.
-       The indent on a wrapped line keeps the second line reading as a
-       continuation rather than as another chart. */
+    /* NO CHART NAME EVER BREAKS OVER TWO LINES. This used to be `normal` plus a
+       hanging indent, on the reasoning that a wrapped name was the acceptable
+       failure once the columns started shrinking. It is not acceptable: a
+       two-line entry in a list of one-line entries reads as two charts.
+
+       nowrap is only safe if the row is guaranteed to fit, because a track that
+       shrinks under nowrap does not wrap, it spills its text over the next
+       column. Two rules make it fit, and both have to stay: the fluid type size
+       at the top of this sheet, and the stack below 1240px where even the 11px
+       floor runs out. The hanging indent went with the wrapping — it only ever
+       styled a second line, and dropping it also returns 8px per column. */
     .nav-dd-group a {
         display: block;
-        padding: 0.1875rem 0.5rem;
-        white-space: normal;
-        text-indent: -0.5rem;
-        padding-left: 1rem;
+        padding: 0.1875rem 0.375rem;
+        white-space: nowrap;
+    }
+
+    /* Below 1240px the 7-column row cannot hold every name on one line at a
+       size worth reading, so the groups stack and the panel scrolls — the same
+       layout the phone rules below use, for the same reason. This is the ONLY
+       sanctioned way to run out of width: a stacked group is as wide as the
+       panel, so nothing shrinks and nothing spills. Reaching for wrapping or a
+       narrower column here instead would put the two-line names straight back.
+       1250 rather than the 1212 where the floor is exactly reached: the last
+       few px of the floor's range fit only by a hair, and the fit has to
+       survive a browser measuring text ~1% differently from the test's font
+       metrics. The test picks the same number by scanning, and fails if this
+       one drifts away from it in either direction. */
+    @media (max-width: 1249px) {
+        .nav .nav-dd-flow { grid-auto-flow: row; gap: 0.75rem; }
     }
 
     @media (max-width: 640px) {

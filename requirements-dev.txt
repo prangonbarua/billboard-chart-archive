@@ -10,3 +10,9 @@
 -r requirements.txt
 
 pytest==8.3.4
+
+# Reads the vendored Space Grotesk faces in static/fonts/ so
+# tests/test_nav_panel_width.py can measure real chart names against the chart
+# menu's width, rather than guessing at an average glyph. Test-only: the site
+# loads its fonts from Google Fonts and never imports this.
+fonttools==4.55.3
