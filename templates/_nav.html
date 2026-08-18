@@ -256,6 +256,12 @@
           <div class="nav-dd-flow">
             {{ nav_group('Songs', nav_is_yearend) }}
             {{ nav_group('Airplay', nav_is_yearend) }}
+            {# Groups are named here rather than iterated from nav_groups so the
+               column order is deliberate. That means a NEW group is invisible
+               until it gets a line — Streaming was added 2026-08-17 with its 11
+               charts. The macro's own guard keeps it out of the nav until one
+               of them has data. #}
+            {{ nav_group('Streaming', nav_is_yearend) }}
             {{ nav_group('Albums & Artists', nav_is_yearend) }}
             {{ nav_group('International', nav_is_yearend) }}
             {{ nav_group('Hits of the World', nav_is_yearend) }}

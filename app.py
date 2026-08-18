@@ -481,11 +481,88 @@ BATCH_CHARTS = {
     'italy_hot100':       ('Billboard Italy Hot 100',       'International', 25, 'song', 'italy_hot100.csv'),
     'philippines_hot100': ('Billboard Philippines Hot 100', 'International', 25, 'song', 'philippines_hot100.csv'),
     'china_tme':          ('China TME Uni Songs',           'International', 50, 'song', 'china_tme.csv'),
+
+    # ── Batch added 2026-08-17 ───────────────────────────────────────────────
+    # 57 charts that survived the archive test. Depths here are CURRENT depth,
+    # measured off each page; the scraper's backfill floors are the historical
+    # MINIMUM and are a different number in every chart that ever ran shallow.
+    #
+    # Every label below is the page's own h1, not a reading of the slug. Seven
+    # of them disagree with their slug, and two disagree by swapping with each
+    # other: billboard.com/charts/classical-albums is "Classical Albums" while
+    # traditional-classic-albums is "Traditional Classical Albums". Reading the
+    # h1 is the only way this stays right.
+    'alternative_albums':      ('Alternative Albums',          'Albums & Artists', 25, 'album', 'alternative_albums.csv'),
+    'americana_folk_albums':   ('Americana/Folk Albums',       'Albums & Artists', 25, 'album', 'americana_folk_albums.csv'),
+    'australia_albums':        ('Australia Albums',            'Albums & Artists', 10, 'album', 'australia_albums.csv'),
+    'bluegrass_albums':        ('Bluegrass Albums',            'Albums & Artists', 15, 'album', 'bluegrass_albums.csv'),
+    'blues_albums':            ('Blues Albums',                'Albums & Artists', 15, 'album', 'blues_albums.csv'),
+    'cast_albums':             ('Cast Albums',                 'Albums & Artists', 15, 'album', 'cast_albums.csv'),
+    'classical_albums':        ('Classical Albums',            'Albums & Artists', 25, 'album', 'classical_albums.csv'),
+    'classical_crossover_albums': ('Classical Crossover Albums', 'Albums & Artists', 15, 'album', 'classical_crossover_albums.csv'),
+    'comedy_albums':           ('Comedy Albums',               'Albums & Artists', 10, 'album', 'comedy_albums.csv'),
+    'contemporary_jazz_albums': ('Contemporary Jazz Albums',   'Albums & Artists', 15, 'album', 'contemporary_jazz_albums.csv'),
+    'dance_albums':            ('Top Dance Albums',            'Albums & Artists', 25, 'album', 'dance_albums.csv'),
+    'emerging_artists':        ('Emerging Artists',            'Albums & Artists', 50, 'artist', 'emerging_artists.csv'),
+    'greece_albums':           ('Greece Albums',               'Albums & Artists', 10, 'album', 'greece_albums.csv'),
+    'indie_store_album_sales': ('Indie Store Album Sales',     'Albums & Artists', 25, 'album', 'indie_store_album_sales.csv'),
+    'italy_albums':            ('Italy Albums',                'Albums & Artists', 25, 'album', 'italy_albums.csv'),
+    'jazz_albums':             ('Jazz Albums',                 'Albums & Artists', 25, 'album', 'jazz_albums.csv'),
+    'kid_albums':              ('Kid Albums',                  'Albums & Artists', 25, 'album', 'kid_albums.csv'),
+    'latin_pop_albums':        ('Latin Pop Albums',            'Albums & Artists', 25, 'album', 'latin_pop_albums.csv'),
+    'latin_rhythm_albums':     ('Latin Rhythm Albums',         'Albums & Artists', 25, 'album', 'latin_rhythm_albums.csv'),
+    'new_age_albums':          ('New Age Albums',              'Albums & Artists', 15, 'album', 'new_age_albums.csv'),
+    'rap_albums':              ('Top Rap Albums',              'Albums & Artists', 25, 'album', 'rap_albums.csv'),
+    'reggae_albums':           ('Reggae Albums',               'Albums & Artists', 10, 'album', 'reggae_albums.csv'),
+    'regional_mexican_albums': ('Regional Mexican Albums',     'Albums & Artists', 25, 'album', 'regional_mexican_albums.csv'),
+    'rnb_albums':              ('Top R&B Albums',              'Albums & Artists', 25, 'album', 'rnb_albums.csv'),
+    'rock_albums':             ('Top Rock Albums',             'Albums & Artists', 25, 'album', 'rock_albums.csv'),
+    'rock_alternative_albums': ('Top Rock & Alternative Albums', 'Albums & Artists', 50, 'album', 'rock_alternative_albums.csv'),
+    'soundtracks':             ('Soundtracks',                 'Albums & Artists', 25, 'album', 'soundtracks.csv'),
+    'top_streaming_albums':    ('Top Streaming Albums',        'Albums & Artists', 50, 'album', 'top_streaming_albums.csv'),
+    'traditional_classical_albums': ('Traditional Classical Albums', 'Albums & Artists', 15, 'album', 'traditional_classical_albums.csv'),
+    'traditional_jazz_albums': ('Traditional Jazz Albums',     'Albums & Artists', 15, 'album', 'traditional_jazz_albums.csv'),
+    'tropical_albums':         ('Tropical Albums',             'Albums & Artists', 25, 'album', 'tropical_albums.csv'),
+    'uk_albums':               ('Official U.K. Albums',        'Albums & Artists', 20, 'album', 'uk_albums.csv'),
+    'world_albums':            ('World Albums',                'Albums & Artists', 25, 'album', 'world_albums.csv'),
+
+    # Both slugs name a genre and neither page does. hot-christian-adult-
+    # contemporary renders "Christian AC Airplay" and jazz-songs renders
+    # "Smooth Jazz Airplay" — airplay charts, so they belong in that group.
+    'christian_ac_airplay':    ('Christian AC Airplay',        'Airplay', 30, 'song', 'christian_ac_airplay.csv'),
+    'smooth_jazz_airplay':     ('Smooth Jazz Airplay',         'Airplay', 30, 'song', 'smooth_jazz_airplay.csv'),
+
+    'afrobeats_songs':         ('U.S. Afrobeats Songs',        'Songs', 50, 'song', 'afrobeats_songs.csv'),
+    'hot_alternative_songs':   ('Hot Alternative Songs',       'Songs', 25, 'song', 'hot_alternative_songs.csv'),
+    'hot_rock_songs':          ('Hot Rock Songs',              'Songs', 25, 'song', 'hot_rock_songs.csv'),
+    'lyricfind_global':        ('LyricFind Global',            'Songs', 25, 'song', 'lyricfind_global.csv'),
+    'lyricfind_us':            ('LyricFind U.S.',              'Songs', 25, 'song', 'lyricfind_us.csv'),
+    'rap_songs':               ('Hot Rap Songs',               'Songs', 25, 'song', 'rap_songs.csv'),
+    # NOT the same chart as 'rnb_songs' above, which is Hot R&B/Hip-Hop Songs.
+    # This one excludes hip-hop and is a separate ranking; the keys have to
+    # keep them apart because both would otherwise want the same name.
+    'hot_rnb_songs':           ('Hot R&B Songs',               'Songs', 25, 'song', 'hot_rnb_songs.csv'),
+
+    'arabic_artist100':        ('Arabic Artist 100',           'International', 25, 'artist', 'arabic_artist100.csv'),
+    'arabic_hot100':           ('Arabic Hot 100',              'International', 25, 'song', 'arabic_hot100.csv'),
+    'philippines_top_songs':   ('Top Philippine Songs',        'International', 25, 'song', 'philippines_top_songs.csv'),
+
+    'alternative_streaming':   ('Alternative Streaming Songs', 'Streaming', 25, 'song', 'alternative_streaming.csv'),
+    'christian_streaming':     ('Christian Streaming Songs',   'Streaming', 25, 'song', 'christian_streaming.csv'),
+    'country_streaming':       ('Country Streaming Songs',     'Streaming', 25, 'song', 'country_streaming.csv'),
+    'dance_streaming':         ('Dance Streaming Songs',       'Streaming', 15, 'song', 'dance_streaming.csv'),
+    'gospel_streaming':        ('Gospel Streaming Songs',      'Streaming', 15, 'song', 'gospel_streaming.csv'),
+    'hard_rock_streaming':     ('Hard Rock Streaming Songs',   'Streaming', 25, 'song', 'hard_rock_streaming.csv'),
+    'latin_streaming':         ('Latin Streaming Songs',       'Streaming', 25, 'song', 'latin_streaming.csv'),
+    'rap_streaming':           ('Rap Streaming Songs',         'Streaming', 15, 'song', 'rap_streaming.csv'),
+    'rnb_hiphop_streaming':    ('R&B/Hip-Hop Streaming Songs', 'Streaming', 25, 'song', 'rnb_hiphop_streaming.csv'),
+    'rnb_streaming':           ('R&B Streaming Songs',         'Streaming', 15, 'song', 'rnb_streaming.csv'),
+    'rock_streaming':          ('Rock Streaming Songs',        'Streaming', 25, 'song', 'rock_streaming.csv'),
 }
 
-# Hits of the World: 38 national charts that share one shape entirely — same
-# 2022-02-19 launch, same 25 rows, same columns. Listing them by hand would be
-# 38 lines differing only in a country name. Billboard titles them '<Country>
+# Hits of the World: 39 national charts that share one shape entirely — same
+# 25 rows, same columns, and all but one the same 2022-02-19 launch. Listing
+# them by hand would be 39 lines differing only in a country name. Billboard titles them '<Country>
 # Songs', not 'Billboard <Country>', because they are its own Luminate-tracked
 # series rather than licensed local editions.
 HOTW_COUNTRIES = [
@@ -493,7 +570,12 @@ HOTW_COUNTRIES = [
     ('bolivia', 'Bolivia'), ('chile', 'Chile'), ('croatia', 'Croatia'),
     ('czech-republic', 'Czech Republic'), ('denmark', 'Denmark'),
     ('ecuador', 'Ecuador'), ('finland', 'Finland'), ('france', 'France'),
-    ('germany', 'Germany'), ('greece', 'Greece'), ('hungary', 'Hungary'),
+    ('germany', 'Germany'), ('greece', 'Greece'),
+    # Added 2026-08-17. The one Hits of the World chart that was missing from
+    # this list; its first week is measured with the rest of that batch rather
+    # than assumed to be the series-wide 2022-02-19.
+    ('hong-kong', 'Hong Kong'),
+    ('hungary', 'Hungary'),
     ('iceland', 'Iceland'), ('india', 'India'), ('indonesia', 'Indonesia'),
     ('ireland', 'Ireland'), ('luxembourg', 'Luxembourg'), ('malaysia', 'Malaysia'),
     ('mexico', 'Mexico'), ('netherlands', 'Netherlands'),
