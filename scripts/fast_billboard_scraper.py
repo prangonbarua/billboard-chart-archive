@@ -352,42 +352,37 @@ def scrape_billboard_chart(chart_name='hot-100', date=None, min_rows=None):
                         'singapore', 'slovakia', 'south-africa', 'spain',
                         'sweden', 'switzerland', 'taiwan', 'thailand', 'turkey',
                         'u-k')},
-                    # These four DIP in 2021-2025 and recover by 2026, so
-                    # neither launch depth nor current depth reveals the
-                    # minimum — the first batch run rejected 165 weeks each on
-                    # bluegrass and kids and 64 each on cast and blues, all
-                    # inside that window. Measured 2026-08-18: bluegrass 15 at
-                    # launch, 10 through 2022-2024, 15 today; kids 25/15/25;
-                    # cast and blues 15/10/15.
-                    # ── Batch added 2026-08-17 ─────────────────────
-                    # BACKFILL FLOORS, NOT MODERN DEPTHS. Each is the
-                    # MINIMUM depth measured across the chart's life:
-                    # launch week, sampled eras, and current depth.
-                    # Twenty-one of these run below the default 20, and
-                    # six of those look fine at current depth and only
-                    # ran shallow in an earlier era — world-albums
-                    # registers 25 today and served 15 in every era
-                    # sampled. Raise each to its modern depth once that
-                    # chart's CSV is complete and it joins the weekly
-                    # path, the same way japan-hot-100 and the Latin
-                    # charts above were raised.
+                    # ── Batch added 2026-08-17 ─────────────────────────
+                    # MODERN DEPTHS, raised from the backfill floors now that
+                    # every CSV is complete — this is what guards the weekly
+                    # path, which never looks back far enough to see the
+                    # shallow eras the backfill needed. Each is the MINIMUM row
+                    # count over that chart's last 52 weeks, taken from the
+                    # finished CSV; all 57 hold one constant depth across that
+                    # window, so none of these is a compromise between eras.
+                    #
+                    # The backfill floors they replace were much lower and were
+                    # right for their purpose: four charts launch at ONE row,
+                    # and four more (bluegrass, kids, cast, blues) dip in
+                    # 2021-2025 and recover by 2026. Re-deriving a backfill
+                    # needs measure_depth_floor.py again, NOT these numbers.
                     'alternative-albums': 25,
                     'alternative-streaming-songs': 25,
-                    'americana-folk-albums': 15,
+                    'americana-folk-albums': 25,
                     'australian-albums': 10,
                     'billboard-italy-albums-top-100': 25,
                     'billboard-philippines-top-philippine-songs': 25,
                     'billboard-u-s-afrobeats-songs': 50,
-                    'bluegrass-albums': 10,
-                    'blues-albums': 10,
-                    'cast-albums': 10,
+                    'bluegrass-albums': 15,
+                    'blues-albums': 15,
+                    'cast-albums': 15,
                     'christian-streaming-songs': 25,
                     'classical-albums': 25,
-                    'classical-crossover-albums': 1,
+                    'classical-crossover-albums': 15,
                     'comedy-albums': 10,
                     'contemporary-jazz': 15,
                     'country-streaming-songs': 25,
-                    'dance-electronic-albums': 15,
+                    'dance-electronic-albums': 25,
                     'dance-electronic-streaming-songs': 15,
                     'emerging-artists': 50,
                     'gospel-streaming-songs': 15,
@@ -396,17 +391,17 @@ def scrape_billboard_chart(chart_name='hot-100', date=None, min_rows=None):
                     'hot-alternative-songs': 25,
                     'hot-christian-adult-contemporary': 30,
                     'hot-rock-songs': 25,
-                    'indie-store-album-sales': 15,
-                    'jazz-albums': 1,
+                    'indie-store-album-sales': 25,
+                    'jazz-albums': 25,
                     'jazz-songs': 30,
-                    'kids-albums': 15,
-                    'latin-pop-albums': 15,
-                    'latin-rhythm-albums': 15,
+                    'kids-albums': 25,
+                    'latin-pop-albums': 25,
+                    'latin-rhythm-albums': 25,
                     'latin-streaming-songs': 25,
                     'lyricfind-global': 25,
                     'lyricfind-us': 25,
-                    'new-age-albums': 1,
-                    'official-uk-albums': 10,
+                    'new-age-albums': 15,
+                    'official-uk-albums': 20,
                     'r-and-b-albums': 25,
                     'r-and-b-hip-hop-streaming-songs': 25,
                     'r-and-b-songs': 25,
@@ -415,18 +410,18 @@ def scrape_billboard_chart(chart_name='hot-100', date=None, min_rows=None):
                     'rap-song': 25,
                     'rap-streaming-songs': 15,
                     'reggae-albums': 10,
-                    'regional-mexican-albums': 15,
+                    'regional-mexican-albums': 25,
                     'rock-albums': 25,
                     'rock-streaming-songs': 25,
                     'soundtracks': 25,
                     'the-arabic-hot-100': 25,
                     'top-arabic-artist-100': 25,
-                    'top-rock-alternative-albums': 25,
+                    'top-rock-alternative-albums': 50,
                     'top-streaming-albums': 50,
-                    'traditional-classic-albums': 1,
+                    'traditional-classic-albums': 15,
                     'traditional-jazz-albums': 15,
-                    'tropical-albums': 15,
-                    'world-albums': 15,
+                    'tropical-albums': 25,
+                    'world-albums': 25,
                     }.get(chart_name, 20)
         if min_rows is not None:
             expected = min_rows
