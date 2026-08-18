@@ -13,6 +13,12 @@ padding alone. Two numbers in two files that have to agree.
 
 These tests read both files and check they still do, so the pair cannot drift
 apart again silently.
+
+The nav's own panel now answers that by shifting OUT over the left rail rather
+than by shrinking away from it — the rails are decorative and it paints over
+them anyway — which is the same two-numbers-in-two-files problem pointed the
+other way, plus a new edge to check: an overshoot puts the panel off the left of
+the viewport, where the page cannot scroll to reach it.
 """
 import re
 from pathlib import Path
@@ -70,31 +76,70 @@ def test_page_inset_defaults_to_zero_below_the_rail_breakpoint():
     )
 
 
-def test_panel_max_width_accounts_for_the_left_rail():
-    """The left rail is what moves the panel's start, so it must be subtracted.
+def _base_panel():
+    """The shared .nav-dd-panel rule — the nav's copy AND dropouts.html's."""
+    return _rule(NAV, '.nav-dd-panel')
 
-    Only the left one. The right rail is decorative and sits under the panel,
-    so reserving it just costs column width — see the panel's own comment. The
-    right edge is still checked against the viewport below, which is the
-    property that actually matters.
+
+def _nav_panel():
+    """The nav-scoped override, which reclaims the left rail for the menu."""
+    return _rule(NAV, '.nav .nav-dd-panel')
+
+
+def _effective(prop):
+    """`prop` as it resolves on the NAV's panel at >=1100px.
+
+    Two rules apply to it: the shared one and the nav-scoped override. The
+    override is more specific, so it wins wherever it declares something.
     """
-    max_width = _decl(_rule(NAV, '.nav-dd-panel'), 'max-width')
-    assert 'var(--page-inset' in max_width, (
-        'panel max-width does not reference --page-inset, so it is budgeting '
-        f'from the raw viewport edge again: {max_width!r}'
+    override = _nav_panel()
+    if re.search(rf'(?<![\w-]){re.escape(prop)}\s*:', override):
+        return _decl(override, prop)
+    return _decl(_base_panel(), prop)
+
+
+def test_panel_start_accounts_for_the_left_rail():
+    """The left rail moves the panel's start, so the geometry must know it.
+
+    Either the panel subtracts the rail from its cap or it shifts out past the
+    rail and takes the width back — both are valid, and which one is shipped is
+    checked arithmetically below. What is never valid is neither: a panel that
+    budgets from the raw viewport edge while starting a rail's width in is the
+    original sideways-scroll bug.
+    """
+    geometry = _effective('left') + ' ' + _effective('max-width')
+    assert 'var(--page-inset' in geometry, (
+        'neither the panel\'s left nor its max-width references --page-inset, '
+        f'so it is budgeting from the raw viewport edge again: {geometry!r}'
     )
 
 
-def _eval_cap(expr, viewport, inset):
-    """Evaluate a CSS calc() for max-width in px.
+def test_the_shared_panel_rule_is_not_pulled_out_past_the_rail():
+    """The rail reclaim must stay scoped to the nav.
 
-    Resolves the units this rule actually uses so the test measures the shipped
-    formula rather than a copy of it — dropping a term or halving a factor has
-    to fail here.
+    dropouts.html reuses .nav-dd-panel for its chart picker, and that copy is
+    drawn mid-page after a <label> inside a centred .wrap — not at the body's
+    padding edge. A negative offset on the shared rule would drag it a rail's
+    width away from the summary it belongs to.
     """
-    m = re.fullmatch(r'calc\((.*)\)', expr.strip(), re.S)
-    assert m, f'panel max-width is not a calc(): {expr!r}'
-    body = m.group(1)
+    left = _decl(_base_panel(), 'left')
+    assert '-' not in left, (
+        'the shared .nav-dd-panel rule offsets the panel leftwards; that also '
+        f"moves dropouts.html's picker, which does not start at the rail: {left!r}"
+    )
+
+
+def _eval_len(expr, viewport, inset):
+    """Evaluate a CSS length — a bare value or a calc() — in px.
+
+    Resolves the units these rules actually use so the test measures the
+    shipped formula rather than a copy of it — dropping a term or halving a
+    factor has to fail here.
+    """
+    body = expr.strip()
+    m = re.fullmatch(r'calc\((.*)\)', body, re.S)
+    if m:
+        body = m.group(1)
     body = re.sub(r'var\(--page-inset[^)]*\)', str(inset), body)
     body = re.sub(r'(\d*\.?\d+)rem', lambda x: str(float(x.group(1)) * 16), body)
     body = re.sub(r'(\d*\.?\d+)vw', lambda x: str(float(x.group(1)) / 100 * viewport), body)
@@ -106,23 +151,46 @@ def _eval_cap(expr, viewport, inset):
     return eval(body, {'__builtins__': {}}, {})
 
 
+def _panel_edges(viewport):
+    """Where the open menu's left and right edges land, in px from the left.
+
+    The panel is abspos in a .nav-dd that is the nav's first child, so its
+    static position is the body inset plus the nav's padding. `left` then moves
+    it from there — negative, out over the rail, once it reclaims that width.
+    """
+    inset = _page_inset_px()
+    left_edge = inset + NAV_PADDING_PX + _eval_len(_effective('left'), viewport, inset)
+    return left_edge, left_edge + _eval_len(_effective('max-width'), viewport, inset)
+
+
 @pytest.mark.parametrize('viewport', [1100, 1280, 1440, 1512, 1920, 2560])
 def test_open_panel_right_edge_stays_inside_the_viewport(viewport):
     """The arithmetic the three earlier fixes never did.
 
-    The panel always reaches its cap on a real window: six groups of chart
+    The panel always reaches its cap on a real window: seven groups of chart
     names measure ~1600px, wider than any cap here. So the cap IS the panel's
     width, and the cap plus where the panel starts has to land on screen.
     """
-    inset = _page_inset_px()
-    left_edge = inset + NAV_PADDING_PX
-    cap = _eval_cap(_decl(_rule(NAV, '.nav-dd-panel'), 'max-width'), viewport, inset)
-    right_edge = left_edge + cap
+    _, right_edge = _panel_edges(viewport)
     assert right_edge <= viewport, (
         f'at {viewport}px the panel reaches {right_edge}px, overflowing by '
         f'{right_edge - viewport}px — the page scrolls sideways'
     )
 
+
+@pytest.mark.parametrize('viewport', [1100, 1280, 1440, 1512, 1920, 2560])
+def test_open_panel_left_edge_stays_inside_the_viewport(viewport):
+    """The failure mode the rail reclaim introduces, in the other direction.
+
+    Pulling the panel out over the left rail is a negative offset, and one
+    that overshoots puts content off the left edge — where, unlike the right,
+    the page cannot even be scrolled to reach it.
+    """
+    left_edge, _ = _panel_edges(viewport)
+    assert left_edge >= 0, (
+        f'at {viewport}px the panel starts at {left_edge}px, off the left edge '
+        'of the viewport — that width is unreachable, not merely clipped'
+    )
 
 
 def test_panel_has_no_min_width_floor():
@@ -132,8 +200,8 @@ def test_panel_has_no_min_width_floor():
     here). Both times the panel could no longer shrink to its cap and pushed
     the page sideways instead.
     """
-    panel = _rule(NAV, '.nav-dd-panel')
-    assert not re.search(r'(?<![\w-])min-width\s*:\s*[1-9]', panel), (
-        'a min-width floor is back on .nav-dd-panel; min-width beats max-width, '
-        'so the panel can no longer shrink to fit the viewport'
-    )
+    for panel in (_base_panel(), _nav_panel()):
+        assert not re.search(r'(?<![\w-])min-width\s*:\s*[1-9]', panel), (
+            'a min-width floor is back on .nav-dd-panel; min-width beats '
+            'max-width, so the panel can no longer shrink to fit the viewport'
+        )

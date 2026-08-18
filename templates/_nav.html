@@ -112,7 +112,12 @@
            is opaque, so it covers the rail cleanly while open. What must stay
            subtracted on the right is a real gutter, hence the 3rem: 1.5rem for
            the nav padding the panel starts at, 1.5rem to keep its right edge
-           off the viewport edge and clear of the scrollbar. */
+           off the viewport edge and clear of the scrollbar.
+
+           These two values are the SHARED ones — dropouts.html's picker reuses
+           this panel and they are correct for it. The nav's own copy takes the
+           left rail back in the override below; do not fold that back in here
+           or the picker goes with it. */
         width: max-content;
         max-width: calc(100vw - var(--page-inset, 0px) - 3rem);
         /* The cap and the columns are on DIFFERENT boxes on purpose. A
@@ -132,6 +137,41 @@
         box-shadow: 0 8px 28px rgba(0, 0, 0, 0.10);
         z-index: 200;
     }
+
+    /* THE NAV'S PANEL TAKES THE LEFT RAIL BACK. Everything above budgets the
+       panel to start inside the inset <body>; this pulls it back out to the
+       viewport's own gutter, which is where the width for 154 charts has been
+       sitting unused. It is allowed because the rails are decoration —
+       pointer-events: none at z-index 1 — while the panel is opaque at z-index
+       200 inside a nav at z-index 100, so it ALREADY paints over them when
+       open. It simply was not permitted to start there.
+
+       Shifting left by exactly one inset puts the panel's left edge back at the
+       nav's own 1.5rem, so the cap returns to a plain `100vw - 3rem`: 1.5rem of
+       gutter at each edge, right edge at 100vw - 1.5rem, same as before. The
+       columns gain a full rail, ~200px. The width the panel WANTS is unchanged
+       (max-content, ~1600px at 7 groups), so this is width the columns actually
+       take rather than slack.
+
+       Scoped to .nav deliberately. dropouts.html reuses .nav-dd-panel for its
+       chart picker, and that one is drawn mid-page after a <label> inside a
+       centred .wrap — pulling it a rail's width left would tear it off its own
+       summary. Only the nav's copy starts at the body padding edge, so only the
+       nav's copy may reclaim it.
+
+       Inside the rails' own breakpoint because --page-inset is 0px below it:
+       under 1100px the shift is a no-op and the base cap already resolves to
+       this same value, so there is nothing to override. It also keeps this
+       clear of the <=640px block, which pins the panel with left + right and
+       would otherwise lose to this selector's higher specificity — the two
+       ranges do not overlap, so those rules are never in play here. */
+    @media (min-width: 1100px) {
+        .nav .nav-dd-panel {
+            left: calc(-1 * var(--page-inset));
+            max-width: calc(100vw - 3rem);
+        }
+    }
+
     /* One group per column, so every heading sits on the same line. A column
        flow was tried instead and rejected: it packs tighter, but a group starts
        wherever the previous one ran out of column, which scatters the headings
