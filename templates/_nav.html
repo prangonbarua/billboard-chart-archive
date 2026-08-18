@@ -166,7 +166,12 @@
            a narrow window is the acceptable failure; a row wider than the panel
            is not, because reaching it is what needed the wheel hijack. */
         grid-auto-columns: minmax(0, max-content);
-        gap: 1rem;
+        /* 0.5rem, not 1rem. At 154 charts the row wants more width than the cap
+           allows, and every rem of gap is width taken from the columns — six
+           gaps at 1rem cost 48px, which is about one wrapped label. The gap
+           only has to keep adjacent columns from reading as one list; the
+           columns are max-content and take the freed space themselves. */
+        gap: 0.5rem;
         align-items: start;
     }
 
