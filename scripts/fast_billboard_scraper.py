@@ -352,6 +352,13 @@ def scrape_billboard_chart(chart_name='hot-100', date=None, min_rows=None):
                         'singapore', 'slovakia', 'south-africa', 'spain',
                         'sweden', 'switzerland', 'taiwan', 'thailand', 'turkey',
                         'u-k')},
+                    # These four DIP in 2021-2025 and recover by 2026, so
+                    # neither launch depth nor current depth reveals the
+                    # minimum — the first batch run rejected 165 weeks each on
+                    # bluegrass and kids and 64 each on cast and blues, all
+                    # inside that window. Measured 2026-08-18: bluegrass 15 at
+                    # launch, 10 through 2022-2024, 15 today; kids 25/15/25;
+                    # cast and blues 15/10/15.
                     # ── Batch added 2026-08-17 ─────────────────────
                     # BACKFILL FLOORS, NOT MODERN DEPTHS. Each is the
                     # MINIMUM depth measured across the chart's life:
@@ -371,9 +378,9 @@ def scrape_billboard_chart(chart_name='hot-100', date=None, min_rows=None):
                     'billboard-italy-albums-top-100': 25,
                     'billboard-philippines-top-philippine-songs': 25,
                     'billboard-u-s-afrobeats-songs': 50,
-                    'bluegrass-albums': 15,
-                    'blues-albums': 15,
-                    'cast-albums': 15,
+                    'bluegrass-albums': 10,
+                    'blues-albums': 10,
+                    'cast-albums': 10,
                     'christian-streaming-songs': 25,
                     'classical-albums': 25,
                     'classical-crossover-albums': 1,
@@ -392,7 +399,7 @@ def scrape_billboard_chart(chart_name='hot-100', date=None, min_rows=None):
                     'indie-store-album-sales': 15,
                     'jazz-albums': 1,
                     'jazz-songs': 30,
-                    'kids-albums': 25,
+                    'kids-albums': 15,
                     'latin-pop-albums': 15,
                     'latin-rhythm-albums': 15,
                     'latin-streaming-songs': 25,
