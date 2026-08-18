@@ -12,13 +12,18 @@ import re
 import time
 import json
 
-def scrape_billboard_chart(chart_name='hot-100', date=None):
+def scrape_billboard_chart(chart_name='hot-100', date=None, min_rows=None):
     """
     Scrape a Billboard chart for a specific date
 
     Args:
         chart_name: 'hot-100' or 'billboard-200'
         date: Date string 'YYYY-MM-DD' or None for latest
+        min_rows: Override the row-count floor below. Only measure_depth_floor.py
+            passes this, and only as 1: the floor is what that script exists to
+            measure, so applying the default would reject every week of a chart
+            that ever ran shallower than 20 and report it as having no depth at
+            all. Nothing on the weekly or backfill path may pass this.
 
     Returns:
         List of chart entries or None if failed
@@ -348,6 +353,8 @@ def scrape_billboard_chart(chart_name='hot-100', date=None):
                         'sweden', 'switzerland', 'taiwan', 'thailand', 'turkey',
                         'u-k')},
                     }.get(chart_name, 20)
+        if min_rows is not None:
+            expected = min_rows
         if len(entries) < expected:
             print(f"✗ Incomplete chart: {len(entries)}/{expected} rows — skipping (will retry next run)")
             time.sleep(1)
