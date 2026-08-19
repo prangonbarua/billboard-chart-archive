@@ -151,8 +151,19 @@ def scrape_mediatraffic_week(year, week, session=None, timeout=30):
     if (got_week, got_year) != (week, year):
         print(f'✗ page says week {got_week}/{got_year}, not {week}/{year} — skipping')
         return None
+    # The week LABEL's year is not always the date's year. "week 53 / 2004 -
+    # January 1" is 2005-01-01: the last week of a chart year is dated into the
+    # next calendar year. Stamping the label year instead puts that week nearly
+    # twelve months early, which shows up as a chart whose weeks are 1-2 days
+    # apart and land on three different weekdays. Symmetrically, a week-1 page
+    # dated in December belongs to the previous year.
+    date_year = got_year
+    if got_week >= 52 and month.lower() == 'january':
+        date_year += 1
+    elif got_week <= 1 and month.lower() == 'december':
+        date_year -= 1
     try:
-        date = datetime.strptime(f'{month} {day} {got_year}', '%B %d %Y').strftime('%Y-%m-%d')
+        date = datetime.strptime(f'{month} {day} {date_year}', '%B %d %Y').strftime('%Y-%m-%d')
     except ValueError:
         print(f'✗ unparseable date "{month} {day}"')
         return None

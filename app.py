@@ -492,6 +492,13 @@ BATCH_CHARTS = {
     'italy_hot100':       ('Billboard Italy Hot 100',       'International', 25, 'song', 'italy_hot100.csv'),
     'philippines_hot100': ('Billboard Philippines Hot 100', 'International', 25, 'song', 'philippines_hot100.csv'),
     'china_tme':          ('China TME Uni Songs',           'International', 50, 'song', 'china_tme.csv'),
+    # The ONLY chart here that is not Billboard's. MediaTraffic estimates a
+    # global singles chart from national charts, so the label names the source
+    # rather than letting it sit unmarked among Billboard's own — every other
+    # row on this site is Billboard data and a reader assumes that.
+    # Its 2004-onward weeks only: see fast_mediatraffic_scraper.py for why the
+    # older pages, which state no date, are refused instead of derived.
+    'world_singles':      ('World Single Chart (MediaTraffic)', 'International', 40, 'song', 'world_singles.csv'),
 
     # ── Batch added 2026-08-17 ───────────────────────────────────────────────
     # 57 charts that survived the archive test. Depths here are CURRENT depth,
