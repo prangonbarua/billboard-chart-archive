@@ -476,6 +476,17 @@ BATCH_CHARTS = {
     # it carries ~320 weeks against the albums chart's ~995 from 2007.
     'hard_rock_songs':    ('Hot Hard Rock Songs',     'Songs', 25, 'song', 'hard_rock_songs.csv'),
 
+    # Younger still: Hot Dance/Pop Songs launched 2025-01-18 and carries ~80
+    # weeks. The launch week is not inferred from a binary search —
+    # find_chart_start.py cannot bracket this chart at all ("modern week
+    # matches clamp") because every pre-launch date clamps FORWARD to the
+    # launch week rather than failing. It is measured instead: all 15 rows of
+    # 2025-01-18 carry Weeks on Chart == 1, and 2025-01-11, 2025-01-04 and
+    # 2024-12-28 each serve 2025-01-18's rankings under their own date.
+    # Depth is 15, below the scraper's default floor of 20 — see the floor note
+    # in fast_billboard_scraper.py.
+    'dance_pop':          ('Hot Dance/Pop Songs',     'Songs', 15, 'song', 'dance_pop.csv'),
+
     'argentina_hot100':   ('Billboard Argentina Hot 100',   'International', 25, 'song', 'argentina_hot100.csv'),
     'brasil_hot100':      ('Billboard Brasil Hot 100',      'International', 25, 'song', 'brasil_hot100.csv'),
     'italy_hot100':       ('Billboard Italy Hot 100',       'International', 25, 'song', 'italy_hot100.csv'),
