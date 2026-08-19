@@ -237,3 +237,40 @@ def test_report_week_links_are_not_hardcoded_to_hot100(application):
            / 'templates' / 'results.html').read_text()
     assert "'/top100?date='" not in src, 'week links must follow the chart'
     assert "currentDetail.chart.url + '?date='" in src
+
+
+def test_album_modal_does_not_read_billboard200(application):
+    """The album modal fetched /api/album-history, which reads only
+    BILLBOARD_200_DATA, and linked its weeks to /albums200. Both are wrong on
+    every album chart that is not the Billboard 200. It now renders from
+    currentDetail.series like the song modal, so assert the shipped JS."""
+    src = (pathlib.Path(__file__).resolve().parent.parent
+           / 'templates' / 'results.html').read_text()
+    # The call, not the name — the comment above the fix cites the old path.
+    assert "fetch('/api/album-history" not in src, 'album modal must use this chart, not the Billboard 200'
+    assert "'/albums200?date='" not in src, 'album week links must follow the chart'
+
+
+def test_album_detail_is_its_own_chart_not_billboard200(application):
+    """The premise the fix rests on: these really are different frames, so
+    reading the wrong one is a visible error and not a no-op. Fearless is a
+    long-running Billboard 200 #1 but a brief, low-peaking Vinyl Albums entry.
+    Guards the data; the template test above guards the modal that reads it."""
+    vinyl = application.artist_chart_detail('Taylor Swift', 'vinyl_albums')
+    bb200 = application.artist_chart_detail('Taylor Swift', 'albums200')
+
+    assert vinyl['chart']['url'] == '/vinyl_albums'
+    assert 'Fearless' in vinyl['series'] and 'Fearless' in bb200['series']
+
+    vinyl_run, bb200_run = vinyl['series']['Fearless'], bb200['series']['Fearless']
+    assert len(vinyl_run) < len(bb200_run)
+    assert min(e['rank'] for e in vinyl_run) > min(e['rank'] for e in bb200_run)
+
+
+def test_every_album_chart_detail_carries_its_own_url(application):
+    """The album modal's week links are built from chart.url, so no album
+    chart may resolve to /albums200 but the Billboard 200 itself."""
+    for key, meta in application.CHARTS.items():
+        if meta['kind'] != 'album' or key == 'albums200':
+            continue
+        assert application._chart_url(key) != '/albums200', f'{key} links to the Billboard 200'

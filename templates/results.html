@@ -859,24 +859,17 @@
                 .catch(() => {});
         }
 
-        function showSongDetails(songName) {
-            document.getElementById('modalSongName').textContent = songName;
+        // Songs and albums render the same way, from currentDetail.series \u2014
+        // this chart's rank history, keyed by title, straight from the same
+        // fetch that populated the table. The album path used to fetch
+        // /api/album-history instead, which reads only BILLBOARD_200_DATA, so
+        // every other album chart (Top Album Sales, Vinyl Albums, Top Country
+        // Albums, ...) showed Billboard 200 history under its own heading.
+        function renderWeeks(title) {
             const container = document.getElementById('weeklyData');
             container.textContent = '';
-            songModal.style.display = 'block';
 
-            // Fetch Spotify stream count from kworb (best-effort).
-            // Find the row for this song to get artist_only / song_only
-            const row = document.querySelector('#detailTable tbody tr[data-song="' + CSS.escape(songName) + '"]');
-            if (row && row.dataset.artistOnly && row.dataset.songOnly) {
-                loadSongStreams(row.dataset.artistOnly, row.dataset.songOnly);
-            } else {
-                document.getElementById('songStreamsStrip').style.display = 'none';
-            }
-
-            // currentDetail.series holds this chart's rank history, keyed by
-            // title, straight from the same fetch that populated the table.
-            const data = currentDetail && currentDetail.series ? currentDetail.series[songName] : null;
+            const data = currentDetail && currentDetail.series ? currentDetail.series[title] : null;
             if (!data || !data.length) {
                 const p = document.createElement('p');
                 p.style.color = 'var(--text-muted)';
@@ -889,54 +882,38 @@
             const sorted = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
             const best = Math.min(...sorted.map(e => e.rank));
             sorted.forEach((entry, i) => {
-                // The chart the detail came from, not the Hot 100. These rows
-                // are built from currentDetail.series, so linking anywhere else
-                // opens a week that does not contain the rank shown here.
+                // The chart the detail came from, not the Hot 100 and not the
+                // Billboard 200. These rows are built from currentDetail.series,
+                // so linking anywhere else opens a week that does not contain
+                // the rank shown here.
                 const href = currentDetail.chart.url + '?date=' + entry.date
-                    + '&highlight=' + encodeURIComponent(songName)
+                    + '&highlight=' + encodeURIComponent(title)
                     + '&rank=' + entry.rank;
                 container.appendChild(makeWeekRow(entry.date, 'Week ' + (i+1), entry.rank, entry.rank === best, href));
             });
         }
 
+        function showSongDetails(songName) {
+            document.getElementById('modalSongName').textContent = songName;
+            songModal.style.display = 'block';
+
+            // Fetch Spotify stream count from kworb (best-effort).
+            // Find the row for this song to get artist_only / song_only
+            const row = document.querySelector('#detailTable tbody tr[data-song="' + CSS.escape(songName) + '"]');
+            if (row && row.dataset.artistOnly && row.dataset.songOnly) {
+                loadSongStreams(row.dataset.artistOnly, row.dataset.songOnly);
+            } else {
+                document.getElementById('songStreamsStrip').style.display = 'none';
+            }
+
+            renderWeeks(songName);
+        }
+
         function showAlbumDetails(albumName) {
             document.getElementById('modalSongName').textContent = albumName;
             document.getElementById('songStreamsStrip').style.display = 'none';
-            const container = document.getElementById('weeklyData');
-            container.textContent = '';
             songModal.style.display = 'block';
-
-            const loading = document.createElement('p');
-            loading.style.color = 'var(--text-muted)';
-            loading.style.paddingTop = '0.5rem';
-            loading.textContent = 'Loading\u2026';
-            container.appendChild(loading);
-
-            fetch('/api/album-history?artist=' + encodeURIComponent(ARTIST_NAME) + '&album=' + encodeURIComponent(albumName))
-                .then(r => r.ok ? r.json() : Promise.reject())
-                .then(data => {
-                    container.textContent = '';
-                    if (data.error || !data.history) {
-                        const p = document.createElement('p');
-                        p.style.color = 'var(--text-muted)';
-                        p.textContent = 'No data available.';
-                        container.appendChild(p);
-                        return;
-                    }
-                    data.history.forEach(entry => {
-                        const href = '/albums200?date=' + entry.date
-                            + '&highlight=' + encodeURIComponent(albumName)
-                            + '&rank=' + entry.rank;
-                        container.appendChild(makeWeekRow(entry.date, 'Week ' + entry.weeks, entry.rank, entry.rank === data.peak, href));
-                    });
-                })
-                .catch(() => {
-                    container.textContent = '';
-                    const p = document.createElement('p');
-                    p.style.color = 'var(--red)';
-                    p.textContent = 'Error loading album data.';
-                    container.appendChild(p);
-                });
+            renderWeeks(albumName);
         }
 
         // ── Modal close ───────────────────────────────────────────────
