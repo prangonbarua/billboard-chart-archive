@@ -889,7 +889,10 @@
             const sorted = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
             const best = Math.min(...sorted.map(e => e.rank));
             sorted.forEach((entry, i) => {
-                const href = '/top100?date=' + entry.date
+                // The chart the detail came from, not the Hot 100. These rows
+                // are built from currentDetail.series, so linking anywhere else
+                // opens a week that does not contain the rank shown here.
+                const href = currentDetail.chart.url + '?date=' + entry.date
                     + '&highlight=' + encodeURIComponent(songName)
                     + '&rank=' + entry.rank;
                 container.appendChild(makeWeekRow(entry.date, 'Week ' + (i+1), entry.rank, entry.rank === best, href));

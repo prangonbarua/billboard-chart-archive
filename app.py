@@ -922,6 +922,21 @@ def artist_chart_summaries(artist_name):
         return None
     return {'charts': charts, 'hidden': hidden}
 
+def _chart_url(chart_key):
+    """Path of a chart's own page.
+
+    Read off the url_map rather than built with url_for, because this feeds
+    artist_chart_detail, which the tests call directly with no request context
+    — url_for raises there. The map is the authority either way: every chart
+    registers its route under its own key, so a chart whose path stops matching
+    its key resolves correctly here instead of silently pointing elsewhere.
+    """
+    try:
+        return next(iter(app.url_map.iter_rules(chart_key))).rule
+    except (KeyError, StopIteration):
+        return '/' + chart_key
+
+
 def artist_chart_detail(artist_name, chart_key):
     """Per-entry rank history for one artist on one chart.
 
@@ -981,7 +996,8 @@ def artist_chart_detail(artist_name, chart_key):
 
     return {
         'chart': {'key': chart_key, 'label': meta['label'],
-                  'kind': meta['kind'], 'depth': meta['depth']},
+                  'kind': meta['kind'], 'depth': meta['depth'],
+                  'url': _chart_url(chart_key)},
         'series': series,
         'items': items,
     }

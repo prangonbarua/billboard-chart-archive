@@ -1,5 +1,6 @@
 """Wiring tests for the all-charts artist report. These import app, which
 loads every CSV — slow by design. Fixture artists are real rows in data/."""
+import pathlib
 import re
 
 import pytest
@@ -209,3 +210,30 @@ def test_results_page_rows_carry_chart_keys(application):
     body = c.post('/analyze', data={'artist_name': 'Taylor Swift'}).get_data(as_text=True)
     assert 'data-chart="albums200"' in body
     assert 'data-chart="country_airplay"' in body
+
+
+def test_detail_carries_its_own_chart_url(application):
+    """The report's week links are built from this, and used to be hardcoded
+    to /top100 — clicking a Hot Country Songs week opened the Hot 100."""
+    detail = application.artist_chart_detail('Aaron Watson', 'country_songs')
+    assert detail['chart']['url'] == '/country_songs'
+
+    hot100 = application.artist_chart_detail('Taylor Swift', 'top100')
+    assert hot100['chart']['url'] == '/top100'
+
+
+def test_every_chart_url_matches_a_registered_route(application):
+    """_chart_url reads the url_map, so this fails if a chart is ever
+    registered under a path that is not its key."""
+    rules = {r.endpoint: r.rule for r in application.app.url_map.iter_rules()}
+    for key in application.CHARTS:
+        assert key in rules, f'{key} has no route registered under its own key'
+        assert application._chart_url(key) == rules[key]
+
+
+def test_report_week_links_are_not_hardcoded_to_hot100(application):
+    """The defect was in the template, so assert on the shipped JS."""
+    src = (pathlib.Path(__file__).resolve().parent.parent
+           / 'templates' / 'results.html').read_text()
+    assert "'/top100?date='" not in src, 'week links must follow the chart'
+    assert "currentDetail.chart.url + '?date='" in src
