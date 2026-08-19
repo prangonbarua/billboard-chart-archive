@@ -498,7 +498,10 @@ BATCH_CHARTS = {
     # row on this site is Billboard data and a reader assumes that.
     # Its 2004-onward weeks only: see fast_mediatraffic_scraper.py for why the
     # older pages, which state no date, are refused instead of derived.
-    'world_singles':      ('World Single Chart (MediaTraffic)', 'International', 40, 'song', 'world_singles.csv'),
+    # Label length is load-bearing: the nav puts every chart name on one line
+    # (ab74b5a), and "World Single Chart (MediaTraffic)" at 33 characters is
+    # longer than any Billboard label and fails that test outright.
+    'world_singles':      ('World Singles (MediaTraffic)', 'International', 40, 'song', 'world_singles.csv'),
 
     # ── Batch added 2026-08-17 ───────────────────────────────────────────────
     # 57 charts that survived the archive test. Depths here are CURRENT depth,
