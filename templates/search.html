@@ -97,6 +97,7 @@
         }
         .past-row .num { font-weight: 700; font-size: 1rem; white-space: nowrap; }
         .past-row .query { color: var(--text-muted); font-size: 1rem; }
+        .past-row .credit { color: var(--text-dim); font-size: 0.875rem; }
         .past-row .spacer { flex: 1; }
         .past-row .when { color: var(--text-dim); font-size: 0.9375rem; white-space: nowrap; }
         .past-row .go { font-size: 1.0625rem; color: var(--text); }
@@ -189,12 +190,40 @@
         const clearBtn = document.getElementById('clearBtn');
         const KEY = 'pastSearches';
 
-        const getPast = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } };
+        // One history for all three modes, tagged by mode. Entries written
+        // before song/album existed carry no mode at all, so they default to
+        // artist rather than vanishing from the list.
+        const getPast = () => {
+            try {
+                return (JSON.parse(localStorage.getItem(KEY)) || [])
+                    .map(p => ({ mode: 'artist', ...p }));
+            } catch { return []; }
+        };
+
+        function rememberSearch(entry) {
+            // Same title by two different acts is two entries, so the artist
+            // is part of the identity, not just the query text.
+            const past = getPast().filter(p => !(
+                p.mode === entry.mode &&
+                p.q.toLowerCase() === entry.q.toLowerCase() &&
+                (p.artist || '') === (entry.artist || '')
+            ));
+            past.push(entry);
+            localStorage.setItem(KEY, JSON.stringify(past.slice(-50)));
+        }
+
+        const EMPTY_TEXT = {
+            artist: 'No reports yet. Your searches will show up here.',
+            song: 'No songs yet. The songs you look up will show up here.',
+            album: 'No albums yet. The albums you look up will show up here.',
+        };
 
         function renderPast() {
-            const past = getPast();
+            // Only this mode's history. Song lookups in the artist list would
+            // replay through /analyze and come back empty.
+            const past = getPast().filter(p => p.mode === mode);
             if (!past.length) {
-                pastList.innerHTML = '<p class="empty">No reports yet. Your searches will show up here.</p>';
+                pastList.innerHTML = '<p class="empty">' + EMPTY_TEXT[mode] + '</p>';
                 clearBtn.style.display = 'none';
                 return;
             }
@@ -210,8 +239,20 @@
                 const when = document.createElement('span'); when.className = 'when';
                 when.textContent = new Date(item.d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 const go = document.createElement('span'); go.className = 'go'; go.textContent = '→';
-                row.append(num, q, sp, when, go);
-                row.addEventListener('click', e => { e.preventDefault(); input.value = item.q; form.submit(); });
+                row.append(num, q);
+                if (item.credit) {
+                    const credit = document.createElement('span');
+                    credit.className = 'credit';
+                    credit.textContent = 'by ' + item.credit;
+                    row.appendChild(credit);
+                }
+                row.append(sp, when, go);
+                row.addEventListener('click', e => {
+                    e.preventDefault();
+                    input.value = item.q;
+                    if (item.mode === 'artist') { form.submit(); return; }
+                    showTitleCharts(item.q, item.artist, item.credit);
+                });
                 pastList.appendChild(row);
             });
             clearBtn.style.display = 'inline-block';
@@ -224,12 +265,15 @@
             if (mode !== 'artist') { e.preventDefault(); return; }
             const q = input.value.trim();
             if (!q) return;
-            const past = getPast().filter(p => p.q.toLowerCase() !== q.toLowerCase());
-            past.push({ q: q, d: Date.now() });
-            localStorage.setItem(KEY, JSON.stringify(past.slice(-50)));
+            rememberSearch({ q: q, d: Date.now(), mode: 'artist' });
         });
 
-        clearBtn.addEventListener('click', () => { localStorage.removeItem(KEY); renderPast(); });
+        // Clears the mode you are looking at. The other two modes' histories
+        // are not on screen, so wiping them from here would be invisible.
+        clearBtn.addEventListener('click', () => {
+            localStorage.setItem(KEY, JSON.stringify(getPast().filter(p => p.mode !== mode)));
+            renderPast();
+        });
 
         // ── Mode ────────────────────────────────────────────────────────────
         // 'artist' keeps the original behaviour exactly: autocomplete on
@@ -238,7 +282,6 @@
         // rather than a report and does not need a page of its own.
         const modeSwitch = document.getElementById('modeSwitch');
         const titleResults = document.getElementById('titleResults');
-        const pastHead = document.getElementById('pastHead');
         let mode = 'artist';
 
         const PLACEHOLDER = { artist: 'Artist name', song: 'Song title', album: 'Album title' };
@@ -252,11 +295,9 @@
             input.value = '';
             suggest.style.display = 'none';
             titleResults.innerHTML = '';
-            // Past reports are artist reports; they have nothing to say here.
-            const artistMode = mode === 'artist';
-            pastHead.style.display = artistMode ? '' : 'none';
-            pastList.style.display = artistMode ? '' : 'none';
-            clearBtn.style.display = artistMode && getPast().length ? 'inline-block' : 'none';
+            // Each mode keeps its own history, so the section stays up and
+            // swaps contents instead of disappearing on a title mode.
+            renderPast();
         });
 
         async function showTitleCharts(title, artist, credit) {
@@ -277,6 +318,12 @@
                 titleResults.appendChild(p);
                 return;
             }
+
+            // Recorded only once the lookup actually answered. A failed fetch
+            // returns above, so the list never fills with searches that never
+            // ran and would replay into the same error.
+            rememberSearch({ q: title, d: Date.now(), mode: mode, artist: artist, credit: credit || artist });
+            renderPast();
 
             const head = document.createElement('div');
             head.className = 't-head';
