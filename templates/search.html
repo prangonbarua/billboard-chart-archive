@@ -150,7 +150,7 @@
 
     <div class="container">
         <h1>Your reports</h1>
-        <p class="sub">Search any artist to generate a full chart report &mdash; every Hot 100 and Billboard 200 entry, peaks, and weeks on chart. Type a name below.</p>
+        <p class="sub">Search any artist to generate a full chart report: every Hot 100 and Billboard 200 entry, peaks, and weeks on chart. Type a name below.</p>
 
         {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -280,7 +280,7 @@
 
             const head = document.createElement('div');
             head.className = 't-head';
-            head.textContent = title + ' — ' + (credit || artist);
+            head.textContent = title + ' by ' + (credit || artist);
             titleResults.appendChild(head);
 
             const rows = body.charts || [];
