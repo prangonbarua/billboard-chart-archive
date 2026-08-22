@@ -10,7 +10,7 @@ Requested, probed thoroughly, and unavailable. Do not re-derive.
 | Chart | Finding |
 |---|---|
 | **Pop 100** (2005-2009) | 7 slug variants x 2 in-run dates, all 404 |
-| **Hot 100 Recurrents** | 6 variants 404. Billboard's own slug `hot-singles-recurrents` also 404s on www; `assets.billboard.com` is dead (expired cert, 503) |
+| **Hot 100 Recurrents** | 6 variants 404. Billboard's own slug `hot-singles-recurrents` also 404s on www; `assets.billboard.com` is dead (expired cert, 503). Re-probed 2026-08-22: still 404, absent from the live `/charts/` index (31 slugs), and **zero** of the ~20k distinct `billboard.com/charts/*` URLs in the Wayback CDX contain "recurrent" — verified against a known slug first, so that is a real absence, not a bad query. There is no page, live or archived |
 | **European Hot 100 Singles** (1984-2010) | Weekly URL redirects to `/charts/year-end/...` — the reverse-redirect trap. No weekly archive |
 
 ### Rolling Stone Top 100 — measured 2026-08-10, NOT addable
