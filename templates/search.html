@@ -115,10 +115,15 @@
             border: 1px solid var(--border);
             cursor: pointer;
         }
+        /* Matched to the nav's own active pill (_nav.html:57, --surface-hover)
+           rather than a hardcoded green, so the two stay in step if the palette
+           moves again. The dark fill this replaced put white-on-green here while
+           the nav a few pixels above used dark-on-mint for the same "you are
+           here" meaning. */
         .mode-switch button.on {
-            background: #0c492c;
-            border-color: #0c492c;
-            color: #ffffff;
+            background: var(--surface-hover);
+            border-color: var(--border);
+            color: var(--text);
         }
         /* Two lines per suggestion: the title, and the credit as billed. The
            credit is what disambiguates two acts sharing a title. */
