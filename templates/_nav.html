@@ -343,17 +343,13 @@
         {% endmacro %}
         <div class="nav-dd-panel">
           <div class="nav-dd-flow">
-            {{ nav_group('Songs', nav_is_yearend) }}
-            {{ nav_group('Airplay', nav_is_yearend) }}
-            {# Groups are named here rather than iterated from nav_groups so the
-               column order is deliberate. That means a NEW group is invisible
-               until it gets a line — Streaming was added 2026-08-17 with its 11
-               charts. The macro's own guard keeps it out of the nav until one
-               of them has data. #}
-            {{ nav_group('Streaming', nav_is_yearend) }}
-            {{ nav_group('Albums & Artists', nav_is_yearend) }}
-            {{ nav_group('International', nav_is_yearend) }}
-            {{ nav_group('Hits of the World', nav_is_yearend) }}
+            {# Order comes from CHART_GROUP_ORDER, not from nav_groups, so the
+               columns stay deliberate rather than falling out of dict order.
+               It used to be six literal calls here; the dropouts picker had
+               its own copy of the same list and silently kept serving the
+               three groups that existed the day it was written. One list now.
+               The macro's own guard keeps a group out until it has data. #}
+            {% for group in nav_group_order %}{{ nav_group(group, nav_is_yearend) }}{% endfor %}
             {% if nav_yearend %}
             <div class="nav-dd-group">
                 <div class="nav-dd-label">Year-End</div>

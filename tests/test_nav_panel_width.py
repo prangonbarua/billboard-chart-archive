@@ -320,11 +320,16 @@ def _registry_groups():
 def _columns():
     """[(heading, tuple of label)] in the order the panel lays them out.
 
-    The order comes from the template's own nav_group() calls, so a group added
-    there is measured without touching this file.
+    The order comes from app.py's CHART_GROUP_ORDER, which is what the nav
+    iterates, so a group added there is measured without touching this file.
+    It used to be read from literal nav_group() calls in the template; those
+    became a loop when the dropouts picker was made to share the same list.
     """
+    import ast
+
     groups = _registry_groups()
-    order = list(dict.fromkeys(re.findall(r"nav_group\('([^']+)'", NAV)))
+    order = ast.literal_eval(_assignment(ast.parse(APP.read_text()), 'CHART_GROUP_ORDER'))
+    assert order, 'CHART_GROUP_ORDER is empty — the panel would measure as no columns'
     cols = [(g, groups[g]) for g in order]
     # The Year-End column holds whichever charts have a year-end edition, which
     # depends on loaded data. Measuring it against every label in the registry

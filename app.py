@@ -627,6 +627,18 @@ for _stem, _country in HOTW_COUNTRIES:
         f'{_country} Songs', 'Hits of the World', 25, 'song',
         f"{_stem.replace('-', '_')}_hotw.csv")
 
+# Column order for every chart picker on the site. Deliberate rather than
+# sorted, but named ONCE: the nav and the dropouts picker each used to carry
+# their own list, and the dropouts one still named the three groups that
+# existed when it was written. Streaming (11 charts), International (9) and
+# Hits of the World were all reachable by URL and absent from that menu.
+# A group with no loaded data is dropped by the templates' own guard, so a
+# group can be listed here before its charts are backfilled.
+CHART_GROUP_ORDER = [
+    'Songs', 'Airplay', 'Streaming', 'Albums & Artists',
+    'International', 'Hits of the World',
+]
+
 for _key, (_label, _group, _depth, _kind, _csv) in BATCH_CHARTS.items():
     CHARTS[_key] = dict(label=_label, group=_group, depth=_depth, kind=_kind)
     # A missing CSV loads as None, and available_charts() drops dataless charts
@@ -736,6 +748,7 @@ def inject_nav():
         'nav_groups': available_charts(),
         'nav_charts': CHARTS,
         'nav_yearend': yearend_charts(),
+        'nav_group_order': CHART_GROUP_ORDER,
     }
 
 def safe_int(val, default=None):
