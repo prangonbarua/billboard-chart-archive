@@ -366,6 +366,10 @@
        class="{{ 'active' if request.endpoint == 'versus_page' else '' }}">Versus</a>
     <a href="{{ url_for('dropouts_page') }}"
        class="{{ 'active' if request.endpoint == 'dropouts_page' else '' }}">Dropouts</a>
+    {# Sits next to Dropouts because it is a filtered view of them. The page
+       itself carries the derived-data notice; this link cannot. #}
+    <a href="{{ url_for('recurrents_page') }}"
+       class="{{ 'active' if request.endpoint == 'recurrents_page' else '' }}">Recurrents</a>
     <a href="{{ url_for('search') }}"
        class="{{ 'active' if request.endpoint == 'search' else '' }}">Reports</a>
 </nav>

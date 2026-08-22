@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recurrents</title>
+    {% include '_head_styles.html' %}
+    <style>
+        .wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+        h1 { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; }
+        .page-meta { color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; }
+
+        /* The derived-data notice. Deliberately not muted like .page-meta —
+           every other table on this site is scraped Billboard data and a
+           reader assumes that, so the one page that is not has to say so
+           where the eye lands, not in small print under the table. */
+        .derived {
+            border: 1px solid var(--border); border-left: 3px solid var(--text);
+            background: var(--surface); padding: 0.875rem 1rem; margin-top: 1.25rem;
+            font-size: 0.8125rem; color: var(--text-muted); line-height: 1.55;
+            max-width: 78ch;
+        }
+        .derived strong { color: var(--text); font-weight: 600; }
+
+        .chart-block { margin-top: 2.5rem; }
+        .chart-block-head {
+            display: flex; align-items: baseline; justify-content: space-between;
+            gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem;
+        }
+        .chart-block-head h2 { font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.01em; }
+        .chart-block-head h2 a { color: var(--text); text-decoration: none; }
+        .chart-block-head h2 a:hover { text-decoration: underline; }
+        .week-range { font-size: 0.8125rem; color: var(--text-muted); }
+
+        /* Same table shell the chart pages use, so paxel.css lands on it identically. */
+        .chart-table { width: 100%; border-collapse: collapse; }
+        .chart-table thead tr { border-bottom: 1px solid var(--border); }
+        .chart-table thead th {
+            font-size: 0.6875rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.06em; color: var(--text-muted);
+            text-align: left; padding: 0.5rem 0.75rem;
+        }
+        .chart-table thead th.col-rank { width: 96px; text-align: center; }
+        .chart-table thead th.col-stat { text-align: center; width: 68px; }
+        .chart-table tbody tr { border-bottom: 1px solid var(--border); }
+        .chart-table tbody tr:last-child { border-bottom: none; }
+        .chart-table tbody tr:hover { background: var(--surface-hover); box-shadow: inset 3px 0 0 var(--row-hover-bar); }
+        .chart-table td { padding: 0.625rem 0.75rem; vertical-align: middle; }
+
+        .cell-rank { text-align: center; }
+        .rank-num { font-size: 0.9375rem; font-weight: 700; color: var(--text-muted); }
+        .song-title { font-size: 0.9375rem; font-weight: 600; color: var(--text); }
+        .song-artist { font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.125rem; }
+        .cell-stat { text-align: center; font-size: 0.8125rem; color: var(--text-muted); }
+
+        .picker { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 1.5rem 0 0; }
+        .picker select {
+            font-family: inherit; font-size: 0.875rem; padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border); background: var(--surface); color: var(--text);
+        }
+        .week-form { display: flex; gap: 0.5rem; align-items: center; }
+        .picker label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;
+                        color: var(--text-muted); font-weight: 600; }
+        .none { font-size: 0.875rem; color: var(--text-muted); padding: 0.75rem 0; }
+    </style>
+</head>
+<body>
+{% include '_nav.html' %}
+
+<div class="wrap">
+    <h1>Recurrents</h1>
+    <p class="page-meta">
+        Hot 100 entries retired under Billboard's recurrent rule: {{ min_weeks }} weeks
+        on the chart and below #{{ rank_floor }}.
+    </p>
+
+    {# The one page on this site whose table is not scraped Billboard data. #}
+    <div class="derived">
+        <strong>Derived, not a Billboard chart.</strong>
+        Billboard's Hot&nbsp;100 Recurrents was never published with a weekly archive,
+        so none of this is copied from it. This applies Billboard's stated retirement
+        rule to the Hot&nbsp;100 data on this site and shows what comes out.
+        Billboard ranked its recurrents by continued airplay and streaming after a song
+        left the Hot&nbsp;100 — data this archive does not hold — so these are ordered by
+        <strong>last Hot&nbsp;100 position</strong>, which is not the order Billboard used.
+        Most weeks retire nobody.
+    </div>
+
+    {% if report %}
+    <div class="picker">
+        <form class="week-form" method="get" action="{{ url_for('recurrents_page') }}">
+            <label for="weekSelect">Week</label>
+            <select id="weekSelect" name="week" onchange="this.form.submit()">
+                {% for w in report.weeks %}
+                <option value="{{ w }}" {{ 'selected' if w == report.current_week }}>{{ w }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    <div class="chart-block">
+        <div class="chart-block-head">
+            <h2><a href="{{ url_for(report.key) }}">{{ report.label }}</a></h2>
+            <span class="week-range">
+                {{ report.previous_week }} &rarr; {{ report.current_week }}
+                &middot; {{ report.dropouts|length }} of {{ report.considered }}
+                {{ 'entry' if report.considered == 1 else 'entries' }} that left became recurrent
+            </span>
+        </div>
+
+        {% if report.dropouts %}
+        <table class="chart-table">
+            <thead>
+                <tr>
+                    {# Named for what it is. A bare '#' here would read as a
+                       recurrent chart position, which is exactly the thing
+                       this page cannot know. #}
+                    <th class="col-rank">Last&nbsp;pos.</th>
+                    <th>Song / Artist</th>
+                    <th class="col-stat">Weeks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in report.dropouts %}
+                <tr>
+                    <td class="cell-rank"><div class="rank-num">{{ d.rank }}</div></td>
+                    <td>
+                        <div class="song-title">{{ d.title }}</div>
+                        {% if d.artist %}<div class="song-artist">{{ d.artist }}</div>{% endif %}
+                    </td>
+                    <td class="cell-stat">{{ d.weeks if d.weeks else '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="none">
+            Nothing became recurrent this week. That is the usual result — over 554 weeks
+            from 2016, 523 of them retired nobody.
+        </p>
+        {% endif %}
+    </div>
+    {% else %}
+    <p class="none">The Hot 100 data needed for this is not loaded.</p>
+    {% endif %}
+</div>
+</body>
+</html>

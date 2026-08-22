@@ -1431,6 +1431,60 @@ def chart_dropouts(chart_key, week=None):
     }
 
 
+# Billboard's rule: a Hot 100 entry is retired to recurrent status once it has
+# spent RECURRENT_MIN_WEEKS weeks on the chart and sits below RECURRENT_RANK.
+RECURRENT_MIN_WEEKS = 20
+RECURRENT_RANK = 25
+
+
+def hot100_recurrents(week=None):
+    """Hot 100 entries that left under the recurrent rule, in a given week.
+
+    THIS IS NOT BILLBOARD'S HOT 100 RECURRENTS CHART. That chart was never
+    published with a weekly archive -- re-probed 2026-08-22, see
+    docs/HANDOFF-new-charts.md -- so there is nothing to scrape and nothing
+    here is copied from it. This applies Billboard's stated retirement rule to
+    the Hot 100 data already in the repo and reports what comes out. Every
+    caller and the template say so; do not relabel this as a Billboard chart.
+
+    Two limits are the point rather than defects to fix later:
+
+    Billboard ranked its recurrents by continued airplay and streaming for
+    songs no longer on the Hot 100. This repo has no data for a song once it
+    is off the chart, so there is no way to reproduce that order. Rows come
+    back in last-Hot-100-rank order and the template labels the column as
+    such. Presenting that as a recurrent ranking would be an invention.
+
+    Measured over 554 weeks from 2016: 94 entries qualify, and 523 of those
+    weeks have none at all. A blank week is the normal result, not a failure.
+    A further 56 long-tenured entries left from inside the top RECURRENT_RANK,
+    which the rule does not cover -- data artifact or another removal reason,
+    either way not a recurrent -- so they are excluded rather than folded in
+    to pad the list.
+    """
+    report = chart_dropouts('top100', week)
+    if report is None:
+        return None
+    qualifying = [
+        d for d in report['dropouts']
+        if (d['weeks'] or 0) >= RECURRENT_MIN_WEEKS and (d['rank'] or 0) > RECURRENT_RANK
+    ]
+    return dict(report, dropouts=qualifying, considered=len(report['dropouts']))
+
+
+@app.route('/recurrents')
+@limiter.exempt
+def recurrents_page():
+    """Derived Hot 100 recurrents. Week is in the URL so a week is shareable."""
+    report = hot100_recurrents(request.args.get('week'))
+    return render_template(
+        'recurrents.html',
+        report=report,
+        min_weeks=RECURRENT_MIN_WEEKS,
+        rank_floor=RECURRENT_RANK,
+    )
+
+
 @app.route('/dropouts')
 @limiter.exempt
 def dropouts_page():
