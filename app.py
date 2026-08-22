@@ -19,6 +19,7 @@ from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import versus
 import analytics
+import chart_index
 from flask import session
 
 # Load environment variables from .env file
@@ -662,6 +663,15 @@ del _k, _df, _d, _names
 # unreachable from a search box that can now report on all of them.
 ALL_ARTISTS = sorted({a for names in CHART_ARTISTS.values() for a in names})
 
+# Every (title, artist) on every chart, so "where else did this chart?" is a
+# lookup instead of a scan. Built here for the same reason CHART_DT is: the
+# alternative is paying it per request. Measured 2026-08-21 as built — a
+# per-request scan of all charts is 0.94s, this frame is 63 MB, answers in
+# 1.5ms, and adds 8.4s to a 15.4s import. railway.json sets no healthcheckPath, so Railway waits
+# for the port to bind rather than polling: a slower import delays the bind, it
+# cannot fail a healthcheck.
+CHART_INDEX = chart_index.build(CHART_DATA, CHART_DT, CHARTS)
+
 
 # Year-end charts.
 # One combined CSV rather than the per-chart files the weekly charts use: the
@@ -1084,6 +1094,56 @@ def get_artists():
 
     # Pools are pre-sorted, so slicing preserves order.
     return {'artists': list(artists[:50])}
+
+
+@app.route('/api/songs')
+@limiter.exempt
+def get_songs():
+    """Title autocomplete, the song/album counterpart to /api/artists.
+
+    ?kind= picks the pool: 'song' titles or 'album' titles. They are kept apart
+    because the lookup they feed is kind-matched — offering an album title to a
+    song search would only produce an empty result.
+    """
+    kind = request.args.get('kind', 'song')
+    if kind not in chart_index.INDEXABLE_KINDS:
+        return {'error': f'unknown kind {kind!r}'}, 400
+    # Pairs, not bare titles. The lookup is keyed on (title, artist) and a title
+    # alone does not identify a record — 'Hold On' is Justin Bieber's and Wilson
+    # Phillips'. Each suggestion carries `credit` to show and `artist` to query.
+    return {'songs': chart_index.suggest(CHART_INDEX, kind=kind,
+                                         prefix=request.args.get('q', ''))}
+
+
+@app.route('/api/song-charts')
+@limiter.exempt
+def get_song_charts():
+    """Every chart of one kind a title reached — the standalone search entry
+    point, serving the same lookup the song modal uses.
+
+    Unlike /api/song-history there is no origin chart to read the kind from, so
+    this one takes it directly. Nothing is excluded: the caller did not come
+    from a chart, so every hit is a result.
+    """
+    song = request.args.get('song', '').strip()
+    artist = request.args.get('artist', '').strip()
+    if not song or not artist:
+        return {'error': 'Missing song or artist parameter'}, 400
+
+    kind = request.args.get('kind', 'song')
+    if kind not in chart_index.INDEXABLE_KINDS:
+        return {'error': f'unknown kind {kind!r}'}, 400
+
+    # Same contract as /api/song-history: found=True with an empty list means it
+    # charted nowhere, which must never be rendered as a failure.
+    try:
+        charts = chart_index.lookup(CHART_INDEX, song, artist, kind=kind)
+    except Exception:
+        app.logger.exception('song-charts lookup failed for %r by %r', song, artist)
+        return {'error': 'Lookup failed', 'found': False}, 500
+
+    return {'song': song, 'artist': artist, 'kind': kind,
+            'charts': charts, 'found': True}
 
 # ── Artist versus ───────────────────────────────────────────────────────────
 
@@ -2345,51 +2405,23 @@ def albums200():
     return _song_chart_page(BILLBOARD_200_DATA, ALBUMS200_AVAILABLE_DATES,
                             'albums200', 'billboard200.html')
 
-# Bubbling Under is the Hot 100's feeder chart, so each side answers a question
-# about the other: did this entry graduate, and did that hit start down there?
-CROSSOVER_CHART = {'bubbling': 'top100', 'top100': 'bubbling'}
+def _crossover_runs(chart_key, song, artist, debut):
+    """Every other chart of the same kind this title reached.
 
+    Replaces the old _crossover_run, which joined exactly one hardcoded pair
+    (Bubbling Under <-> Hot 100) and so left every other chart's modal with no
+    crossover section at all. tests/test_chart_index.py pins the old pair's
+    results against a baseline captured before that function was deleted.
 
-def _crossover_run(chart_key, song, artist, debut):
-    """This song's run on the paired chart, or None if it never charted there.
-
-    The join casefolds BOTH fields. Scraped artist casing drifts week to week
-    ('The Kid LAROI' vs 'The Kid Laroi') — the 2026-07-01 bug — and an exact-key
-    join silently returns nothing, which looks identical to a song that genuinely
-    never crossed over.
+    kind comes from the registry rather than the caller: a modal opened on an
+    album chart searches album charts without the caller knowing anything. A
+    cross-kind title match would be a coincidence, not a fact.
     """
-    other = CROSSOVER_CHART.get(chart_key)
-    df, _ = CHART_DATA.get(other, (None, None))
-    if df is None or not len(df) or other not in CHART_DT:
-        return None
-
-    # Filter on the title first: matching titles are a handful of rows, so the
-    # credit normalization runs over those instead of the whole chart.
-    same_title = df[df['Song'].astype(str).str.strip().str.casefold() == song.strip().casefold()]
-    if same_title.empty:
-        return None
-    match = same_title[
-        same_title['Artist'].map(primary_artist, na_action='ignore') == primary_artist(artist)
-    ]
-    if match.empty:
-        return None
-
-    when = CHART_DT[other].loc[match.index].dropna()
-    ranks = pd.to_numeric(match['Rank'], errors='coerce').dropna()
-    if when.empty or ranks.empty:
-        return None
-
-    first = when.min()
-    return {
-        'chart': other,
-        'label': CHARTS[other]['label'],
-        'debut': first.strftime('%Y-%m-%d'),
-        'peak': int(ranks.min()),
-        'weeks': int(when.nunique()),
-        # Whether that run began after this one — the difference between "reached
-        # the Hot 100" and "was already there".
-        'later': bool(debut is not None and pd.notna(debut) and first > debut),
-    }
+    kind = CHARTS.get(chart_key, {}).get('kind')
+    if kind not in chart_index.INDEXABLE_KINDS:
+        return []
+    return chart_index.lookup(CHART_INDEX, song, artist, kind=kind,
+                              exclude_chart=chart_key, origin_debut=debut)
 
 
 @app.route('/api/song-history')
@@ -2449,13 +2481,26 @@ def get_song_history():
     peak = int(rank_clean.min()) if not rank_clean.empty else 100
     total_weeks = len(song_data)
 
+    # crossover_ok exists so an empty list cannot be read as a failure. "Charted
+    # nowhere else" and "the lookup broke" returning the same thing is exactly
+    # what let the 2026-07-01 casefold bug hide: a join matching zero rows looked
+    # identical to a song that genuinely never crossed over. The UI renders the
+    # empty state ONLY on crossover_ok, and an error otherwise.
+    try:
+        crossover = _crossover_runs(chart, song, artist, song_data['Date'].min())
+        crossover_ok = True
+    except Exception:
+        app.logger.exception('crossover lookup failed for %r by %r', song, artist)
+        crossover, crossover_ok = [], False
+
     return jsonify({
         'history': history,
         'peak': peak,
         'total_weeks': total_weeks,
         'song': song,
         'artist': artist,
-        'crossover': _crossover_run(chart, song, artist, song_data['Date'].min()),
+        'crossover': crossover,
+        'crossover_ok': crossover_ok,
     })
 
 @app.route('/api/album-history')
@@ -2501,12 +2546,25 @@ def get_album_history():
     peak = int(rank_clean.min()) if not rank_clean.empty else 200
     total_weeks = len(album_data)
 
+    # Same contract as /api/song-history. The Billboard 200 has its own page and
+    # its own endpoint, so without this the flagship album chart would be the one
+    # album chart with no "also charted on" — every other one renders through
+    # chart.html and gets it from song-history.
+    try:
+        crossover = _crossover_runs('albums200', album, artist, album_data['Date'].min())
+        crossover_ok = True
+    except Exception:
+        app.logger.exception('crossover lookup failed for %r by %r', album, artist)
+        crossover, crossover_ok = [], False
+
     return jsonify({
         'history': history,
         'peak': peak,
         'total_weeks': total_weeks,
         'album': album,
-        'artist': artist
+        'artist': artist,
+        'crossover': crossover,
+        'crossover_ok': crossover_ok,
     })
 
 @app.route('/api/hot100/current')

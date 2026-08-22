@@ -38,6 +38,12 @@ estimated. These numbers are what decided the architecture.
 | Index as a dict of tuples | ~100-150 MB live | 0.8us | 9.0s |
 | **Index as a DataFrame, sorted MultiIndex** | **33 MB** | **0.53ms** | 10.7s |
 
+AS BUILT the frame is 543,400 rows, **63 MB**, **1.5ms** per lookup, and **8.4s**
+of a 15.4s import. The gap from the 33 MB prototype is entirely the two display
+columns added during implementation: `display` (~18 MB) and `credit` (~8 MB) over
+the ~26 MB MultiIndex. See "Two keys, two labels" below for why they are not
+optional.
+
 The naive scan is the shape `_crossover_run` already has, generalized. At 0.94s
 per lookup it is a real regression on a modal that is currently fast, so it is
 rejected.
@@ -152,10 +158,31 @@ future reader knows it was seen and left alone.
    from the same `lookup`.
 
 4. **`/api/songs?q=&kind=`** — title autocomplete, mirroring `/api/artists`
-   (app.py:1068), served from `title_pool`.
+   (app.py:1068). Serves `suggest`, not `title_pool` — see below.
+
+6. **`/api/album-history` gains the same `crossover`/`crossover_ok` pair.** The
+   Billboard 200 is the one album chart that does not render through
+   `chart.html`; it has its own template and its own endpoint. Without this the
+   flagship album chart would be the only one with no "also charted on".
 
 5. **`search.html`** gains a title mode alongside its existing artist mode,
    rendering the same row shape.
+
+## Two keys, two labels
+
+Discovered in implementation, and it changed the API. `primary_artist` casefolds
+AND drops featured acts: `'The Kid LAROI & Justin Bieber'` becomes
+`'the kid laroi'`. That is correct for a join key and unusable as a label — a
+search box offering "the kid laroi" reads as broken.
+
+So the index carries both a key and a label on each axis: `title`/`display` and
+`artist`/`credit`. A suggestion returns `credit` to show and `artist` to query
+with.
+
+This is also why `title_pool` alone could not serve the search box. The index is
+keyed on (title, artist), and a bare title does not identify a record — "Hold On"
+is Justin Bieber's and Wilson Phillips'. `suggest` returns pairs, ranked by how
+many charts each reached.
 
 ## Error handling
 

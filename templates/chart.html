@@ -214,7 +214,9 @@
         }
         .view-toggle .filter-btn { text-decoration: none; display: inline-block; }
 
-        /* Bubbling Under <-> Hot 100 crossover note in the history modal. */
+        /* "Also charted on" in the history modal. Was a one-line note for the
+           single Bubbling Under <-> Hot 100 pair; now a list, because the
+           lookup covers every chart of the same kind. */
         .modal-crossover {
             font-size: 0.8125rem;
             color: var(--text);
@@ -224,6 +226,38 @@
             margin-bottom: 1.5rem;
         }
         .modal-crossover .x-detail { color: var(--text-muted); }
+        .modal-crossover .x-head {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.375rem;
+        }
+        /* Capped so a song on fifty charts does not push the rank history off
+           the screen; the rest are one click away rather than hidden. */
+        .modal-crossover .x-list { max-height: 13rem; overflow-y: auto; }
+        .modal-crossover .x-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.1875rem 0;
+        }
+        .modal-crossover .x-row .x-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .modal-crossover .x-row .x-detail { white-space: nowrap; }
+        .modal-crossover .x-more {
+            background: none;
+            border: 0;
+            padding: 0.25rem 0;
+            font: inherit;
+            font-size: 0.75rem;
+            color: #0c492c;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        /* A failed lookup must not be able to look like "charted nowhere
+           else" — that ambiguity is what hid the 2026-07-01 casefold bug. */
+        .modal-crossover.x-failed {
+            background: #fff4f4;
+            border-left-color: #a01212;
+        }
 
         /* New peak: a song that has charted before and just beat its own best.
            Debuts are excluded server-side, so this marks real milestones only. */
@@ -690,31 +724,72 @@
                     const streamBox = appendStat('—', 'Spotify Streams');
                     body.appendChild(grid);
 
-                    // Bubbling Under is the Hot 100's feeder chart, so each side
-                    // says something about the other: whether this entry
-                    // graduated, or whether this hit started down there.
-                    const x = data.crossover;
-                    if (x) {
-                        const note = document.createElement('div');
-                        note.className = 'modal-crossover';
-                        const lead = document.createElement('span');
-                        if (CHART_KEY === 'bubbling') {
-                            lead.textContent = x.later
-                                ? 'Reached ' + x.label + ' on ' + x.debut
-                                : 'Was already on ' + x.label + ', from ' + x.debut;
-                        } else {
-                            lead.textContent = x.later
-                                ? 'Later appeared on ' + x.label + ', from ' + x.debut
-                                : 'Started on ' + x.label + ' on ' + x.debut;
+                    // Where else this title charted. Every chart of the same
+                    // kind, not the one hardcoded pair this used to cover.
+                    //
+                    // Three states, and they must stay three: a failed lookup
+                    // renders as a failure, an empty list renders as "nowhere
+                    // else", and neither may borrow the other's wording. A join
+                    // returning zero rows looking identical to a genuine miss is
+                    // exactly how the 2026-07-01 casefold bug stayed hidden.
+                    const note = document.createElement('div');
+                    note.className = 'modal-crossover';
+                    const runs = data.crossover || [];
+
+                    if (data.crossover_ok === false) {
+                        note.classList.add('x-failed');
+                        note.textContent = 'Could not check the other charts.';
+                    } else if (!runs.length) {
+                        note.textContent = 'Did not chart anywhere else.';
+                    } else {
+                        const head = document.createElement('span');
+                        head.className = 'x-head';
+                        head.textContent = 'Also charted on ' + runs.length +
+                            (runs.length === 1 ? ' other chart' : ' other charts');
+                        note.appendChild(head);
+
+                        const list = document.createElement('div');
+                        list.className = 'x-list';
+                        const SHOWN = 8;
+
+                        const addRow = function (r) {
+                            const row = document.createElement('div');
+                            row.className = 'x-row';
+                            const name = document.createElement('span');
+                            name.className = 'x-name';
+                            name.textContent = r.label;
+                            const detail = document.createElement('span');
+                            detail.className = 'x-detail';
+                            // 'already charting' only when the other run began
+                            // first. That is the non-obvious case and it is
+                            // rare, so it carries signal without adding noise to
+                            // every row. null means the origin run had no usable
+                            // debut, which is not the same as false.
+                            detail.textContent = 'peak #' + r.peak + ' \u00b7 ' +
+                                r.weeks + (r.weeks === 1 ? ' week' : ' weeks') +
+                                ' \u00b7 from ' + r.debut +
+                                (r.later === false ? ' \u00b7 already charting' : '');
+                            row.appendChild(name);
+                            row.appendChild(detail);
+                            list.appendChild(row);
+                        };
+
+                        runs.slice(0, SHOWN).forEach(addRow);
+                        note.appendChild(list);
+
+                        if (runs.length > SHOWN) {
+                            const more = document.createElement('button');
+                            more.type = 'button';
+                            more.className = 'x-more';
+                            more.textContent = 'Show all ' + runs.length;
+                            more.addEventListener('click', function () {
+                                runs.slice(SHOWN).forEach(addRow);
+                                more.remove();
+                            });
+                            note.appendChild(more);
                         }
-                        const detail = document.createElement('span');
-                        detail.className = 'x-detail';
-                        detail.textContent = ' \u2014 peak #' + x.peak + ', ' +
-                            x.weeks + (x.weeks === 1 ? ' week' : ' weeks');
-                        note.appendChild(lead);
-                        note.appendChild(detail);
-                        body.appendChild(note);
                     }
+                    body.appendChild(note);
 
                     function fmtStreams(n) {
                         if (n == null) return '—';

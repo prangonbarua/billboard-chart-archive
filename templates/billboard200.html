@@ -266,6 +266,29 @@
         .h-week { font-size: 0.8125rem; color: var(--text-dim); }
         .h-peak-badge { margin-left: auto; background: var(--green-dim); color: var(--green); font-size: 0.6875rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; }
         .modal-error { text-align: center; color: var(--red); padding: 2rem; }
+
+        /* "Also charted on" in the album modal. Same rules as the copy in
+           chart.html — this page has its own template and its own endpoint, so
+           it needs its own copy. Keep the two in step. */
+        .modal-crossover {
+            font-size: 0.8125rem;
+            color: var(--text);
+            background: #edfff7;
+            border-left: 3px solid #0c492c;
+            padding: 0.625rem 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+        .modal-crossover .x-detail { color: var(--text-muted); white-space: nowrap; }
+        .modal-crossover .x-head { font-weight: 600; display: block; margin-bottom: 0.375rem; }
+        .modal-crossover .x-list { max-height: 13rem; overflow-y: auto; }
+        .modal-crossover .x-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.1875rem 0; }
+        .modal-crossover .x-row .x-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .modal-crossover .x-more {
+            background: none; border: 0; padding: 0.25rem 0; font: inherit;
+            font-size: 0.75rem; color: #0c492c; cursor: pointer; text-decoration: underline;
+        }
+        /* A failed lookup must never be able to look like "charted nowhere". */
+        .modal-crossover.x-failed { background: #fff4f4; border-left-color: #a01212; }
         .modal-loading { text-align: center; color: var(--text-muted); padding: 2rem; }
 
         footer { margin-top: 3rem; padding: 1.5rem; border-top: 1px solid var(--border); text-align: center; }
@@ -597,6 +620,59 @@
                     appendStat(data.total_weeks, 'Total Weeks');
                     const listenersBox = appendStat('—', 'Artist Listeners');
                     body.appendChild(grid);
+
+                    // Where else this album charted. Three states that must stay
+                    // apart: a failed lookup reads as a failure, an empty list
+                    // reads as "nowhere else", and neither borrows the other's
+                    // wording — a broken join looking like a real miss is how
+                    // the 2026-07-01 casefold bug stayed hidden.
+                    const xnote = document.createElement('div');
+                    xnote.className = 'modal-crossover';
+                    const xruns = data.crossover || [];
+                    if (data.crossover_ok === false) {
+                        xnote.classList.add('x-failed');
+                        xnote.textContent = 'Could not check the other charts.';
+                    } else if (!xruns.length) {
+                        xnote.textContent = 'Did not chart on any other album chart.';
+                    } else {
+                        const xhead = document.createElement('span');
+                        xhead.className = 'x-head';
+                        xhead.textContent = 'Also charted on ' + xruns.length +
+                            (xruns.length === 1 ? ' other chart' : ' other charts');
+                        xnote.appendChild(xhead);
+                        const xlist = document.createElement('div');
+                        xlist.className = 'x-list';
+                        const XSHOWN = 8;
+                        const xaddRow = function (r) {
+                            const row = document.createElement('div');
+                            row.className = 'x-row';
+                            const name = document.createElement('span');
+                            name.className = 'x-name';
+                            name.textContent = r.label;
+                            const detail = document.createElement('span');
+                            detail.className = 'x-detail';
+                            detail.textContent = 'peak #' + r.peak + ' · ' + r.weeks +
+                                (r.weeks === 1 ? ' week' : ' weeks') + ' · from ' + r.debut +
+                                (r.later === false ? ' · already charting' : '');
+                            row.appendChild(name);
+                            row.appendChild(detail);
+                            xlist.appendChild(row);
+                        };
+                        xruns.slice(0, XSHOWN).forEach(xaddRow);
+                        xnote.appendChild(xlist);
+                        if (xruns.length > XSHOWN) {
+                            const more = document.createElement('button');
+                            more.type = 'button';
+                            more.className = 'x-more';
+                            more.textContent = 'Show all ' + xruns.length;
+                            more.addEventListener('click', function () {
+                                xruns.slice(XSHOWN).forEach(xaddRow);
+                                more.remove();
+                            });
+                            xnote.appendChild(more);
+                        }
+                    }
+                    body.appendChild(xnote);
 
                     function fmtBig(n) {
                         if (n == null) return '—';

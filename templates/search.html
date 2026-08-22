@@ -101,6 +101,40 @@
         .past-row .when { color: var(--text-dim); font-size: 0.9375rem; white-space: nowrap; }
         .past-row .go { font-size: 1.0625rem; color: var(--text); }
         .empty { color: var(--text-dim); font-size: 0.9375rem; }
+
+        /* Artist / Song / Album. The artist mode posts to /analyze for a full
+           report; the title modes answer inline from /api/song-charts, because
+           "where else did this chart" is a list, not a report. */
+        .mode-switch { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+        .mode-switch button {
+            font: inherit;
+            font-size: 0.8125rem;
+            padding: 0.375rem 0.875rem;
+            background: var(--surface);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+        .mode-switch button.on {
+            background: #0c492c;
+            border-color: #0c492c;
+            color: #ffffff;
+        }
+        /* Two lines per suggestion: the title, and the credit as billed. The
+           credit is what disambiguates two acts sharing a title. */
+        .suggest .s-credit { display: block; font-size: 0.8125rem; color: var(--text-muted); }
+        .title-results { margin-bottom: 3.5rem; }
+        .title-results .t-head { font-weight: 700; font-size: 1.0625rem; margin-bottom: 1rem; }
+        .title-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9375rem;
+        }
+        .title-row .t-detail { color: var(--text-muted); white-space: nowrap; }
+        .title-error { color: #a01212; font-size: 0.9375rem; }
         .clear-btn { margin-top: 2rem; background: none; border: 1px solid var(--border); color: var(--text-dim); font-size: 0.75rem; padding: 0.375rem 0.75rem; cursor: pointer; display: none; }
         .clear-btn:hover { color: var(--text); border-color: var(--border-accent); }
     </style>
@@ -121,6 +155,12 @@
         {% endif %}
         {% endwith %}
 
+        <div class="mode-switch" id="modeSwitch">
+            <button type="button" class="on" data-mode="artist">Artist</button>
+            <button type="button" data-mode="song">Song</button>
+            <button type="button" data-mode="album">Album</button>
+        </div>
+
         <div class="search-box">
             <form class="search-form" id="searchForm" method="POST" action="{{ url_for('analyze') }}" autocomplete="off">
                 <input type="text" name="artist_name" id="artistInput" placeholder="Artist name" spellcheck="false">
@@ -129,7 +169,9 @@
             <div class="suggest" id="suggest"></div>
         </div>
 
-        <div class="eyebrow">Past reports</div>
+        <div class="title-results" id="titleResults"></div>
+
+        <div class="eyebrow" id="pastHead">Past reports</div>
         <div id="pastList"><p class="empty">No reports yet. Your searches will show up here.</p></div>
         <button class="clear-btn" id="clearBtn">Clear history</button>
     </div>
@@ -170,7 +212,11 @@
             clearBtn.style.display = 'inline-block';
         }
 
-        form.addEventListener('submit', () => {
+        form.addEventListener('submit', e => {
+            // /analyze only understands artists. In a title mode the form must
+            // not post at all, or Enter would run an artist report on a song
+            // title and come back "no results" for a song that charted fine.
+            if (mode !== 'artist') { e.preventDefault(); return; }
             const q = input.value.trim();
             if (!q) return;
             const past = getPast().filter(p => p.q.toLowerCase() !== q.toLowerCase());
@@ -179,6 +225,87 @@
         });
 
         clearBtn.addEventListener('click', () => { localStorage.removeItem(KEY); renderPast(); });
+
+        // ── Mode ────────────────────────────────────────────────────────────
+        // 'artist' keeps the original behaviour exactly: autocomplete on
+        // /api/artists, submit the form, get a full report. 'song' and 'album'
+        // answer inline instead, because "where else did this chart" is a list
+        // rather than a report and does not need a page of its own.
+        const modeSwitch = document.getElementById('modeSwitch');
+        const titleResults = document.getElementById('titleResults');
+        const pastHead = document.getElementById('pastHead');
+        let mode = 'artist';
+
+        const PLACEHOLDER = { artist: 'Artist name', song: 'Song title', album: 'Album title' };
+
+        modeSwitch.addEventListener('click', e => {
+            const btn = e.target.closest('button[data-mode]');
+            if (!btn) return;
+            mode = btn.dataset.mode;
+            [...modeSwitch.children].forEach(b => b.classList.toggle('on', b === btn));
+            input.placeholder = PLACEHOLDER[mode];
+            input.value = '';
+            suggest.style.display = 'none';
+            titleResults.innerHTML = '';
+            // Past reports are artist reports; they have nothing to say here.
+            const artistMode = mode === 'artist';
+            pastHead.style.display = artistMode ? '' : 'none';
+            pastList.style.display = artistMode ? '' : 'none';
+            clearBtn.style.display = artistMode && getPast().length ? 'inline-block' : 'none';
+        });
+
+        async function showTitleCharts(title, artist, credit) {
+            titleResults.innerHTML = '';
+            let body;
+            try {
+                const res = await fetch('/api/song-charts?song=' + encodeURIComponent(title) +
+                    '&artist=' + encodeURIComponent(artist) + '&kind=' + encodeURIComponent(mode));
+                body = await res.json();
+                if (!res.ok) throw new Error(body.error || 'lookup failed');
+            } catch (err) {
+                // A failed lookup renders as a failure. It must never borrow the
+                // "charted nowhere" wording — that ambiguity is what hid the
+                // casefold bug, where a broken join looked like a real miss.
+                const p = document.createElement('p');
+                p.className = 'title-error';
+                p.textContent = 'Could not search the charts. Try again.';
+                titleResults.appendChild(p);
+                return;
+            }
+
+            const head = document.createElement('div');
+            head.className = 't-head';
+            head.textContent = title + ' — ' + (credit || artist);
+            titleResults.appendChild(head);
+
+            const rows = body.charts || [];
+            if (!rows.length) {
+                const p = document.createElement('p');
+                p.className = 'empty';
+                p.textContent = 'Did not chart on any ' + mode + ' chart.';
+                titleResults.appendChild(p);
+                return;
+            }
+
+            const count = document.createElement('p');
+            count.className = 'empty';
+            count.textContent = 'Charted on ' + rows.length +
+                (rows.length === 1 ? ' chart' : ' charts');
+            titleResults.appendChild(count);
+
+            rows.forEach(r => {
+                const row = document.createElement('div');
+                row.className = 'title-row';
+                const name = document.createElement('span');
+                name.textContent = r.label;
+                const detail = document.createElement('span');
+                detail.className = 't-detail';
+                detail.textContent = 'peak #' + r.peak + ' · ' + r.weeks +
+                    (r.weeks === 1 ? ' week' : ' weeks') + ' · from ' + r.debut;
+                row.append(name, detail);
+                titleResults.appendChild(row);
+            });
+        }
 
         // Autocomplete
         let selIdx = -1, items = [];
@@ -189,17 +316,41 @@
             if (q.length < 2) { suggest.style.display = 'none'; return; }
             debounce = setTimeout(async () => {
                 try {
-                    const res = await fetch('/api/artists?q=' + encodeURIComponent(q));
+                    const url = mode === 'artist'
+                        ? '/api/artists?q=' + encodeURIComponent(q)
+                        : '/api/songs?kind=' + mode + '&q=' + encodeURIComponent(q);
+                    const res = await fetch(url);
                     if (!res.ok) return;
-                    const names = (await res.json()).artists || [];
+                    const payload = await res.json();
                     suggest.innerHTML = '';
                     items = []; selIdx = -1;
-                    names.slice(0, 8).forEach(name => {
-                        const d = document.createElement('div');
-                        d.textContent = name;
-                        d.addEventListener('mousedown', () => { input.value = name; suggest.style.display = 'none'; form.requestSubmit(); });
-                        suggest.appendChild(d); items.push(d);
-                    });
+
+                    if (mode === 'artist') {
+                        (payload.artists || []).slice(0, 8).forEach(name => {
+                            const d = document.createElement('div');
+                            d.textContent = name;
+                            d.addEventListener('mousedown', () => { input.value = name; suggest.style.display = 'none'; form.requestSubmit(); });
+                            suggest.appendChild(d); items.push(d);
+                        });
+                    } else {
+                        // Each suggestion carries both: `credit` is shown,
+                        // `artist` is the key the lookup is run with. Showing
+                        // the key would print 'the kid laroi'.
+                        (payload.songs || []).slice(0, 8).forEach(s => {
+                            const d = document.createElement('div');
+                            d.textContent = s.title;
+                            const credit = document.createElement('span');
+                            credit.className = 's-credit';
+                            credit.textContent = s.credit;
+                            d.appendChild(credit);
+                            d.addEventListener('mousedown', () => {
+                                input.value = s.title;
+                                suggest.style.display = 'none';
+                                showTitleCharts(s.title, s.artist, s.credit);
+                            });
+                            suggest.appendChild(d); items.push(d);
+                        });
+                    }
                     suggest.style.display = items.length ? 'block' : 'none';
                 } catch {}
             }, 150);
@@ -211,7 +362,10 @@
                 selIdx = e.key === 'ArrowDown' ? Math.min(selIdx + 1, items.length - 1) : Math.max(selIdx - 1, 0);
                 items.forEach((d, i) => d.classList.toggle('sel', i === selIdx));
             } else if (e.key === 'Enter' && selIdx >= 0) {
-                input.value = items[selIdx].textContent;
+                e.preventDefault();
+                // Not .textContent — in a title mode the suggestion holds a
+                // second line with the credit, which would land in the input.
+                items[selIdx].dispatchEvent(new MouseEvent('mousedown'));
                 suggest.style.display = 'none';
             } else if (e.key === 'Escape') {
                 suggest.style.display = 'none';

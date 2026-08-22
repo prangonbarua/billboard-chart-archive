@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/Users/prangonbarua/Documents/GitHub/billboard-chart-archive/scripts/backfill_chart.py", line 232, in <module>
+    main()
+    ~~~~^^
+  File "/Users/prangonbarua/Documents/GitHub/billboard-chart-archive/scripts/backfill_chart.py", line 176, in main
+    wanted = chart_weeks(slug, first_week, last_week)
+  File "/Users/prangonbarua/Documents/GitHub/billboard-chart-archive/scripts/backfill_chart.py", line 131, in chart_weeks
+    begin = datetime.strptime(first_week, '%Y-%m-%d')
+  File "/opt/anaconda3/lib/python3.13/_strptime.py", line 673, in _strptime_datetime
+    tt, fraction, gmtoff_fraction = _strptime(data_string, format)
+                                    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/_strptime.py", line 452, in _strptime
+    raise ValueError("time data %r does not match format %r" %
+                     (data_string, format))
+ValueError: time data '' does not match format '%Y-%m-%d'

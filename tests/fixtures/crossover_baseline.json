@@ -1,0 +1,408 @@
+[
+  {
+    "artist": "Lil Baby",
+    "debut": "2018-01-27",
+    "expected": {
+      "chart": "top100",
+      "debut": "2022-09-24",
+      "label": "The Hot 100\u2122",
+      "later": true,
+      "peak": 59,
+      "weeks": 25
+    },
+    "origin": "bubbling",
+    "song": "Freestyle"
+  },
+  {
+    "artist": "Dylan Scott",
+    "debut": "2024-04-13",
+    "expected": {
+      "chart": "top100",
+      "debut": "2026-03-14",
+      "label": "The Hot 100\u2122",
+      "later": true,
+      "peak": 55,
+      "weeks": 8
+    },
+    "origin": "bubbling",
+    "song": "What He'll Never Have"
+  },
+  {
+    "artist": "Tucker Wetmore",
+    "debut": "2025-05-10",
+    "expected": {
+      "chart": "top100",
+      "debut": "2026-01-10",
+      "label": "The Hot 100\u2122",
+      "later": true,
+      "peak": 36,
+      "weeks": 22
+    },
+    "origin": "bubbling",
+    "song": "Brunette"
+  },
+  {
+    "artist": "Pearl Jam",
+    "debut": "1995-07-15",
+    "expected": {
+      "chart": "top100",
+      "debut": "1996-02-03",
+      "label": "The Hot 100\u2122",
+      "later": true,
+      "peak": 97,
+      "weeks": 2
+    },
+    "origin": "bubbling",
+    "song": "Daughter/Yellow Ledbetter"
+  },
+  {
+    "artist": "Don Omar & Lucenzo",
+    "debut": "2010-10-23",
+    "expected": {
+      "chart": "top100",
+      "debut": "2011-05-21",
+      "label": "The Hot 100\u2122",
+      "later": true,
+      "peak": 82,
+      "weeks": 5
+    },
+    "origin": "bubbling",
+    "song": "Danza Kuduro"
+  },
+  {
+    "artist": "Zara Larsson",
+    "debut": "2016-01-23",
+    "expected": {
+      "chart": "top100",
+      "debut": "2016-07-30",
+      "label": "The Hot 100\u2122",
+      "later": true,
+      "peak": 35,
+      "weeks": 26
+    },
+    "origin": "bubbling",
+    "song": "Lush Life"
+  },
+  {
+    "artist": "Noah Kahan",
+    "debut": "2022-08-06",
+    "expected": {
+      "chart": "top100",
+      "debut": "2023-10-14",
+      "label": "The Hot 100\u2122",
+      "later": true,
+      "peak": 9,
+      "weeks": 52
+    },
+    "origin": "bubbling",
+    "song": "Stick Season"
+  },
+  {
+    "artist": "Riley Green Featuring Ella Langley",
+    "debut": "2024-11-02",
+    "expected": {
+      "chart": "top100",
+      "debut": "2025-08-16",
+      "label": "The Hot 100\u2122",
+      "later": true,
+      "peak": 23,
+      "weeks": 24
+    },
+    "origin": "bubbling",
+    "song": "Don't Mind If I Do"
+  },
+  {
+    "artist": "Bakar Featuring Summer Walker",
+    "debut": "2023-04-29",
+    "expected": {
+      "chart": "top100",
+      "debut": "2024-04-20",
+      "label": "The Hot 100\u2122",
+      "later": true,
+      "peak": 53,
+      "weeks": 12
+    },
+    "origin": "bubbling",
+    "song": "Hell N Back"
+  },
+  {
+    "artist": "Pop Smoke Featuring A Boogie wit da Hoodie",
+    "debut": "2020-08-08",
+    "expected": {
+      "chart": "top100",
+      "debut": "2021-03-06",
+      "label": "The Hot 100\u2122",
+      "later": true,
+      "peak": 83,
+      "weeks": 11
+    },
+    "origin": "bubbling",
+    "song": "Hello"
+  },
+  {
+    "artist": "Imagine Dragons",
+    "debut": "2013-01-26",
+    "expected": {
+      "chart": "top100",
+      "debut": "2014-02-15",
+      "label": "The Hot 100\u2122",
+      "later": true,
+      "peak": 79,
+      "weeks": 20
+    },
+    "origin": "bubbling",
+    "song": "On Top Of The World"
+  },
+  {
+    "artist": "Lauv",
+    "debut": "2017-08-05",
+    "expected": {
+      "chart": "top100",
+      "debut": "2018-02-24",
+      "label": "The Hot 100\u2122",
+      "later": true,
+      "peak": 27,
+      "weeks": 41
+    },
+    "origin": "bubbling",
+    "song": "I Like Me Better"
+  },
+  {
+    "artist": "Teddy Swims",
+    "debut": "2023-08-26",
+    "expected": {
+      "chart": "bubbling",
+      "debut": "2023-08-12",
+      "label": "Bubbling Under Hot 100",
+      "later": false,
+      "peak": 8,
+      "weeks": 2
+    },
+    "origin": "top100",
+    "song": "Lose Control"
+  },
+  {
+    "artist": "Glass Animals",
+    "debut": "2021-01-16",
+    "expected": {
+      "chart": "bubbling",
+      "debut": "2020-12-19",
+      "label": "Bubbling Under Hot 100",
+      "later": false,
+      "peak": 17,
+      "weeks": 3
+    },
+    "origin": "top100",
+    "song": "Heat Waves"
+  },
+  {
+    "artist": "AWOLNATION",
+    "debut": "2011-09-03",
+    "expected": {
+      "chart": "bubbling",
+      "debut": "2011-06-18",
+      "label": "Bubbling Under Hot 100",
+      "later": false,
+      "peak": 3,
+      "weeks": 11
+    },
+    "origin": "top100",
+    "song": "Sail"
+  },
+  {
+    "artist": "Mariah Carey",
+    "debut": "2000-01-08",
+    "expected": {
+      "chart": "bubbling",
+      "debut": "2000-01-01",
+      "label": "Bubbling Under Hot 100",
+      "later": false,
+      "peak": 7,
+      "weeks": 1
+    },
+    "origin": "top100",
+    "song": "All I Want For Christmas Is You"
+  },
+  {
+    "artist": "Dua Lipa",
+    "debut": "2020-10-17",
+    "expected": {
+      "chart": "bubbling",
+      "debut": "2020-08-29",
+      "label": "Bubbling Under Hot 100",
+      "later": false,
+      "peak": 10,
+      "weeks": 1
+    },
+    "origin": "top100",
+    "song": "Levitating"
+  },
+  {
+    "artist": "Jason Mraz",
+    "debut": "2008-05-03",
+    "expected": {
+      "chart": "bubbling",
+      "debut": "2008-03-01",
+      "label": "Bubbling Under Hot 100",
+      "later": false,
+      "peak": 3,
+      "weeks": 5
+    },
+    "origin": "top100",
+    "song": "I'm Yours"
+  },
+  {
+    "artist": "OneRepublic",
+    "debut": "2013-07-06",
+    "expected": {
+      "chart": "bubbling",
+      "debut": "2013-04-13",
+      "label": "Bubbling Under Hot 100",
+      "later": false,
+      "peak": 2,
+      "weeks": 3
+    },
+    "origin": "top100",
+    "song": "Counting Stars"
+  },
+  {
+    "artist": "Chappell Roan",
+    "debut": "2024-06-29",
+    "expected": {
+      "chart": "bubbling",
+      "debut": "2024-06-22",
+      "label": "Bubbling Under Hot 100",
+      "later": false,
+      "peak": 14,
+      "weeks": 1
+    },
+    "origin": "top100",
+    "song": "Pink Pony Club"
+  },
+  {
+    "artist": "Adele",
+    "debut": "2010-12-25",
+    "expected": {
+      "chart": "bubbling",
+      "debut": "2010-12-18",
+      "label": "Bubbling Under Hot 100",
+      "later": false,
+      "peak": 12,
+      "weeks": 1
+    },
+    "origin": "top100",
+    "song": "Rolling In The Deep"
+  },
+  {
+    "artist": "Carrie Underwood",
+    "debut": "2006-09-16",
+    "expected": {
+      "chart": "bubbling",
+      "debut": "2006-09-02",
+      "label": "Bubbling Under Hot 100",
+      "later": false,
+      "peak": 8,
+      "weeks": 2
+    },
+    "origin": "top100",
+    "song": "Before He Cheats"
+  },
+  {
+    "artist": "Gabby Barrett Featuring Charlie Puth",
+    "debut": "2020-01-11",
+    "expected": {
+      "chart": "bubbling",
+      "debut": "2019-11-02",
+      "label": "Bubbling Under Hot 100",
+      "later": false,
+      "peak": 1,
+      "weeks": 9
+    },
+    "origin": "top100",
+    "song": "I Hope"
+  },
+  {
+    "artist": "Imagine Dragons",
+    "debut": "2013-01-26",
+    "expected": {
+      "chart": "bubbling",
+      "debut": "2012-09-29",
+      "label": "Bubbling Under Hot 100",
+      "later": false,
+      "peak": 8,
+      "weeks": 6
+    },
+    "origin": "top100",
+    "song": "Demons"
+  },
+  {
+    "artist": "Trippie Redd",
+    "debut": "2019-08-24",
+    "expected": null,
+    "origin": "bubbling",
+    "song": "!"
+  },
+  {
+    "artist": "Travi$ Scott Featuring Young Thug & Rich Homie Quan",
+    "debut": "2024-09-07",
+    "expected": null,
+    "origin": "bubbling",
+    "song": "Mamacita"
+  },
+  {
+    "artist": "YNW Melly",
+    "debut": "2019-03-02",
+    "expected": null,
+    "origin": "bubbling",
+    "song": "Mama Cry"
+  },
+  {
+    "artist": "NF",
+    "debut": "2023-04-22",
+    "expected": null,
+    "origin": "bubbling",
+    "song": "Mama"
+  },
+  {
+    "artist": "Lil Uzi Vert",
+    "debut": "2017-09-16",
+    "expected": null,
+    "origin": "bubbling",
+    "song": "Malfunction"
+  },
+  {
+    "artist": "J. Cole & Burna Boy",
+    "debut": "2026-02-21",
+    "expected": null,
+    "origin": "top100",
+    "song": "Only You"
+  },
+  {
+    "artist": "Future",
+    "debut": "2015-12-12",
+    "expected": null,
+    "origin": "top100",
+    "song": "Rich $ex"
+  },
+  {
+    "artist": "Kendrick Lamar",
+    "debut": "2022-05-28",
+    "expected": null,
+    "origin": "top100",
+    "song": "Rich (Interlude)"
+  },
+  {
+    "artist": "Clinton Kane",
+    "debut": "2021-09-04",
+    "expected": null,
+    "origin": "top100",
+    "song": "I Guess I'm In Love"
+  },
+  {
+    "artist": "Trippie Redd Featuring Lil Durk & Polo G",
+    "debut": "2021-09-04",
+    "expected": null,
+    "origin": "top100",
+    "song": "Rich MF"
+  }
+]

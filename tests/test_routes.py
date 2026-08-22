@@ -271,11 +271,14 @@ def test_crossover_finds_the_bulk_of_bubbling_under_graduations(graduations):
 
 
 def test_crossover_resolves_every_sampled_graduation(graduations):
+    """Still the Bubbling Under -> Hot 100 guarantee, now expressed against the
+    generalized lookup: the Hot 100 must be among the charts reported."""
     import app
     _, sample = graduations
     assert sample
     missed = [(s, a) for s, a in sample
-              if app._crossover_run('bubbling', str(s), str(a), None) is None]
+              if 'top100' not in {r['chart'] for r in
+                                  app._crossover_runs('bubbling', str(s), str(a), None)}]
     assert missed == [], f'{len(missed)} known graduations returned nothing: {missed[:5]}'
 
 
@@ -285,11 +288,11 @@ def test_crossover_join_survives_artist_casing_drift():
     import app
     b = app.BUBBLING_DATA
     for song, artist in zip(b['Song'].astype(str), b['Artist'].astype(str)):
-        base = app._crossover_run('bubbling', song, artist, None)
-        if base is None:
+        base = app._crossover_runs('bubbling', song, artist, None)
+        if not base:
             continue
         for variant in (artist.upper(), artist.lower(), artist.swapcase()):
-            got = app._crossover_run('bubbling', song, variant, None)
+            got = app._crossover_runs('bubbling', song, variant, None)
             assert got == base, (song, variant)
         return
     pytest.fail('no crossover found to test casing against')
@@ -297,46 +300,61 @@ def test_crossover_join_survives_artist_casing_drift():
 
 def test_crossover_reports_both_directions(client):
     """Bubbling Under asks 'did it graduate'; the Hot 100 asks 'did it start
-    there'. `later` is what separates the two sentences."""
+    there'. Each side must still report the other."""
     import app
     b = app.BUBBLING_DATA
     for song, artist in zip(b['Song'].astype(str), b['Artist'].astype(str)):
-        up = app._crossover_run('bubbling', song, artist, None)
-        if up is None:
+        up = app._crossover_runs('bubbling', song, artist, None)
+        if not up:
             continue
-        assert up['chart'] == 'top100'
-        down = app._crossover_run('top100', song, artist, None)
-        assert down is not None and down['chart'] == 'bubbling'
-        # Each side reports the other chart's run, so the labels must differ.
-        assert up['label'] != down['label']
+        assert 'top100' in {r['chart'] for r in up}
+        down = app._crossover_runs('top100', song, artist, None)
+        assert 'bubbling' in {r['chart'] for r in down}
+        # Neither side may report the chart it was asked from.
+        assert 'bubbling' not in {r['chart'] for r in up}
+        assert 'top100' not in {r['chart'] for r in down}
         return
     pytest.fail('no crossover found')
 
 
-def test_charts_without_a_pair_report_no_crossover(client, charts):
-    """Only Bubbling Under and the Hot 100 are paired; everything else must
-    return null rather than a wrong-chart match or an error."""
+def test_every_song_chart_can_report_crossovers(client, charts):
+    """The reversal this feature exists for. Crossover used to be hardcoded to
+    the Bubbling Under <-> Hot 100 pair, so every other chart returned null by
+    construction; the old test asserted exactly that. Now any song chart can
+    answer, and the charts it names must all be song charts — a title matching
+    an album is a coincidence, not a fact."""
     import app
+    answered = 0
     for key in charts:
-        if key in ('bubbling', 'top100') or app.CHARTS[key]['kind'] != 'song':
+        if app.CHARTS[key]['kind'] != 'song':
             continue
         df, _ = app.CHART_DATA[key]
         song, artist = str(df['Song'].iloc[0]), str(df['Artist'].iloc[0])
-        assert app._crossover_run(key, song, artist, None) is None, key
+        runs = app._crossover_runs(key, song, artist, None)
+        assert isinstance(runs, list), key
+        for row in runs:
+            assert app.CHARTS[row['chart']]['kind'] == 'song', (key, row['chart'])
+            assert row['chart'] != key, key
+        answered += bool(runs)
+    assert answered > 1, 'only one chart reported a crossover; the pair is still hardcoded'
 
 
 def test_song_history_carries_the_crossover_field(client):
     import app
     b = app.BUBBLING_DATA
     for song, artist in zip(b['Song'].astype(str), b['Artist'].astype(str)):
-        if app._crossover_run('bubbling', song, artist, None) is None:
+        if not app._crossover_runs('bubbling', song, artist, None):
             continue
         r = client.get('/api/song-history', query_string={
             'chart': 'bubbling', 'artist': artist, 'song': song})
         assert r.status_code == 200
-        x = r.get_json()['crossover']
-        assert x and x['chart'] == 'top100'
-        assert set(x) == {'chart', 'label', 'debut', 'peak', 'weeks', 'later'}
+        body = r.get_json()
+        assert body['crossover_ok'] is True
+        x = body['crossover']
+        assert isinstance(x, list) and x
+        assert 'top100' in {row['chart'] for row in x}
+        for row in x:
+            assert set(row) == {'chart', 'label', 'debut', 'peak', 'weeks', 'later'}
         return
     pytest.fail('no crossover found')
 
