@@ -65,8 +65,9 @@ can be built and asserted against in a test without booting the app.
 
 ```
 build(chart_data, chart_dt, charts_meta) -> DataFrame
-lookup(index, title, artist, kind, exclude_chart) -> list[dict]
-title_pool(index, kind, prefix) -> list[str]
+lookup(index, title, artist, kind, exclude_chart, origin_debut) -> list[dict]
+title_pool(index, kind, prefix, limit) -> list[str]
+suggest(index, kind, prefix, limit) -> list[dict]   # {title, credit, artist, charts}
 ```
 
 ### The index
@@ -83,6 +84,8 @@ One row per (title, artist, chart). 547,988 rows over 245,949 distinct
 | `peak` | int16 | min rank over the run |
 | `weeks` | int16 | `nunique` of dates |
 | `debut` | datetime | min date |
+| `display` | category | title as billed, for the search box |
+| `credit` | category | credit as billed, for the search box |
 
 MultiIndex sorted at build time — an unsorted MultiIndex makes `.loc` fall back
 to a scan, which would quietly hand back the 0.94s this design exists to avoid.
@@ -160,13 +163,13 @@ future reader knows it was seen and left alone.
 4. **`/api/songs?q=&kind=`** — title autocomplete, mirroring `/api/artists`
    (app.py:1068). Serves `suggest`, not `title_pool` — see below.
 
+5. **`search.html`** gains a title mode alongside its existing artist mode,
+   rendering the same row shape.
+
 6. **`/api/album-history` gains the same `crossover`/`crossover_ok` pair.** The
    Billboard 200 is the one album chart that does not render through
    `chart.html`; it has its own template and its own endpoint. Without this the
    flagship album chart would be the only one with no "also charted on".
-
-5. **`search.html`** gains a title mode alongside its existing artist mode,
-   rendering the same row shape.
 
 ## Two keys, two labels
 
