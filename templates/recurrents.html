@@ -63,6 +63,9 @@
                         color: var(--text-muted); font-weight: 600; }
         .none { font-size: 0.875rem; color: var(--text-muted); padding: 0.75rem 0; }
     </style>
+    {# Must come AFTER _head_styles.html, or this page silently gets the
+       legacy palette while every other page carries the current one. #}
+    <link rel="stylesheet" href="/static/paxel.css">
 </head>
 <body>
 {% include '_nav.html' %}
