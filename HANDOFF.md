@@ -73,6 +73,35 @@ So the map has to be reconstructed before any refresh can run.
   current depth. Conflating them truncated Dance Singles Sales at 2007.
 - Scattered per-week failures are noise; a chart failing every week is real.
 
+## Outstanding week gaps (found 2026-08-27, mostly NOT yet repaired)
+
+`tests/test_no_missing_weeks.py` measures chart continuity from weeks-on-chart
+rather than from the calendar, which is the only thing that sees these. It
+ratchets against `tests/fixtures/known_week_gaps.json`: **103 charts, 451
+discontinuities** still recorded there. Repaired so far: `hot100`,
+`canadian_hot100`, `japan_hot100`.
+
+Three separate populations, in priority order:
+
+1. **82 charts are missing Billboard's 2018-01-03 week.** Same root cause as
+   the repaired three: the backfill walks 7-day steps and that chart is dated
+   a Wednesday. These are date defects -- the stored 2018-01-06 may hold the
+   01-03 chart, so check each before writing, exactly as the repair script
+   did. `hot100` needed a replace-and-insert; the other two needed insert only.
+2. **6 charts have other date defects**: `billboard200`, `digital_songs`,
+   `radio`, `streaming_songs` (1 each), `singapore_hotw`, `world_albums`
+   (2 each). Not diagnosed.
+3. **`dance_club_songs` has 69 duplicated weeks across 1979-1981.** Suspected
+   NOT a defect: Billboard's disco/dance chart was biweekly then, so the
+   archive may have duplicated each real chart across two weekly dates.
+   Diagnose before touching -- if it is duplication it is fabrication, and if
+   the chart was biweekly the honest fix is to delete dates Billboard never
+   published, not to invent new ones.
+
+The remaining ~281 instances across 15 charts are **honest holes**: the calendar
+distance and the elapsed weeks agree, so those dates are truthful and the
+archive simply lacks those weeks. Lower priority than anything above.
+
 ## Other open items
 
 - The user's last three messages each cut off mid-sentence ("and…"). There was
