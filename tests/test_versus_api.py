@@ -216,7 +216,13 @@ def test_artist_csv_can_be_scoped_to_another_chart(application):
     assert titles
     # Scoped, not the Hot 100 slice: this is the country chart's own frame.
     country = application._versus_artist_rows('country_airplay', 'Luke Combs')
-    assert titles <= set(country['Song'].astype(str))
+    songs = set(country['Song'].astype(str))
+    # A column is "<song>" or "<song> (<credit>)" when the credit names more
+    # than the lead act. Matched by prefix rather than by stripping a trailing
+    # parenthetical, because song titles carry their own -- "Beer Never Broke
+    # My Heart (Live)" must not be cut down to a title that does not exist.
+    assert all(t in songs or any(t.startswith(f'{s} (') for s in songs)
+               for t in titles)
 
 
 def test_artist_csv_rejects_an_unknown_chart(application):

@@ -2696,7 +2696,19 @@ def _song_pivot(df):
     title_counts = {}
     for s, a in pairs:
         title_counts[s] = title_counts.get(s, 0) + 1
-    headers = [s if title_counts[s] == 1 else f"{s} ({latest_credit.get((s, a), a)})" for s, a in pairs]
+    # Show the credit whenever it says more than the primary artist does -- a
+    # feature or a duet -- so "Rockstar" exports as "Rockstar (Post Malone
+    # Featuring 21 Savage)" while a solo song stays bare. A repeated title
+    # still gets the credit regardless, since there it is the only thing
+    # telling the two columns apart.
+    # Compared against primary_credit, NOT the pair's `a`: `a` is
+    # primary_artist, a casefolded grouping key that never equals a display
+    # credit, so comparing to it would append a credit to every column.
+    headers = []
+    for s, a in pairs:
+        credit = latest_credit.get((s, a), a)
+        bare = versus.primary_credit(credit) == credit and title_counts[s] == 1
+        headers.append(s if bare else f"{s} ({credit})")
 
     images = {}
     if 'Image URL' in df.columns:
