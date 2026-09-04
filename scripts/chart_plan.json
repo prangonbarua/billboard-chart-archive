@@ -1,31 +1,56 @@
 {
   "adult-contemporary": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "adult_contemporary.csv",
     "key": "adult_contemporary"
   },
   "adult-pop-songs": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "adult_pop_airplay.csv",
     "key": "adult_pop"
   },
   "alternative-airplay": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "alternative_airplay.csv",
     "key": "alternative"
   },
   "alternative-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "alternative_albums.csv",
     "key": "alternative_albums"
   },
+  "alternative-streaming-songs": {
+    "anchor": "2026-08-22",
+    "csv": "alternative_streaming.csv",
+    "key": "alternative_streaming"
+  },
+  "americana-folk-albums": {
+    "anchor": "2026-08-22",
+    "csv": "americana_folk_albums.csv",
+    "key": "americana_folk_albums"
+  },
   "artist-100": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "artist100.csv",
     "key": "artist100"
   },
-  "billboard-200": {
+  "australian-albums": {
+    "anchor": "2026-08-22",
+    "csv": "australia_albums.csv",
+    "key": "australia_albums"
+  },
+  "austria-songs-hotw": {
     "anchor": "2026-08-15",
+    "csv": "austria_hotw.csv",
+    "key": "austria_hotw"
+  },
+  "belgium-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "belgium_hotw.csv",
+    "key": "belgium_hotw"
+  },
+  "billboard-200": {
+    "anchor": "2026-08-22",
     "csv": "billboard200.csv",
     "key": "albums200"
   },
@@ -35,22 +60,27 @@
     "key": "argentina_hot100"
   },
   "billboard-brasil-hot-100": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "brasil_hot100.csv",
     "key": "brasil_hot100"
   },
   "billboard-global-200": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "global200.csv",
     "key": "global200"
   },
   "billboard-global-excl-us": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "globalexus.csv",
     "key": "globalexus"
   },
+  "billboard-italy-albums-top-100": {
+    "anchor": "2026-08-22",
+    "csv": "italy_albums.csv",
+    "key": "italy_albums"
+  },
   "billboard-italy-hot-100": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "italy_hot100.csv",
     "key": "italy_hot100"
   },
@@ -64,120 +94,235 @@
     "csv": "philippines_top_songs.csv",
     "key": "philippines_top_songs"
   },
-  "bubbling-under-hot-100-singles": {
+  "bluegrass-albums": {
+    "anchor": "2026-08-22",
+    "csv": "bluegrass_albums.csv",
+    "key": "bluegrass_albums"
+  },
+  "blues-albums": {
+    "anchor": "2026-08-22",
+    "csv": "blues_albums.csv",
+    "key": "blues_albums"
+  },
+  "bolivia-songs-hotw": {
     "anchor": "2026-08-15",
+    "csv": "bolivia_hotw.csv",
+    "key": "bolivia_hotw"
+  },
+  "bubbling-under-hot-100-singles": {
+    "anchor": "2026-08-22",
     "csv": "bubbling_under.csv",
     "key": "bubbling"
   },
   "canadian-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "canadian_albums.csv",
     "key": "canadian_albums"
   },
   "canadian-hot-100": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "canadian_hot100.csv",
     "key": "canadian_hot100"
   },
+  "cast-albums": {
+    "anchor": "2026-08-22",
+    "csv": "cast_albums.csv",
+    "key": "cast_albums"
+  },
+  "chile-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "chile_hotw.csv",
+    "key": "chile_hotw"
+  },
   "china-tme-uni-songs": {
-    "anchor": "2026-08-08",
+    "anchor": "2026-08-22",
     "csv": "china_tme.csv",
     "key": "china_tme"
   },
   "christian-airplay": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "christian_airplay.csv",
     "key": "christian_airplay"
   },
   "christian-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "christian_albums.csv",
     "key": "christian_albums"
   },
+  "christian-streaming-songs": {
+    "anchor": "2026-08-22",
+    "csv": "christian_streaming.csv",
+    "key": "christian_streaming"
+  },
   "classical-albums": {
-    "anchor": "2026-07-18",
+    "anchor": "2026-08-22",
     "csv": "classical_albums.csv",
     "key": "classical_albums"
   },
   "classical-crossover-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "classical_crossover_albums.csv",
     "key": "classical_crossover_albums"
   },
   "comedy-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "comedy_albums.csv",
     "key": "comedy_albums"
   },
   "contemporary-jazz": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "contemporary_jazz_albums.csv",
     "key": "contemporary_jazz_albums"
   },
   "country-airplay": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "country_airplay.csv",
     "key": "country_airplay"
   },
   "country-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "country_albums.csv",
     "key": "country_albums"
   },
   "country-songs": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "country_songs.csv",
     "key": "country_songs"
+  },
+  "country-streaming-songs": {
+    "anchor": "2026-08-22",
+    "csv": "country_streaming.csv",
+    "key": "country_streaming"
+  },
+  "croatia-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "croatia_hotw.csv",
+    "key": "croatia_hotw"
+  },
+  "czech-republic-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "czech_republic_hotw.csv",
+    "key": "czech_republic_hotw"
   },
   "dance-club": {
     "anchor": "2020-03-28",
     "csv": "dance_club_songs.csv",
     "key": "dance_club"
   },
-  "digital-song-sales": {
+  "dance-electronic-streaming-songs": {
+    "anchor": "2026-08-22",
+    "csv": "dance_streaming.csv",
+    "key": "dance_streaming"
+  },
+  "denmark-songs-hotw": {
     "anchor": "2026-08-15",
+    "csv": "denmark_hotw.csv",
+    "key": "denmark_hotw"
+  },
+  "digital-song-sales": {
+    "anchor": "2026-08-22",
     "csv": "digital_songs.csv",
     "key": "digital"
   },
-  "emerging-artists": {
+  "ecuador-songs-hotw": {
     "anchor": "2026-08-15",
+    "csv": "ecuador_hotw.csv",
+    "key": "ecuador_hotw"
+  },
+  "emerging-artists": {
+    "anchor": "2026-08-22",
     "csv": "emerging_artists.csv",
     "key": "emerging_artists"
   },
-  "gospel-airplay": {
+  "finland-songs-hotw": {
     "anchor": "2026-08-15",
+    "csv": "finland_hotw.csv",
+    "key": "finland_hotw"
+  },
+  "france-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "france_hotw.csv",
+    "key": "france_hotw"
+  },
+  "germany-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "germany_hotw.csv",
+    "key": "germany_hotw"
+  },
+  "gospel-airplay": {
+    "anchor": "2026-08-22",
     "csv": "gospel_airplay.csv",
     "key": "gospel_airplay"
   },
   "gospel-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "gospel_albums.csv",
     "key": "gospel_albums"
+  },
+  "gospel-streaming-songs": {
+    "anchor": "2026-08-22",
+    "csv": "gospel_streaming.csv",
+    "key": "gospel_streaming"
   },
   "greece-albums": {
     "anchor": "2026-08-08",
     "csv": "greece_albums.csv",
     "key": "greece_albums"
   },
-  "hard-rock-albums": {
+  "greece-songs-hotw": {
     "anchor": "2026-08-15",
+    "csv": "greece_hotw.csv",
+    "key": "greece_hotw"
+  },
+  "hard-rock-albums": {
+    "anchor": "2026-08-22",
     "csv": "hard_rock_albums.csv",
     "key": "hard_rock_albums"
+  },
+  "hard-rock-streaming-songs": {
+    "anchor": "2026-08-22",
+    "csv": "hard_rock_streaming.csv",
+    "key": "hard_rock_streaming"
   },
   "heatseekers-songs": {
     "anchor": "2014-11-29",
     "csv": "heatseekers_songs.csv",
     "key": "heatseekers"
   },
+  "hong-kong-songs-hotw": {
+    "anchor": "2026-08-22",
+    "csv": "hong_kong_hotw.csv",
+    "key": "hong_kong_hotw"
+  },
+  "hot-100": {
+    "anchor": "2026-08-22",
+    "csv": "hot100.csv",
+    "key": "top100"
+  },
   "hot-adult-r-and-b-airplay": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "adult_rnb_airplay.csv",
     "key": "adult_rnb"
   },
+  "hot-alternative-songs": {
+    "anchor": "2026-08-22",
+    "csv": "hot_alternative_songs.csv",
+    "key": "hot_alternative_songs"
+  },
+  "hot-christian-adult-contemporary": {
+    "anchor": "2026-08-22",
+    "csv": "christian_ac_airplay.csv",
+    "key": "christian_ac_airplay"
+  },
   "hot-dance-airplay": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "dance_airplay.csv",
     "key": "dance_airplay"
+  },
+  "hot-dance-pop-songs": {
+    "anchor": "2026-08-22",
+    "csv": "dance_pop.csv",
+    "key": "dance_pop"
   },
   "hot-dance-singles-sales": {
     "anchor": "2013-11-30",
@@ -185,144 +330,324 @@
     "key": "dance_sales"
   },
   "hot-hard-rock-songs": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "hard_rock_songs.csv",
     "key": "hard_rock_songs"
   },
   "hot-mainstream-rock-tracks": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "mainstream_rock.csv",
     "key": "mainstream_rock"
   },
   "hot-r-and-b-hip-hop-airplay": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "rnb_hiphop_airplay_chart.csv",
     "key": "hot_rnb_hiphop_airplay"
   },
   "hot-rap-tracks": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "rap_airplay.csv",
     "key": "rap_airplay"
   },
-  "independent-albums": {
+  "hot-rock-songs": {
+    "anchor": "2026-08-22",
+    "csv": "hot_rock_songs.csv",
+    "key": "hot_rock_songs"
+  },
+  "hungary-songs-hotw": {
     "anchor": "2026-08-15",
+    "csv": "hungary_hotw.csv",
+    "key": "hungary_hotw"
+  },
+  "iceland-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "iceland_hotw.csv",
+    "key": "iceland_hotw"
+  },
+  "independent-albums": {
+    "anchor": "2026-08-22",
     "csv": "independent_albums.csv",
     "key": "independent_albums"
   },
-  "jazz-albums": {
+  "india-songs-hotw": {
     "anchor": "2026-08-15",
+    "csv": "india_hotw.csv",
+    "key": "india_hotw"
+  },
+  "indie-store-album-sales": {
+    "anchor": "2026-08-22",
+    "csv": "indie_store_album_sales.csv",
+    "key": "indie_store_album_sales"
+  },
+  "indonesia-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "indonesia_hotw.csv",
+    "key": "indonesia_hotw"
+  },
+  "ireland-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "ireland_hotw.csv",
+    "key": "ireland_hotw"
+  },
+  "jazz-albums": {
+    "anchor": "2026-08-22",
     "csv": "jazz_albums.csv",
     "key": "jazz_albums"
   },
+  "kids-albums": {
+    "anchor": "2026-08-22",
+    "csv": "kid_albums.csv",
+    "key": "kid_albums"
+  },
   "latin-airplay": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "latin_airplay.csv",
     "key": "latin_airplay"
   },
   "latin-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "latin_albums.csv",
     "key": "latin_albums"
   },
   "latin-pop-airplay": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "latin_pop_airplay.csv",
     "key": "latin_pop_airplay"
   },
   "latin-pop-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "latin_pop_albums.csv",
     "key": "latin_pop_albums"
   },
   "latin-regional-mexican-airplay": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "regional_mexican_airplay.csv",
     "key": "regional_mexican_airplay"
   },
   "latin-rhythm-airplay": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "latin_rhythm_airplay.csv",
     "key": "latin_rhythm_airplay"
   },
   "latin-rhythm-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "latin_rhythm_albums.csv",
     "key": "latin_rhythm_albums"
   },
   "latin-songs": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "latin_songs.csv",
     "key": "latin_songs"
   },
+  "latin-streaming-songs": {
+    "anchor": "2026-08-22",
+    "csv": "latin_streaming.csv",
+    "key": "latin_streaming"
+  },
   "latin-tropical-airplay": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "tropical_airplay.csv",
     "key": "tropical_airplay"
   },
-  "mainstream-r-and-b-hip-hop": {
+  "luxembourg-songs-hotw": {
     "anchor": "2026-08-15",
+    "csv": "luxembourg_hotw.csv",
+    "key": "luxembourg_hotw"
+  },
+  "lyricfind-global": {
+    "anchor": "2026-08-22",
+    "csv": "lyricfind_global.csv",
+    "key": "lyricfind_global"
+  },
+  "lyricfind-us": {
+    "anchor": "2026-08-22",
+    "csv": "lyricfind_us.csv",
+    "key": "lyricfind_us"
+  },
+  "mainstream-r-and-b-hip-hop": {
+    "anchor": "2026-08-22",
     "csv": "rnb_hiphop_airplay.csv",
     "key": "rnb_hiphop"
   },
-  "official-uk-songs": {
+  "malaysia-songs-hotw": {
     "anchor": "2026-08-15",
+    "csv": "malaysia_hotw.csv",
+    "key": "malaysia_hotw"
+  },
+  "mexico-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "mexico_hotw.csv",
+    "key": "mexico_hotw"
+  },
+  "netherlands-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "netherlands_hotw.csv",
+    "key": "netherlands_hotw"
+  },
+  "new-age-albums": {
+    "anchor": "2026-08-22",
+    "csv": "new_age_albums.csv",
+    "key": "new_age_albums"
+  },
+  "new-zealand-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "new_zealand_hotw.csv",
+    "key": "new_zealand_hotw"
+  },
+  "norway-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "norway_hotw.csv",
+    "key": "norway_hotw"
+  },
+  "official-uk-albums": {
+    "anchor": "2026-08-22",
+    "csv": "uk_albums.csv",
+    "key": "uk_albums"
+  },
+  "official-uk-songs": {
+    "anchor": "2026-08-22",
     "csv": "uk_songs.csv",
     "key": "uk_songs"
   },
-  "pop-songs": {
+  "peru-songs-hotw": {
     "anchor": "2026-08-15",
+    "csv": "peru_hotw.csv",
+    "key": "peru_hotw"
+  },
+  "poland-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "poland_hotw.csv",
+    "key": "poland_hotw"
+  },
+  "pop-songs": {
+    "anchor": "2026-08-22",
     "csv": "pop_airplay.csv",
     "key": "pop_airplay"
   },
-  "r-and-b-albums": {
+  "portugal-songs-hotw": {
     "anchor": "2026-08-15",
+    "csv": "portugal_hotw.csv",
+    "key": "portugal_hotw"
+  },
+  "r-and-b-albums": {
+    "anchor": "2026-08-22",
     "csv": "rnb_albums.csv",
     "key": "rnb_albums"
   },
+  "r-and-b-hip-hop-streaming-songs": {
+    "anchor": "2026-08-22",
+    "csv": "rnb_hiphop_streaming.csv",
+    "key": "rnb_hiphop_streaming"
+  },
+  "r-and-b-streaming-songs": {
+    "anchor": "2026-08-22",
+    "csv": "rnb_streaming.csv",
+    "key": "rnb_streaming"
+  },
   "radio-songs": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "radio.csv",
     "key": "radio"
   },
   "rap-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "rap_albums.csv",
     "key": "rap_albums"
   },
+  "rap-streaming-songs": {
+    "anchor": "2026-08-22",
+    "csv": "rap_streaming.csv",
+    "key": "rap_streaming"
+  },
   "reggae-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "reggae_albums.csv",
     "key": "reggae_albums"
   },
   "regional-mexican-albums": {
-    "anchor": "2026-08-08",
+    "anchor": "2026-08-22",
     "csv": "regional_mexican_albums.csv",
     "key": "regional_mexican_albums"
   },
   "rhythmic-40": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "rhythmic_airplay.csv",
     "key": "rhythmic"
   },
   "rock-airplay": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "rock_airplay.csv",
     "key": "rock_airplay"
   },
   "rock-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "rock_albums.csv",
     "key": "rock_albums"
   },
   "rock-songs": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "rock_songs.csv",
     "key": "rock_songs"
   },
-  "streaming-songs": {
+  "rock-streaming-songs": {
+    "anchor": "2026-08-22",
+    "csv": "rock_streaming.csv",
+    "key": "rock_streaming"
+  },
+  "romania-songs-hotw": {
     "anchor": "2026-08-15",
+    "csv": "romania_hotw.csv",
+    "key": "romania_hotw"
+  },
+  "singapore-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "singapore_hotw.csv",
+    "key": "singapore_hotw"
+  },
+  "slovakia-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "slovakia_hotw.csv",
+    "key": "slovakia_hotw"
+  },
+  "soundtracks": {
+    "anchor": "2026-08-22",
+    "csv": "soundtracks.csv",
+    "key": "soundtracks"
+  },
+  "south-africa-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "south_africa_hotw.csv",
+    "key": "south_africa_hotw"
+  },
+  "spain-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "spain_hotw.csv",
+    "key": "spain_hotw"
+  },
+  "streaming-songs": {
+    "anchor": "2026-08-22",
     "csv": "streaming_songs.csv",
     "key": "streaming"
+  },
+  "sweden-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "sweden_hotw.csv",
+    "key": "sweden_hotw"
+  },
+  "switzerland-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "switzerland_hotw.csv",
+    "key": "switzerland_hotw"
+  },
+  "taiwan-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "taiwan_hotw.csv",
+    "key": "taiwan_hotw"
+  },
+  "thailand-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "thailand_hotw.csv",
+    "key": "thailand_hotw"
   },
   "the-arabic-hot-100": {
     "anchor": "2026-08-15",
@@ -330,7 +655,7 @@
     "key": "arabic_hot100"
   },
   "top-album-sales": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "top_album_sales.csv",
     "key": "top_album_sales"
   },
@@ -339,28 +664,48 @@
     "csv": "arabic_artist100.csv",
     "key": "arabic_artist100"
   },
+  "top-rock-alternative-albums": {
+    "anchor": "2026-08-22",
+    "csv": "rock_alternative_albums.csv",
+    "key": "rock_alternative_albums"
+  },
+  "top-streaming-albums": {
+    "anchor": "2026-08-22",
+    "csv": "top_streaming_albums.csv",
+    "key": "top_streaming_albums"
+  },
   "traditional-classic-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "traditional_classical_albums.csv",
     "key": "traditional_classical_albums"
   },
   "traditional-jazz-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "traditional_jazz_albums.csv",
     "key": "traditional_jazz_albums"
   },
   "tropical-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "tropical_albums.csv",
     "key": "tropical_albums"
   },
-  "vinyl-albums": {
+  "turkey-songs-hotw": {
     "anchor": "2026-08-15",
+    "csv": "turkey_hotw.csv",
+    "key": "turkey_hotw"
+  },
+  "u-k-songs-hotw": {
+    "anchor": "2026-08-15",
+    "csv": "u_k_hotw.csv",
+    "key": "u_k_hotw"
+  },
+  "vinyl-albums": {
+    "anchor": "2026-08-22",
     "csv": "vinyl_albums.csv",
     "key": "vinyl_albums"
   },
   "world-albums": {
-    "anchor": "2026-08-15",
+    "anchor": "2026-08-22",
     "csv": "world_albums.csv",
     "key": "world_albums"
   }

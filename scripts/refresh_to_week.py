@@ -104,6 +104,12 @@ def candidates(key, label):
     add(slug)
     add(slug.replace('-and-', '-'))
     add(key.replace('_', '-'))
+    # Hits of the World keeps the suffix on the FULL label: 'Australia Songs'
+    # is 'australia-songs-hotw', not 'australia-hotw'. Without this every one
+    # of the 38 HOTW charts fails to prove and is skipped.
+    if key.endswith('_hotw'):
+        add(slug + '-hotw')
+        add(slug.replace('-songs', '') + '-songs-hotw')
     add('hot-' + slug)
     add(slug.replace('top-', ''))
     add(slug + '-songs')
