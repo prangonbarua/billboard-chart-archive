@@ -281,7 +281,18 @@
         .modal-crossover .x-detail { color: var(--text-muted); white-space: nowrap; }
         .modal-crossover .x-head { font-weight: 600; display: block; margin-bottom: 0.375rem; }
         .modal-crossover .x-list { max-height: 13rem; overflow-y: auto; }
-        .modal-crossover .x-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.1875rem 0; }
+        /* A button so it is reachable by keyboard; the resets strip the UA
+           button chrome so it still reads as a row of text. */
+        .modal-crossover .x-row {
+            display: flex; justify-content: space-between; align-items: baseline;
+            gap: 1rem; padding: 0.1875rem 0.25rem; margin: 0 -0.25rem; width: 100%;
+            font: inherit; color: inherit; text-align: left;
+            background: none; border: 0; cursor: pointer;
+        }
+        .modal-crossover .x-row:hover:not(:disabled),
+        .modal-crossover .x-row:focus-visible { background: #d9f7e9; }
+        .modal-crossover .x-row:hover:not(:disabled) .x-name { text-decoration: underline; }
+        .modal-crossover .x-row:disabled { cursor: default; opacity: 0.6; }
         .modal-crossover .x-row .x-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .modal-crossover .x-more {
             background: none; border: 0; padding: 0.25rem 0; font: inherit;
@@ -289,6 +300,23 @@
         }
         /* A failed lookup must never be able to look like "charted nowhere". */
         .modal-crossover.x-failed { background: #fff4f4; border-left-color: #a01212; }
+
+        /* Names the chart the stats belong to. Load-bearing once the crossover
+           rows can swap the modal onto another chart — without it the numbers
+           change with no visible cause. */
+        .modal-chart-ctx {
+            display: flex; align-items: baseline; justify-content: space-between;
+            gap: 1rem; margin-bottom: 1rem;
+            font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.05em; color: var(--text-muted);
+        }
+        .modal-chart-ctx .ctx-name { color: #0c492c; }
+        .modal-chart-ctx .ctx-back {
+            background: none; border: 0; padding: 0; font: inherit;
+            color: var(--text-muted); cursor: pointer; text-decoration: underline;
+            white-space: nowrap;
+        }
+        .modal-chart-ctx .ctx-back:hover { color: #0c492c; }
         .modal-loading { text-align: center; color: var(--text-muted); padding: 2rem; }
 
         footer { margin-top: 3rem; padding: 1.5rem; border-top: 1px solid var(--border); text-align: center; }
@@ -575,10 +603,20 @@
         const heroEl = document.querySelector('.hero[data-artist]');
         if (heroEl) heroEl.addEventListener('click', () => showSongHistory(heroEl.dataset.artist, heroEl.dataset.song));
 
+        // Read from the registry rather than spelled out here. This template
+        // already hardcodes its own <title> and <h1>, and that copy is exactly
+        // what went stale when the ™ was added to the registry label.
+        const CHART_KEY = '{{ chart_key }}';
+        const CHART_LABEL = {{ chart.label|tojson }};
+
         // Sequence token so a slow response for a previously clicked album can't
         // overwrite the modal after another album (or a close) superseded it
         let historyReq = 0;
-        function showSongHistory(artist, song) {
+        // chartKey defaults to this page's chart. It is only ever passed when
+        // the reader clicks a crossover row, which reopens the same title on
+        // another chart without leaving the page.
+        function showSongHistory(artist, song, chartKey) {
+            chartKey = chartKey || CHART_KEY;
             const reqId = ++historyReq;
             const modal = document.getElementById('historyModal');
             const titleEl = document.getElementById('modalTitle');
@@ -592,7 +630,18 @@
             body.appendChild(loading);
             modal.style.display = 'block';
 
-            fetch('/api/album-history?artist=' + encodeURIComponent(artist) + '&album=' + encodeURIComponent(song))
+            // Each chart is read through the endpoint that already serves its
+            // own page. This one matches artists on the raw credit while
+            // song-history matches on primary_artist, so sending the other
+            // album charts here would answer a different question than their
+            // own pages do for the same album.
+            const url = chartKey === 'albums200'
+                ? '/api/album-history?artist=' + encodeURIComponent(artist) +
+                  '&album=' + encodeURIComponent(song)
+                : '/api/song-history?chart=' + encodeURIComponent(chartKey) +
+                  '&artist=' + encodeURIComponent(artist) +
+                  '&song=' + encodeURIComponent(song);
+            fetch(url)
                 .then(r => r.ok ? r.json() : Promise.reject(r.status))
                 .then(data => {
                     if (reqId !== historyReq) return;
@@ -604,6 +653,31 @@
                         body.appendChild(err);
                         return;
                     }
+
+                    // Which chart these numbers describe. Always rendered, even
+                    // on this page's own chart: once the modal can move between
+                    // charts, "peak #1 / 47 weeks" means nothing without it.
+                    // The label comes from the response, never from chartKey —
+                    // song-history resolves an unknown key to the Hot 100, and
+                    // captioning that with the requested name would be a lie.
+                    const shownChart = data.chart || chartKey;
+                    const ctx = document.createElement('div');
+                    ctx.className = 'modal-chart-ctx';
+                    const ctxName = document.createElement('span');
+                    ctxName.className = 'ctx-name';
+                    ctxName.textContent = data.chart_label || shownChart;
+                    ctx.appendChild(ctxName);
+                    if (shownChart !== CHART_KEY) {
+                        const back = document.createElement('button');
+                        back.type = 'button';
+                        back.className = 'ctx-back';
+                        back.textContent = 'Back to ' + CHART_LABEL;
+                        back.addEventListener('click', function () {
+                            showSongHistory(artist, song, CHART_KEY);
+                        });
+                        ctx.appendChild(back);
+                    }
+                    body.appendChild(ctx);
 
                     const grid = document.createElement('div');
                     grid.className = 'modal-stats-grid';
@@ -643,9 +717,21 @@
                         const xlist = document.createElement('div');
                         xlist.className = 'x-list';
                         const XSHOWN = 8;
+                        // A button, not a div: keyboard and screen-reader
+                        // support come free, and a row with no chart key can be
+                        // disabled rather than looking clickable and doing
+                        // nothing.
                         const xaddRow = function (r) {
-                            const row = document.createElement('div');
+                            const row = document.createElement('button');
+                            row.type = 'button';
                             row.className = 'x-row';
+                            if (r.chart) {
+                                row.addEventListener('click', function () {
+                                    showSongHistory(artist, song, r.chart);
+                                });
+                            } else {
+                                row.disabled = true;
+                            }
                             const name = document.createElement('span');
                             name.className = 'x-name';
                             name.textContent = r.label;

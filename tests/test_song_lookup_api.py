@@ -150,3 +150,57 @@ def test_song_history_returns_crossover_as_a_list(client, application):
     assert isinstance(body['crossover'], list)
     assert body['crossover_ok'] is True
     assert origin not in {c['chart'] for c in body['crossover']}
+
+
+# ── the modal's chart caption ───────────────────────────────────────────────
+
+def test_song_history_echoes_the_resolved_chart_not_the_requested_one(client):
+    """An unknown key falls back to the Hot 100 rather than 404ing. The modal
+    captions itself from this field, so it has to name the chart that was
+    actually read — echoing the request would put the asked-for chart's name
+    over the Hot 100's numbers."""
+    res = client.get('/api/song-history', query_string={
+        'song': 'Hotline Bling', 'artist': 'Drake', 'chart': 'no_such_chart'})
+    assert res.status_code == 200
+    body = res.get_json()
+    assert body['chart'] == 'top100'
+    assert body['chart_label'] == 'The Hot 100™'
+
+
+def test_album_history_labels_itself_as_the_billboard_200(client, application):
+    """Both endpoints caption the modal the same way, so /albums200 needs the
+    field even though it only ever reads one chart."""
+    display, artist = pick_title(application, 'album')
+    res = client.get('/api/album-history',
+                     query_string={'album': display, 'artist': artist})
+    if res.status_code == 404:
+        pytest.skip('album not on the Billboard 200')
+    body = res.get_json()
+    assert body['chart'] == 'albums200'
+    assert body['chart_label'] == application.CHARTS['albums200']['label']
+
+
+def test_a_crossover_row_opens_the_run_it_advertises(client, application):
+    """Clicking a row reopens the modal on that chart. The row's peak and week
+    count are what the reader was promised, so the view they land on has to
+    report the same two numbers — the row and the endpoint reach the data by
+    different paths (index groupby vs. a fresh filter), and only this pins
+    them together."""
+    display, artist = pick_title(application, 'song', min_charts=3)
+    idx = application.CHART_INDEX
+    origin = str(idx.loc[[(display.strip().casefold(), artist)]]['chart'].iloc[0])
+    rows = client.get('/api/song-history', query_string={
+        'song': display, 'artist': artist, 'chart': origin}).get_json()['crossover']
+    assert rows, 'picked a title with no crossover to click'
+
+    for row in rows:
+        res = client.get('/api/song-history', query_string={
+            'song': display, 'artist': artist, 'chart': row['chart']})
+        assert res.status_code == 200, f"{row['chart']} is unopenable"
+        landed = res.get_json()
+        assert landed['chart'] == row['chart']
+        assert landed['peak'] == row['peak']
+        assert landed['total_weeks'] == row['weeks']
+        # The way back: the chart just left has to reappear in the new list,
+        # or a reader who clicks through is stranded.
+        assert origin in {c['chart'] for c in landed['crossover']}

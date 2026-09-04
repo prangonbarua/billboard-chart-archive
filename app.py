@@ -2566,6 +2566,13 @@ def get_song_history():
         'total_weeks': total_weeks,
         'song': song,
         'artist': artist,
+        # The RESOLVED key, not the one asked for. An unknown chart falls back
+        # to the Hot 100 above, so a caller that labels the modal from its own
+        # request would caption Hot 100 numbers with the chart it wanted. The
+        # modal is navigable now, so that label is the only thing telling the
+        # reader which chart they are looking at.
+        'chart': chart,
+        'chart_label': CHARTS.get(chart, {}).get('label', chart),
         'crossover': crossover,
         'crossover_ok': crossover_ok,
     })
@@ -2630,6 +2637,11 @@ def get_album_history():
         'total_weeks': total_weeks,
         'album': album,
         'artist': artist,
+        # Fixed, unlike song-history's: this endpoint only ever reads the
+        # Billboard 200. Sent anyway so both endpoints caption the modal the
+        # same way and the template needs no special case.
+        'chart': 'albums200',
+        'chart_label': CHARTS.get('albums200', {}).get('label', 'albums200'),
         'crossover': crossover,
         'crossover_ok': crossover_ok,
     })
