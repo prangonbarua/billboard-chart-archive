@@ -19,6 +19,7 @@ from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import versus
 import analytics
+import news
 import chart_index
 from flask import session
 
@@ -934,6 +935,33 @@ def search():
 @app.route('/about')
 def about():
     return render_template('about.html')
+
+
+# Computed once per process. The CSVs do not change between the boot that loads
+# them and the deploy that replaces it, so recomputing per request would be
+# 156 full-column date comparisons to reach the same answer.
+_NEWS = {}
+
+
+@app.route('/news')
+def news_page():
+    """The newest chart week, described from the data and nothing else."""
+    if 'facts' not in _NEWS:
+        try:
+            _NEWS['facts'] = news.weekly_news(CHART_DATA, CHART_DT, CHARTS)
+        except Exception:
+            # A page of derived prose is not worth 500ing over. The template
+            # renders its own empty state and says so plainly.
+            app.logger.exception('weekly news failed')
+            _NEWS['facts'] = None
+        try:
+            _df, _ = CHART_DATA.get('top100', (None, None))
+            _NEWS['reign'] = news.reign(_df, CHART_DT.get('top100'))
+        except Exception:
+            app.logger.exception('hot 100 reign failed')
+            _NEWS['reign'] = None
+    return render_template('news.html', news=_NEWS['facts'],
+                           reign=_NEWS.get('reign'))
 
 def artist_chart_summaries(artist_name):
     """One artist's scorecard on every chart they appear on.

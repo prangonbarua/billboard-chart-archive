@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart News - US Top Charts</title>
+    <style>
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: url('/static/fonts/SFPRODISPLAYMEDIUM.OTF') format('opentype');
+            font-weight: 400 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #ffffff;
+            color: #111111;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* One narrow column of prose, the way the reference page reads. No
+           cards, no grid: the week is a piece of writing, not a dashboard. */
+        .essay {
+            max-width: 40rem;
+            margin: 0 auto;
+            padding: 4rem 1.5rem 6rem;
+        }
+        .essay h1 {
+            font-size: clamp(2.5rem, 9vw, 4rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1;
+            text-transform: uppercase;
+        }
+        .essay .dateline {
+            margin-top: 0.75rem;
+            font-size: 0.9375rem;
+            color: #71717a;
+        }
+        .essay p {
+            margin-top: 1.5rem;
+            font-size: 1.0625rem;
+        }
+        .essay .lead { margin-top: 2.5rem; }
+        .essay a { color: #0c492c; }
+        .essay strong { font-weight: 700; }
+
+        /* The one break from straight prose. A week can turn over a dozen #1s
+           and reading them as a comma list is genuinely worse. */
+        .roll {
+            margin-top: 1.5rem;
+            list-style: none;
+            font-size: 1.0625rem;
+        }
+        .roll li {
+            padding: 0.4375rem 0 0.4375rem 1rem;
+            border-left: 3px solid #0c492c;
+            margin-bottom: 0.375rem;
+        }
+        .roll .where {
+            display: block;
+            font-size: 0.8125rem;
+            color: #71717a;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .notes {
+            margin-top: 4rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e4e4e7;
+            font-size: 0.9375rem;
+            color: #52525b;
+        }
+        .notes h2 {
+            font-size: 0.8125rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #71717a;
+            font-weight: 700;
+        }
+        .notes p { margin-top: 0.875rem; font-size: 0.9375rem; }
+    </style>
+    <!-- paxel.css last: linked before the block above it silently loses the
+         palette to the legacy sheet. -->
+    <link rel="stylesheet" href="/static/paxel.css">
+</head>
+<body>
+{% include '_nav.html' %}
+
+<main class="essay">
+    <h1>Chart News</h1>
+
+    {% if not news %}
+    <p class="dateline">No chart data loaded.</p>
+    <p class="lead">This page reads the newest week off the archive itself. It
+    has nothing to read right now.</p>
+    {% else %}
+    <p class="dateline">Week of {{ news.week_long }}</p>
+
+    <p class="lead">Billboard published {{ news.charts_covered }} charts for the
+    week of {{ news.week_long }}, and this is what changed on them. Every number
+    below is read off that week and the one before it{% if news.charts_covered %},
+    chart by chart{% endif %}.</p>
+
+    {% if reign %}
+    <p><strong>{{ reign.song }}</strong> by {{ reign.artist }} holds the Hot 100
+    for a {{ reign.weeks }}{{ 'st' if reign.weeks % 10 == 1 and reign.weeks != 11 else ('nd' if reign.weeks % 10 == 2 and reign.weeks != 12 else ('rd' if reign.weeks % 10 == 3 and reign.weeks != 13 else 'th')) }}
+    week, unbroken since {{ reign.since }}.</p>
+    {% endif %}
+
+    {% if news.new_ones %}
+    <p>{{ news.total_new_ones }} chart{{ '' if news.total_new_ones == 1 else 's' }}
+    changed hands at number one{% if news.total_new_ones > news.new_ones|length %}. The first
+    {{ news.new_ones|length }} alphabetically{% endif %}:</p>
+    <ul class="roll">
+        {% for n in news.new_ones %}
+        <li>
+            <span class="where">{{ n.chart }}</span>
+            <strong>{{ n.song }}</strong>{% if n.kind != 'artist' %} by {{ n.artist }}{% endif %} takes over from
+            {{ n.was }}{% if n.last_rank %}, up from #{{ n.last_rank }} last week{% else %}, which was not on the chart last week{% endif %}.
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>Nothing changed hands at number one. Every chart that published both this
+    week and last kept the same title on top.</p>
+    {% endif %}
+
+    {% if news.climbs %}
+    <p>{{ news.total_climbs }} title{{ '' if news.total_climbs == 1 else 's' }}
+    climbed {{ news.min_climb }} places or more. The steepest:</p>
+    <ul class="roll">
+        {% for c in news.climbs %}
+        <li>
+            <span class="where">{{ c.chart }}</span>
+            <strong>{{ c.song }}</strong>{% if c.kind != 'artist' %} by {{ c.artist }}{% endif %}, #{{ c.was }} to
+            #{{ c.rank }}, a jump of {{ c.gain }}.
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if news.entries %}
+    <p>{{ news.total_entries }} title{{ '' if news.total_entries == 1 else 's' }}
+    appear that were not on their chart last week. The highest placed:</p>
+    <ul class="roll">
+        {% for e in news.entries %}
+        <li>
+            <span class="where">{{ e.chart }}</span>
+            <strong>{{ e.song }}</strong>{% if e.kind != 'artist' %} by {{ e.artist }}{% endif %}, in at #{{ e.rank }}.
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <section class="notes">
+        <h2>Notes</h2>
+        <p>Every figure here is computed from the archive at page load, not
+        written by hand. Nothing on this page is editorial.</p>
+        <p>"Not on their chart last week" is exactly that claim and no more. A
+        first-ever appearance and a re-entry look identical from two weeks of
+        data, so neither is called a debut. Open any title on its chart page to
+        see which it is.</p>
+        <p>A chart is compared against its own previous published week rather
+        than seven days back, and a chart missing either week is left out of the
+        counts entirely. Billboard skips weeks, and treating a skipped week as a
+        real one is how this archive has invented data before.</p>
+    </section>
+    {% endif %}
+</main>
+</body>
+</html>
