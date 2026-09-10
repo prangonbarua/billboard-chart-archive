@@ -114,8 +114,12 @@
 
     {% if news.new_ones %}
     <p>{{ news.total_new_ones }} chart{{ '' if news.total_new_ones == 1 else 's' }}
+    {# The caption has to say what the cut actually is. It used to read
+       "alphabetically", which was at least honest about being arbitrary; the
+       order is now the main charts first and the rest by name, and saying so
+       keeps the page from implying these are the week's six biggest flips. #}
     changed hands at number one{% if news.total_new_ones > news.new_ones|length %}. The first
-    {{ news.new_ones|length }} alphabetically{% endif %}:</p>
+    {{ news.new_ones|length }}, main charts first{% endif %}:</p>
     <ul class="roll">
         {% for n in news.new_ones %}
         <li>

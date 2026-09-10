@@ -20,6 +20,17 @@ import pandas as pd
 _MIN_CLIMB = 20
 _TOP_N = 6
 
+# A week turns over more number ones than the page prints, so which ones make
+# the cut is the one editorial decision on an otherwise computed page. It is
+# made here rather than left to alphabetical order, which led with whatever
+# chart happened to start with an A — Adult R&B Airplay above the Hot 100.
+#
+# Keys, not labels: labels carry trademark symbols and get reworded, keys are
+# the registry's identity. tests/test_news_order.py checks each one against
+# CHARTS, since a typo here would fail silently as a chart that never leads.
+LEAD_CHARTS = ('top100', 'albums200', 'global200', 'globalexus', 'artist100')
+_LEAD_RANK = {key: i for i, key in enumerate(LEAD_CHARTS)}
+
 
 def _week_frame(df, dt, day):
     """The rows of one chart for one week, ranked, or None."""
@@ -82,7 +93,7 @@ def weekly_news(chart_data, chart_dt, charts):
         if len(top_now) and len(top_prev):
             a, b = _pair(top_now.iloc[0]), _pair(top_prev.iloc[0])
             if a != b:
-                new_ones.append(dict(chart=label, kind=meta.get('kind'),
+                new_ones.append(dict(chart=label, key=key, kind=meta.get('kind'),
                                      song=a[0], artist=a[1],
                                      was=b[0], was_artist=b[1],
                                      last_rank=prev_rank.get(a)))
@@ -101,7 +112,11 @@ def weekly_news(chart_data, chart_dt, charts):
 
     climbs.sort(key=lambda c: -c['gain'])
     entries.sort(key=lambda e: e['rank'])
-    new_ones.sort(key=lambda n: n['chart'])
+    # Flagships first in their declared order, then everything else by name.
+    # Sorting the flips rather than the registry means a flagship that held its
+    # number one simply is not here, instead of leaving a hole at the top.
+    new_ones.sort(key=lambda n: (_LEAD_RANK.get(n['key'], len(LEAD_CHARTS)),
+                                 n['chart']))
 
     return dict(
         week=latest.strftime('%Y-%m-%d'),
