@@ -362,10 +362,6 @@
           </div>
         </div>
     </details>
-    {# First after the dropdown: it describes the week the charts in that
-       dropdown were just refreshed to, so it reads as the way in to them. #}
-    <a href="{{ url_for('news_page') }}"
-       class="{{ 'active' if request.endpoint == 'news_page' else '' }}">News</a>
     <a href="{{ url_for('versus_page') }}"
        class="{{ 'active' if request.endpoint == 'versus_page' else '' }}">Versus</a>
     <a href="{{ url_for('dropouts_page') }}"
