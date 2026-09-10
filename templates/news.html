@@ -47,13 +47,13 @@
 </head>
 <body>
     {# The reference puts a 28px YC logo here, linking to ycombinator.com. This
-       site has no mark of its own and putting YC's on it would be borrowing
-       someone else's branding, so the slot keeps its geometry and holds a plain
-       text link back to the archive — the page is not in the nav any more, so
-       without this there is no way back to the site from it. #}
-    <div style="display: flex; justify-content: center; padding: 48px 24px 32px;">
-        <a href="{{ url_for('top100') }}">US Top Charts</a>
-    </div>
+       site has no mark of its own, so the slot is empty and holds only the
+       reference's spacing: 48px above and 32px below what would be the logo,
+       which is the 80px of air the title sits under. Do not fold this into
+       main's padding — main's top padding is 0px in the reference, and the
+       80px belongs to a block above it. The page carries no link back to the
+       site by design; it is not in the nav either. #}
+    <div style="padding: 48px 24px 32px;"></div>
     <main style="max-width: 555px; margin: 0px auto; padding: 0px 24px 96px;">
         <h1 style="font-size: 13.33px; font-weight: 700; line-height: 1.6; margin-bottom: 0px;">Chart News</h1>
         {% if not news %}
