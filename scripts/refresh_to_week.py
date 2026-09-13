@@ -89,6 +89,30 @@ def weeks_in(rows):
     return sorted({(r.get('Date') or '')[:10] for r in rows if r.get('Date')})
 
 
+def known_slugs():
+    """Hand-proven key -> slug overrides.
+
+    Separate from chart_plan.json, which this script OVERWRITES every run and
+    keys by slug rather than by chart key. Anything written there is lost on the
+    next run, so proven overrides live in their own file that is only read.
+
+    These exist because candidates() derives slugs from the label, and Billboard
+    does not slugify & and / predictably: 'Hot R&B/Hip-Hop Songs' is served at
+    r-b-hip-hop-songs, and 'Hot Rap Songs' at the singular rap-song. Each entry
+    here was proven by refetching a known week, same as any derived candidate.
+    """
+    p = ROOT / 'scripts' / 'known_slugs.json'
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text())
+    except Exception:
+        return {}
+
+
+KNOWN = known_slugs()
+
+
 def candidates(key, label):
     """Slug guesses, most likely first. Each is PROVEN before use."""
     import re
@@ -98,6 +122,11 @@ def candidates(key, label):
         if s and s not in seen:
             seen.add(s)
             out.append(s)
+
+    # Hand-proven override first, so a chart whose URL cannot be derived from
+    # its label stops burning fetches on guesses that 404. Still proven, not
+    # trusted — it only changes the ORDER candidates are tried in.
+    add(KNOWN.get(key))
 
     slug = re.sub(r'[^a-z0-9]+', '-', label.lower().replace('&', ' and ')).strip('-')
     slug = slug.replace('the-', '', 1) if slug.startswith('the-') else slug
