@@ -102,11 +102,11 @@ def scrape_billboard_chart(chart_name='hot-100', date=None, min_rows=None):
                 else:
                     artist = "Unknown"
 
-                def find_stat(label):
+                def find_stat(*labels):
                     """Find a stat value by its label span (LW, PEAK, WEEKS)."""
                     label_span = next(
                         (s for s in item.find_all('span', class_='c-span')
-                         if s.get_text(strip=True) == label), None
+                         if s.get_text(strip=True) in labels), None
                     )
                     if label_span:
                         val_span = label_span.find_next('span', class_='c-label')
@@ -121,7 +121,9 @@ def scrape_billboard_chart(chart_name='hot-100', date=None, min_rows=None):
 
                 last_week = find_stat('LW')
                 peak = find_stat('PEAK') or rank
-                weeks = find_stat('WEEKS') or 1
+                # Billboard renamed the label to 'WEEKS ON CHART' by the
+                # 2026-09-19 chart; missing it silently wrote 1 for every row.
+                weeks = find_stat('WEEKS ON CHART', 'WEEKS') or 1
 
                 entries.append({
                     'Date': chart_date,
