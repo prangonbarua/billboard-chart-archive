@@ -481,6 +481,7 @@
         .coverage-note { font-size:0.75rem; color:var(--text-muted); margin:0.5rem 0 0; }
         .detail-head { display:flex; align-items:baseline; justify-content:space-between; gap:1rem; margin:2rem 0 0.5rem; }
         .detail-title { font-size:1rem; font-weight:700; color:var(--text); }
+        .detail-downloads { display:flex; gap:0.75rem; }
         .detail-download { font-size:0.75rem; color:var(--text-muted); }
         .detail-subtitle { font-size:0.8rem; color:var(--text-muted); margin:0 0 0.5rem; }
         .chart-wrap { border:1px solid var(--border); border-radius:12px; background:var(--surface); margin:0 0 1.5rem; }
@@ -559,8 +560,12 @@
 
             <div class="detail-head">
                 <h2 class="detail-title" id="detailTitle">{{ detail.chart.label }}</h2>
-                <a class="detail-download" id="detailDownload"
-                   href="/download-csv/{{ artist_name|urlencode }}?chart={{ selected_key|e }}">Download CSV</a>
+                <div class="detail-downloads">
+                    <a class="detail-download" id="detailDownload"
+                       href="/download-csv/{{ artist_name|urlencode }}?chart={{ selected_key|e }}">Download CSV</a>
+                    <a class="detail-download" id="detailDownloadXlsx"
+                       href="/download-csv/{{ artist_name|urlencode }}?chart={{ selected_key|e }}&amp;format=xlsx">Download Excel</a>
+                </div>
             </div>
 
             <div class="chart-wrap">
@@ -669,9 +674,10 @@
             document.getElementById('detailTitle').textContent = detail.chart.label;
             document.getElementById('detailCount').textContent =
                 noun + ' (' + detail.items.length + ')';
-            document.getElementById('detailDownload').href =
-                '/download-csv/' + encodeURIComponent(ARTIST_NAME)
+            const csvHref = '/download-csv/' + encodeURIComponent(ARTIST_NAME)
                 + '?chart=' + encodeURIComponent(detail.chart.key);
+            document.getElementById('detailDownload').href = csvHref;
+            document.getElementById('detailDownloadXlsx').href = csvHref + '&format=xlsx';
 
             const tbody = document.querySelector('#detailTable tbody');
             tbody.innerHTML = '';

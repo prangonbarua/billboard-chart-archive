@@ -1308,8 +1308,9 @@ def download_versus_csv():
 
     Same inputs as /api/versus, so the link is just the current URL's query
     string — a download always matches the comparison that produced it.
+    ?format=xlsx returns the same data as a workbook, the scorecard and the
+    weekly ranks on a sheet each.
     """
-    import io, csv as csvmod
     chart_key = request.args.get('chart', 'top100')
     meta = CHARTS.get(chart_key)
     if meta is None:
@@ -1317,6 +1318,9 @@ def download_versus_csv():
     names = _parse_artist_list(request.args.get('artists'))
     if not names:
         return jsonify({'error': 'No artists to compare'}), 400
+    fmt = _export_format()
+    if fmt is None:
+        return jsonify({'error': 'Unknown format'}), 400
 
     entries = []
     for name in names:
@@ -1326,15 +1330,11 @@ def download_versus_csv():
                         rows))
     labels = [d for d, _, _ in entries]
 
-    buf = io.StringIO()
-    w = csvmod.writer(buf)
-    w.writerow([f"{meta['label']} — Versus"])
-    w.writerow([])
-    w.writerow(['Stat'] + labels)
+    scorecard = [['Stat'] + labels]
     for label, key in _VERSUS_CSV_ROWS:
         # A stat nulled for this chart kind writes blank, not 0 — the same
         # distinction the scorecard draws with an em dash.
-        w.writerow([label] + [
+        scorecard.append([label] + [
             ('' if s.get(key) is None else s[key]) for _, s, _ in entries
         ])
 
@@ -1353,17 +1353,14 @@ def download_versus_csv():
         if pairs:
             blocks.append((label, pairs, headers, pivot, images))
 
+    weekly = []
     if blocks:
-        w.writerow([])
-        w.writerow(['Weekly rank by song'])
         song_row, artist_row, image_row = ['Song'], ['Artist'], ['Image']
         for label, pairs, headers, _pivot, images in blocks:
             song_row += headers
             artist_row += [label] * len(headers)
             image_row += [images.get(p, '') for p in pairs]
-        w.writerow(song_row)
-        w.writerow(artist_row)
-        w.writerow(image_row)
+        weekly = [song_row, artist_row, image_row]
 
         # Union of every week any of them charted, so the blocks line up on
         # shared dates and gaps stay visible as blanks.
@@ -1371,9 +1368,9 @@ def download_versus_csv():
         width = sum(len(p) for _l, p, _h, _pv, _i in blocks)
         for date in _weeks_with_gaps(all_dates):
             if date is None:
-                w.writerow([_GAP_MARKER] + [''] * width)
+                weekly.append([_GAP_MARKER] + [''] * width)
                 continue
-            row = [f'{date.month}/{date.day}/{date.year}']
+            row = [date]
             for _label, pairs, _headers, pivot, _images in blocks:
                 if date in pivot.index:
                     ranks = pivot.loc[date]
@@ -1381,13 +1378,22 @@ def download_versus_csv():
                             for p in pairs]
                 else:
                     row += [''] * len(pairs)
-            w.writerow(row)
+            weekly.append(row)
 
     stem = '_vs_'.join(
         re.sub(r'[^\w\s-]', '', d).strip().replace(' ', '_') for d in labels[:3]
     ) or 'versus'
-    return Response(buf.getvalue(), mimetype='text/csv', headers={
-        'Content-Disposition': f'attachment; filename="{stem}_{chart_key}.csv"'})
+    headers = {'Content-Disposition': f'attachment; filename="{stem}_{chart_key}.{fmt}"'}
+    if fmt == 'xlsx':
+        sheets = [('Scorecard', scorecard, 1)]
+        if weekly:
+            sheets.append(('Weekly rank by song', weekly, 3))
+        return Response(_rows_to_xlsx(sheets), mimetype=XLSX_MIMETYPE, headers=headers)
+
+    table = [[f"{meta['label']} — Versus"], []] + scorecard
+    if weekly:
+        table += [[], ['Weekly rank by song']] + weekly
+    return Response(_rows_to_csv(table), mimetype='text/csv', headers=headers)
 
 
 def chart_dropouts(chart_key, week=None):
@@ -2849,32 +2855,100 @@ def _weeks_with_gaps(dates):
         prev = date
 
 
-def _artist_history_csv(df):
-    """One artist's chart history as CSV: songs across the top, an image row,
-    then one row per chart week with each song's rank (blank when it was not
-    on the chart)."""
-    import io, csv as csvmod
-    pairs, headers, pivot, images = _song_pivot(df)
-
-    buf = io.StringIO()
-    writer = csvmod.writer(buf)
-    writer.writerow(['Song'] + headers)
-    writer.writerow(['Image'] + [images.get(p, '') for p in pairs])
+def _weekly_rank_rows(pivot, pairs):
+    """The date section of an export: one row per chart week, the date cell a
+    Timestamp (or the gap marker) and each song's rank, blank when it was not
+    on the chart that week."""
+    rows = []
     for date in _weeks_with_gaps(pivot.index):
         if date is None:
-            writer.writerow([_GAP_MARKER] + [''] * len(pairs))
+            rows.append([_GAP_MARKER] + [''] * len(pairs))
             continue
-        row = pivot.loc[date]
-        date_str = f"{date.month}/{date.day}/{date.year}"
-        writer.writerow([date_str] + [
-            (int(row[p]) if pd.notna(row.get(p)) else '') for p in pairs
+        ranks = pivot.loc[date]
+        rows.append([date] + [
+            (int(ranks[p]) if pd.notna(ranks.get(p)) else '') for p in pairs
         ])
+    return rows
+
+
+def _artist_history_rows(df):
+    """One artist's chart history: songs across the top, an image row, then one
+    row per chart week. Cells are values, not text, so the CSV and the Excel
+    writer format them each their own way from the same rows."""
+    pairs, headers, pivot, images = _song_pivot(df)
+    return [['Song'] + headers,
+            ['Image'] + [images.get(p, '') for p in pairs]] + _weekly_rank_rows(pivot, pairs)
+
+
+def _rows_to_csv(rows):
+    import io, csv as csvmod
+    buf = io.StringIO()
+    w = csvmod.writer(buf)
+    for row in rows:
+        w.writerow([f'{c.month}/{c.day}/{c.year}' if isinstance(c, datetime) else c
+                    for c in row])
     return buf.getvalue()
+
+
+XLSX_MIMETYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+
+def _excel_sheet_title(text):
+    # Excel caps sheet names at 31 characters and forbids []:*?/\ in them.
+    return re.sub(r'[\[\]:*?/\\]', ' ', text).strip()[:31] or 'Sheet'
+
+
+def _rows_to_xlsx(sheets):
+    """Workbook bytes from [(title, rows, header_rows)]. Dates become real Excel
+    dates and ranks real numbers, so a chart tool or a pivot table reads them
+    without the text-to-number cleanup a CSV import needs. The header rows and
+    the date column are frozen, since a busy artist runs hundreds of songs wide
+    and decades deep."""
+    import io
+    from openpyxl import Workbook
+    from openpyxl.cell import WriteOnlyCell
+    from openpyxl.styles import Font
+
+    # Write-only streams rows instead of holding a cell object per rank, which
+    # keeps a Hot 100 superstar's export from ballooning the web worker.
+    wb = Workbook(write_only=True)
+    bold = Font(bold=True)
+    for title, rows, header_rows in sheets:
+        ws = wb.create_sheet(_excel_sheet_title(title))
+        ws.column_dimensions['A'].width = 14
+        if header_rows:
+            ws.freeze_panes = f'B{header_rows + 1}'
+        for i, row in enumerate(rows):
+            out = []
+            for j, value in enumerate(row):
+                # pd.Timestamp is a datetime subclass, so chart weeks land here.
+                is_date = isinstance(value, datetime)
+                if is_date:
+                    value = value.date()
+                elif value == '':
+                    value = None
+                cell = WriteOnlyCell(ws, value=value)
+                if is_date:
+                    cell.number_format = 'm/d/yyyy'
+                if i < header_rows or j == 0:
+                    cell.font = bold
+                out.append(cell)
+            ws.append(out)
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+def _export_format():
+    """The ?format= of a download: 'csv' (the default) or 'xlsx'. None for
+    anything else, which the route answers with a 400."""
+    fmt = request.args.get('format', 'csv')
+    return fmt if fmt in ('csv', 'xlsx') else None
 
 
 @app.route('/download-csv/<path:artist_name>')
 def download_csv(artist_name):
-    """One artist's chart history as CSV.
+    """One artist's chart history as CSV, or as Excel with ?format=xlsx.
 
     Defaults to the Hot 100, which is what the artist report page links to and
     all this route used to serve. ?chart= scopes it to any chart in the
@@ -2888,6 +2962,9 @@ def download_csv(artist_name):
         chart_key = request.args.get('chart', 'top100')
         if chart_key not in CHARTS:
             return jsonify({'error': 'Unknown chart'}), 400
+        fmt = _export_format()
+        if fmt is None:
+            return jsonify({'error': 'Unknown format'}), 400
         df, _dates = CHART_DATA.get(chart_key, (None, None))
         if df is None or not len(df):
             return jsonify({'error': 'Chart data is not available'}), 400
@@ -2903,12 +2980,15 @@ def download_csv(artist_name):
         # The Hot 100 filename is left as it was, so existing links and any
         # saved files keep their names.
         suffix = '' if chart_key == 'top100' else f'_{chart_key}'
-        return Response(
-            _artist_history_csv(rows),
-            mimetype='text/csv',
-            headers={'Content-Disposition':
-                     f'attachment; filename="{safe_name}{suffix}_Chart_History.csv"'}
-        )
+        stem = f'{safe_name}{suffix}_Chart_History'
+        table = _artist_history_rows(rows)
+        if fmt == 'xlsx':
+            body = _rows_to_xlsx([(CHARTS[chart_key]['label'], table, 2)])
+            mimetype = XLSX_MIMETYPE
+        else:
+            body, mimetype = _rows_to_csv(table), 'text/csv'
+        return Response(body, mimetype=mimetype, headers={
+            'Content-Disposition': f'attachment; filename="{stem}.{fmt}"'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

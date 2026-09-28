@@ -20,6 +20,7 @@
     }
     .dl-csv:hover { background: var(--surface-hover); }
     .dl-csv[hidden] { display: none; }
+    .dl-links { display: flex; gap: 0.5rem; }
 
     .picker { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
               margin: 1.5rem 0; }
@@ -90,7 +91,10 @@
             <h1>Versus</h1>
             <div class="page-meta">Compare artists on {{ chart.label }}</div>
         </div>
-        <a class="dl-csv" id="dl-csv" href="/download-versus-csv" hidden>Download CSV</a>
+        <div class="dl-links">
+            <a class="dl-csv" id="dl-csv" href="/download-versus-csv" hidden>Download CSV</a>
+            <a class="dl-csv" id="dl-xlsx" href="/download-versus-csv?format=xlsx" hidden>Download Excel</a>
+        </div>
     </div>
 
     <form class="picker" id="picker" autocomplete="off">
@@ -141,13 +145,16 @@ function syncUrl(push) {
 // comparison currently on screen. Hidden outright when there is nothing to
 // export rather than linking to a 400.
 function syncCsvLink() {
-    const link = document.getElementById('dl-csv');
-    if (!artists.length) { link.hidden = true; return; }
+    const csv = document.getElementById('dl-csv');
+    const xlsx = document.getElementById('dl-xlsx');
+    if (!artists.length) { csv.hidden = xlsx.hidden = true; return; }
     const q = new URLSearchParams();
     q.set('chart', document.getElementById('chart').value);
     q.set('artists', artists.join('|'));
-    link.href = '/download-versus-csv?' + q.toString();
-    link.hidden = false;
+    csv.href = '/download-versus-csv?' + q.toString();
+    q.set('format', 'xlsx');
+    xlsx.href = '/download-versus-csv?' + q.toString();
+    csv.hidden = xlsx.hidden = false;
 }
 
 // Each chip carries its own export: that artist's run on the selected chart,
@@ -166,6 +173,8 @@ function renderChips() {
         + `${escapeHtml(a)}`
         + `<a class="chip-csv" href="${escapeHtml(artistCsvHref(a))}"`
         + ` title="Download ${escapeHtml(a)}'s chart run as CSV">CSV</a>`
+        + `<a class="chip-csv" href="${escapeHtml(artistCsvHref(a) + '&format=xlsx')}"`
+        + ` title="Download ${escapeHtml(a)}'s chart run as an Excel file">Excel</a>`
         + `<button type="button" data-i="${i}" aria-label="Remove">&times;</button></span>`
     ).join('');
 }

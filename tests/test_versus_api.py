@@ -308,3 +308,84 @@ def test_versus_page_offers_the_csv_download(application):
 def test_versus_link_is_in_the_nav(application):
     body = application.app.test_client().get('/top100').get_data(as_text=True)
     assert '/versus' in body
+
+
+def _xlsx(application, url):
+    from openpyxl import load_workbook
+    r = application.app.test_client().get(url)
+    assert r.status_code == 200, r.get_data(as_text=True)[:200]
+    assert r.mimetype == application.XLSX_MIMETYPE
+    return r, load_workbook(io.BytesIO(r.get_data()))
+
+
+def _sheet_as_csv_text(ws):
+    """A worksheet's cells rendered the way the CSV writes them, so the two
+    formats can be compared cell for cell."""
+    out = []
+    for row in ws.iter_rows(values_only=True):
+        cells = ['' if v is None else
+                 f'{v.month}/{v.day}/{v.year}' if isinstance(v, datetime) else str(v)
+                 for v in row]
+        while cells and cells[-1] == '':
+            cells.pop()
+        out.append(cells)
+    return out
+
+
+def test_artist_xlsx_holds_the_same_data_as_the_csv(application):
+    url = '/download-csv/Chubby Checker'
+    r, wb = _xlsx(application, url + '?format=xlsx')
+    assert 'Chubby_Checker_Chart_History.xlsx' in r.headers['Content-Disposition']
+    ws = wb.worksheets[0]
+    assert ws.title == application._excel_sheet_title(application.CHARTS['top100']['label'])
+    assert ws.freeze_panes == 'B3'
+
+    csv_rows = [[c for c in row] for row in csv.reader(io.StringIO(
+        application.app.test_client().get(url).get_data(as_text=True)))]
+    for row in csv_rows:
+        while row and row[-1] == '':
+            row.pop()
+    assert _sheet_as_csv_text(ws) == csv_rows
+
+    # Typed, not text: that is the point of the Excel file.
+    first_week = next(ws.iter_rows(min_row=3, max_row=3, values_only=True))
+    assert isinstance(first_week[0], datetime)
+    assert any(isinstance(v, int) for v in first_week[1:])
+
+
+def test_artist_xlsx_follows_the_chart_scope(application):
+    r, _wb = _xlsx(application, '/download-csv/Luke Combs?chart=country_airplay&format=xlsx')
+    assert 'Luke_Combs_country_airplay_Chart_History.xlsx' in \
+        r.headers['Content-Disposition']
+
+
+def test_versus_xlsx_puts_scorecard_and_weeks_on_their_own_sheets(application):
+    query = 'chart=top100&artists=Chubby+Checker|Elvis+Presley'
+    r, wb = _xlsx(application, '/download-versus-csv?' + query + '&format=xlsx')
+    assert 'Chubby_Checker_vs_Elvis_Presley_top100.xlsx' in r.headers['Content-Disposition']
+    assert wb.sheetnames == ['Scorecard', 'Weekly rank by song']
+    assert wb['Weekly rank by song'].freeze_panes == 'B4'
+
+    csv_rows = [r for r in csv.reader(io.StringIO(_versus_csv(application, query)[1])) if r]
+    for row in csv_rows:
+        while row and row[-1] == '':
+            row.pop()
+    xlsx_rows = (_sheet_as_csv_text(wb['Scorecard'])
+                 + _sheet_as_csv_text(wb['Weekly rank by song']))
+    # The CSV carries two title lines the workbook puts in sheet names instead.
+    assert xlsx_rows == [r for r in csv_rows
+                         if not (len(r) == 1 and (r[0].endswith('— Versus')
+                                                  or r[0] == 'Weekly rank by song'))]
+
+
+def test_exports_reject_an_unknown_format(application):
+    c = application.app.test_client()
+    assert c.get('/download-csv/Drake?format=pdf').status_code == 400
+    assert c.get('/download-versus-csv?chart=top100&artists=Drake&format=pdf').status_code == 400
+
+
+def test_pages_offer_the_excel_download(application):
+    c = application.app.test_client()
+    assert 'format=xlsx' in c.get('/versus?chart=top100&artists=Drake').get_data(as_text=True)
+    assert 'detailDownloadXlsx' in c.post('/analyze', data={'artist_name': 'Drake'},
+                                          follow_redirects=True).get_data(as_text=True)
