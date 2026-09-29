@@ -498,7 +498,7 @@ BATCH_CHARTS = {
     # global singles chart from national charts, so the label names the source
     # rather than letting it sit unmarked among Billboard's own — every other
     # row on this site is Billboard data and a reader assumes that.
-    # Its 2004-onward weeks only: see fast_mediatraffic_scraper.py for why the
+    # Its 2003-onward weeks only: see fast_mediatraffic_scraper.py for why the
     # older pages, which state no date, are refused instead of derived.
     # Label length is load-bearing: the nav puts every chart name on one line
     # (ab74b5a), and "World Single Chart (MediaTraffic)" at 33 characters is

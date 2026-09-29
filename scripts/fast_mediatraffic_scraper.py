@@ -27,12 +27,13 @@ on 2026-08-19:
     cannot be read from the text and why it cannot be inferred from row order
     either — it comes from the image and nowhere else.
 
-  * Only the 2004-onward `tracks-week` pages state their own date ("week 01 /
-    2010 - January 9"). The older `week` pages give a year and a week number
-    and nothing else, so their dates would have to be derived from a
-    week-numbering convention this file has not measured. Deriving them would
-    be inventing dates for 2505 weeks, so this scraper covers the dated era
-    only and refuses the rest rather than guessing.
+  * Only the 2003 `singles-week` and 2004-onward `tracks-week` pages state
+    their own date ("week 01 / 2010 - January 9"). The older `week` pages
+    (back to at least 1970) are a different, top-10 "GLOBAL CHART" and give a
+    year and a week number and nothing else, so their dates would have to be
+    derived from a week-numbering convention this file has not measured.
+    Deriving them would be inventing dates, so this scraper covers the dated
+    era only and refuses the rest rather than guessing.
 
 Peak Position is not published anywhere on the page. It is left blank: app.py
 computes debut and peak from the chart history itself (the 2026-07-29 fix), so
@@ -46,8 +47,16 @@ from datetime import datetime
 import requests
 
 BASE = 'http://www.mediatraffic.de'
-# The dated era. week01-2004 is the first tracks-week page the archive lists.
-FIRST_DATED_YEAR = 2004
+# The dated era. 2003 is served as singles-weekNN-2003 and 2004 onward as
+# tracks-weekNN-YYYY; both state their own date in the same dateline and share
+# one layout. Every year before 2003 exists only as weekNN-YYYY "GLOBAL CHART"
+# pages: a top 10, not this top 40, with a year and week number but no date.
+FIRST_DATED_YEAR = 2003
+
+
+def week_url(year, week):
+    prefix = 'singles-week' if year == 2003 else 'tracks-week'
+    return f'{BASE}/{prefix}{week:02d}-{year}.htm'
 
 HEADERS = {'User-Agent': 'Mozilla/5.0 (compatible; chart-archive/1.0)'}
 
@@ -119,10 +128,10 @@ def scrape_mediatraffic_week(year, week, session=None, timeout=30):
     """
     if year < FIRST_DATED_YEAR:
         raise ValueError(
-            f'{year} predates the dated era: only {FIRST_DATED_YEAR}+ tracks-week '
-            'pages state their own date, and deriving the rest would invent them')
+            f'{year} predates the dated era: only {FIRST_DATED_YEAR}+ pages state '
+            'their own date, and deriving the rest would invent them')
 
-    url = f'{BASE}/tracks-week{week:02d}-{year}.htm'
+    url = week_url(year, week)
     get = (session or requests).get
     print(f'  📥 MediaTraffic {year} week {week:02d}...', end=' ', flush=True)
     try:
