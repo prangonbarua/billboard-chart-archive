@@ -1,3 +1,56 @@
+# HANDOFF — 2026-09-29
+
+## Committed, NOT pushed (main, 3 ahead of origin)
+
+- 7bd4c2d  CLAUDE.md data refresh and deploy rules
+- 005e328  Refresh system: refresh_to_week.py is resumable (checkpoints in
+  logs/refresh_checkpoints/<target>.json), idempotent, merges chart_plan.json
+  per chart, fails if known_slugs.json changes, never extends charts in
+  scripts/frozen_charts.json. New tests/test_freshness.py (live half opt-in:
+  BILLBOARD_LIVE=1) and tests/test_refresh_to_week.py (9 offline tests).
+- 19c9601  australia_albums -> 2026-10-03; world_albums + lyricfind_global
+  slugs recorded in chart_plan.json.
+
+Why unpushed: the four Mexico backfills are still running, and pushing deploys.
+
+## Running in the background
+
+`backfill_chart.py` for mexico, mexico-ingles, mexico-espanol, mexico-popular
+(PIDs 11562-11565), logs in logs/mexico_*_airplay.log, target 2022-09-03. At
+00:30 on 2026-09-29 they were at 2020-02 .. 2021-05.
+
+## Uncommitted (the Mexico batch)
+
+app.py (4 BATCH_CHARTS entries), scripts/known_slugs.json (4 slugs),
+scripts/frozen_charts.json (4 Mexico entries, needed so no refresh extends
+them), data/mexico_*_airplay.csv.
+
+## Exact next steps
+
+1. Wait until `ps aux | grep backfill_chart` is empty. Check each log for
+   "served ... not" / "No chart date" lines (clamps) and failed weeks.
+2. `python3 -m pytest -q tests/test_freshness.py` must pass the 4 Mexico
+   final-week checks (2022-09-03); `tests/test_no_missing_weeks.py` for the
+   4 CSVs. Spot-check 3 weeks per chart against billboard.com.
+3. Commit the Mexico batch, then ASK the user to confirm the deploy, push,
+   poll Railway, curl 3 random charts for their latest week.
+
+## Live freshness run (2026-09-29, before the Australia refresh): 143/152 pass
+
+Still failing, and why:
+- adult_alternative, afrobeats_songs, hot_rnb_songs, smooth_jazz_airplay:
+  no slug proves (unresolved since 2026-09-13; every candidate 404s).
+- greece_albums: stuck at 2026-08-08 while Billboard serves 2026-09-26.
+  Not yet diagnosed.
+- netherlands_hotw: current (2026-09-26) but the page's heading is served
+  about 1 time in 3; the test's 3 retries were not enough.
+- australia_albums, world_albums, lyricfind_global: fixed in 19c9601.
+
+Known unrelated failure: tests/test_analytics.py::test_recent_days_are_separated_by_day
+(hardcoded 2026-08-12/13 aged out of the rolling window).
+
+---
+
 # HANDOFF — 2026-08-24
 
 ## Live and verified
