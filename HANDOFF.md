@@ -1,17 +1,16 @@
 # HANDOFF — 2026-09-29
 
-## Committed, NOT pushed (main, 5 ahead of origin)
+## Live and verified (2026-09-29, 1bd62c2)
 
-7bd4c2d CLAUDE.md rules; 005e328 refresh system; 19c9601 australia_albums
-2026-10-03; a48d09a handoff; a284895 the four Mexico airplay charts (backfills
-DONE, 2018-01-03 Wednesday chart inserted, 7 honest holes in the gap baseline,
-12/12 spot-checks identical). Full suite: 454 passed, 1 known analytics failure.
+Pushed and deployed (~90s). Live: the four Mexico airplay charts serve
+2009-01-17..2022-09-03; australia_albums 2026-10-03; canadian_hot100 and
+gospel 2026-09-26. Refresh system (005e328) is in main.
 
 ## Exact next step
 
-Deploy on the user's confirm: push main, poll Railway, curl /mexico_airplay
-(or whichever route the key serves) plus 3 random charts for their latest week.
-Then diagnose greece_albums and the 4 slug-less charts.
+Diagnose greece_albums (stuck at 2026-08-08) and the 4 slug-less charts
+below. Run `BILLBOARD_LIVE=1 python3 -m pytest -q tests/test_freshness.py`
+after Billboard posts the 2026-10-03 charts, then `refresh_to_week.py`.
 
 ## Live freshness run (2026-09-29, before the Australia refresh): 143/152 pass
 
