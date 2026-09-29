@@ -59,6 +59,22 @@ Known fabrication modes, all measured on this repo:
   `docs/HANDOFF-new-charts.md`. The one sanctioned exception is `/recurrents`,
   which is labelled derived on the page itself.
 
+### Data Refresh & Deploy
+
+- A chart refresh or backfill takes a long time. Run it detached with a log
+  (`nohup ... > logs/<name>.log 2>&1 &`), give a realistic time estimate, and
+  poll the log. Never assume it finished.
+- "Latest week" means EVERY chart. After a refresh, list each chart with its
+  latest week and flag any stale ones.
+- Slug fixes go in `scripts/known_slugs.json`, never `scripts/chart_plan.json`,
+  which `refresh_to_week.py` rewrites every run.
+- Billboard renames page labels (e.g. WEEKS -> WEEKS ON CHART). If the scraper
+  fails or writes suspicious values, check for renamed labels first.
+- Never push while a backfill for a registered chart is still running: the
+  deploy would ship a truncated history that looks complete.
+- Run the nav and page tests before pushing, and check every new HTML page
+  links paxel.css.
+
 ## Frontend / UI
 
 Templates share `_nav.html` (nav + dropdown panel) and `_head_styles.html`.
