@@ -40,7 +40,7 @@
     "key": "australia_hotw"
   },
   "australian-albums": {
-    "anchor": "2026-09-12",
+    "anchor": "2026-09-26",
     "csv": "australia_albums.csv",
     "key": "australia_albums"
   },
@@ -485,7 +485,7 @@
     "key": "luxembourg_hotw"
   },
   "lyricfind-global": {
-    "anchor": "2026-09-12",
+    "anchor": "2026-09-26",
     "csv": "lyricfind_global.csv",
     "key": "lyricfind_global"
   },
@@ -748,5 +748,10 @@
     "anchor": "2026-09-12",
     "csv": "vinyl_albums.csv",
     "key": "vinyl_albums"
+  },
+  "world-albums": {
+    "anchor": "2026-09-26",
+    "csv": "world_albums.csv",
+    "key": "world_albums"
   }
 }
