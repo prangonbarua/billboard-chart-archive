@@ -67,7 +67,13 @@ Known fabrication modes, all measured on this repo:
 - "Latest week" means EVERY chart. After a refresh, list each chart with its
   latest week and flag any stale ones.
 - Slug fixes go in `scripts/known_slugs.json`, never `scripts/chart_plan.json`,
-  which `refresh_to_week.py` rewrites every run.
+  which is tooling output. `refresh_to_week.py` only reads the override (and
+  fails the run if its bytes change); it merges proven slugs into the plan.
+- `refresh_to_week.py` is resumable: it checkpoints each chart to
+  `logs/refresh_checkpoints/<target>.json`, and a rerun skips charts already at
+  the target. Charts in `scripts/frozen_charts.json` are never extended.
+- `BILLBOARD_LIVE=1 python3 -m pytest -q tests/test_freshness.py` checks every
+  chart's latest stored week against Billboard's served-week heading.
 - Billboard renames page labels (e.g. WEEKS -> WEEKS ON CHART). If the scraper
   fails or writes suspicious values, check for renamed labels first.
 - Never push while a backfill for a registered chart is still running: the

@@ -12,6 +12,38 @@ import re
 import time
 import json
 
+def parse_served_date(soup):
+    """The 'Week of <Month D, YYYY>' heading as YYYY-MM-DD, or None if absent."""
+    week_text = soup.find(string=re.compile(r'Week of\s+[A-Z]', re.I))
+    if not week_text:
+        return None
+    m = re.search(r'Week of\s+([A-Z][a-z]+\s+\d{1,2},\s*\d{4})', week_text)
+    if not m:
+        return None
+    try:
+        return datetime.strptime(
+            re.sub(r'\s+', ' ', m.group(1)), '%B %d, %Y').strftime('%Y-%m-%d')
+    except ValueError:
+        return None
+
+
+def latest_published_week(chart_name):
+    """The week Billboard's undated chart page says it is serving.
+
+    Read from the heading only. scrape_billboard_chart falls back to today's
+    date when an undated page has no heading, which is fine for a scrape but
+    would make a freshness check pass against a date Billboard never stated.
+    """
+    url = f'https://www.billboard.com/charts/{chart_name}/'
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+    }
+    response = requests.get(url, headers=headers, timeout=15)
+    if response.status_code != 200:
+        return None
+    return parse_served_date(BeautifulSoup(response.content, 'html.parser'))
+
+
 def scrape_billboard_chart(chart_name='hot-100', date=None, min_rows=None):
     """
     Scrape a Billboard chart for a specific date
@@ -55,16 +87,7 @@ def scrape_billboard_chart(chart_name='hot-100', date=None, min_rows=None):
         # would be stored under the date we ASKED for — fabricated history that
         # looks complete. The page states the week it actually served, so make
         # that the authority and drop anything that isn't the week we requested.
-        served_date = None
-        week_text = soup.find(string=re.compile(r'Week of\s+[A-Z]', re.I))
-        if week_text:
-            m = re.search(r'Week of\s+([A-Z][a-z]+\s+\d{1,2},\s*\d{4})', week_text)
-            if m:
-                try:
-                    served_date = datetime.strptime(
-                        re.sub(r'\s+', ' ', m.group(1)), '%B %d, %Y').strftime('%Y-%m-%d')
-                except ValueError:
-                    served_date = None
+        served_date = parse_served_date(soup)
 
         if date:
             if served_date is None:

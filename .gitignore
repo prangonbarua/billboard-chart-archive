@@ -7,3 +7,6 @@ logs_*.seen
 *.bak
 .cache/
 start_*.out
+
+# refresh_to_week.py resume state
+logs/refresh_checkpoints/

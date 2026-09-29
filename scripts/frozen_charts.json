@@ -1,0 +1,20 @@
+{
+  "_about": "Charts refresh_to_week.py must never extend, and the week each one is expected to end on. 'discontinued' charts stopped publishing: a request past 'until' serves no heading and no rows. 'not_billboard' charts come from another source and have their own refresher. tests/test_freshness.py holds each discontinued chart to exactly its 'until' week instead of Billboard's latest. Keys starting with _ are ignored.",
+  "dance_sales": {
+    "kind": "discontinued",
+    "until": "2013-11-30"
+  },
+  "heatseekers": {
+    "kind": "discontinued",
+    "until": "2014-11-29"
+  },
+  "dance_club": {
+    "kind": "discontinued",
+    "until": "2020-03-28"
+  },
+  "world_singles": {
+    "kind": "not_billboard",
+    "source": "MediaTraffic",
+    "refresher": "scripts/backfill_mediatraffic.py"
+  }
+}
