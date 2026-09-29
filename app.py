@@ -570,6 +570,19 @@ BATCH_CHARTS = {
     'arabic_hot100':           ('Arabic Hot 100',              'International', 25, 'song', 'arabic_hot100.csv'),
     'philippines_top_songs':   ('Top Philippine Songs',        'International', 25, 'song', 'philippines_top_songs.csv'),
 
+    # Billboard's four Mexico airplay charts. All four DISCONTINUED: each runs
+    # 2009-01-17 to 2022-09-03 and nothing later (a 2022-09-10 request serves no
+    # heading and no rows, so there is no clamp to fake a week). The launch week
+    # was read from the served-week heading: a 1990 request clamps forward to
+    # 'Week of January 17, 2009'. 50 rows early on, 30 by the end, so depth is
+    # the final 30 and the default backfill floor of 20 is below both eras.
+    # Slugs are the bare 'mexico' family, not 'mexico-airplay'; 'mexico' is NOT
+    # the Hits of the World chart, which is mexico-songs-hotw below.
+    'mexico_airplay':          ('Mexico Airplay',              'International', 30, 'song', 'mexico_airplay.csv'),
+    'mexico_ingles_airplay':   ('Mexico Ingles Airplay',       'International', 30, 'song', 'mexico_ingles_airplay.csv'),
+    'mexico_espanol_airplay':  ('Mexico Espanol Airplay',      'International', 30, 'song', 'mexico_espanol_airplay.csv'),
+    'mexico_popular_airplay':  ('Mexico Popular Airplay',      'International', 30, 'song', 'mexico_popular_airplay.csv'),
+
     'alternative_streaming':   ('Alternative Streaming Songs', 'Streaming', 25, 'song', 'alternative_streaming.csv'),
     'christian_streaming':     ('Christian Streaming Songs',   'Streaming', 25, 'song', 'christian_streaming.csv'),
     'country_streaming':       ('Country Streaming Songs',     'Streaming', 25, 'song', 'country_streaming.csv'),
