@@ -232,7 +232,9 @@ def test_billboard_200_reads_history_not_the_stored_columns(client):
         k = (_html.unescape(song).strip().casefold(), _html.unescape(artist).strip().casefold())
         if k not in best:
             continue
-        shown_peak = int(re.findall(r'class="stat-val">#?([^<]*)<', cells)[1].lstrip('#'))
+        # Read the peak cell by its class, not its position: the Units column
+        # sits before Last Wk on this page.
+        shown_peak = int(re.findall(r'cell-peak[^"]*"><div class="stat-val">#?([^<]*)<', cells)[0])
         assert shown_peak == int(best[k]), (song, artist, shown_peak, best[k])
         checked += 1
     assert checked > 100
@@ -426,3 +428,18 @@ def test_registered_chart_without_data_is_hidden_not_broken():
     resp = client.get('/' + key)
     assert resp.status_code in (302, 303), \
         f'/{key} should redirect while dataless, got {resp.status_code}'
+
+
+def test_albums200_shows_hits_units_for_matched_albums(client):
+    """The Units column comes from data/albums200_units.csv, keyed by the
+    Billboard chart date. J. Cole's The Fall-Off debuted at No. 1 on the chart
+    dated 2026-02-21; HITS's tracking week ending 2026-02-12 gave it 290,861."""
+    body = client.get('/albums200?date=2026-02-21').get_data(as_text=True)
+    assert '>Units<' in body
+    assert '290,861' in body
+    assert 'HITS Daily Double' in body
+
+
+def test_albums200_has_no_units_column_values_before_2026(client):
+    body = client.get('/albums200?date=2010-06-05').get_data(as_text=True)
+    assert '<p class="units-note">' not in body

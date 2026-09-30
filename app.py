@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, send_file, flash, redirect, u
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import csv
 import os
 import re
 import threading
@@ -138,6 +139,19 @@ if BILLBOARD_200_PATH.exists():
 else:
     print("⚠️  US Album Charts 200 data not found. Album chart will be unavailable.")
     BILLBOARD_200_DATA = None
+
+# Weekly album units for the Billboard 200, keyed by (chart date, title, artist)
+# exactly as billboard200.csv stores them. HITS Daily Double's figures, not
+# Billboard's: HITS ranks by its own measure and runs a few percent off the
+# official count (J. Cole's The Fall-Off debut: HITS 290,861, Billboard 280,000).
+# Built by scripts/fetch_hits_units.py; 2026 onward, HITS's top 50 only.
+ALBUMS200_UNITS = {}
+_units_path = DATA_DIR / 'albums200_units.csv'
+if _units_path.exists():
+    with open(_units_path, newline='') as _fh:
+        for _r in csv.DictReader(_fh):
+            if _r['Units']:
+                ALBUMS200_UNITS[(_r['Date'], _r['Song'].strip(), _r['Artist'].strip())] = int(_r['Units'])
 
 # Precompute request-invariant lookups once at startup (data is loaded once and never
 # mutated in-process, so these are constant for the process lifetime).
@@ -2373,6 +2387,8 @@ def _song_chart_page(source_df, available_dates, endpoint, template):
             if song_info['new_peak']:
                 tags.append('peak')
             song_info['tags'] = tags
+            if endpoint == 'albums200':
+                song_info['units'] = ALBUMS200_UNITS.get((selected_date, song_name, artist_name))
 
             chart_songs.append(song_info)
 
