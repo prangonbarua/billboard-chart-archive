@@ -141,17 +141,27 @@ else:
     BILLBOARD_200_DATA = None
 
 # Weekly album units for the Billboard 200, keyed by (chart date, title, artist)
-# exactly as billboard200.csv stores them. HITS Daily Double's figures, not
-# Billboard's: HITS ranks by its own measure and runs a few percent off the
-# official count (J. Cole's The Fall-Off debut: HITS 290,861, Billboard 280,000).
-# Built by scripts/fetch_hits_units.py; 2026 onward, HITS's top 50 only.
+# exactly as billboard200.csv stores them -> (units, source). Two sources:
+# - 'Billboard': Billboard's own reported figure for the No. 1 album, 1991-06-01
+#   onward (pure sales before the chart dated 2014-12-13, units after), via
+#   scripts/fetch_units_history.py.
+# - 'HITS': HITS Daily Double's figures for its top 50, 2015 onward, from
+#   Wayback captures (fetch_units_history.py) and HITS's own archive
+#   (fetch_hits_units.py, 2026 on). HITS runs a few percent off the official
+#   count (J. Cole's The Fall-Off debut: HITS 290,861, Billboard 280,000).
+# Where both cover an album, Billboard's figure wins.
 ALBUMS200_UNITS = {}
-_units_path = DATA_DIR / 'albums200_units.csv'
-if _units_path.exists():
+for _units_path in (DATA_DIR / 'albums200_units_history.csv', DATA_DIR / 'albums200_units.csv'):
+    if not _units_path.exists():
+        continue
     with open(_units_path, newline='') as _fh:
         for _r in csv.DictReader(_fh):
-            if _r['Units']:
-                ALBUMS200_UNITS[(_r['Date'], _r['Song'].strip(), _r['Artist'].strip())] = int(_r['Units'])
+            if not _r['Units']:
+                continue
+            _k = (_r['Date'], _r['Song'].strip(), _r['Artist'].strip())
+            if _k in ALBUMS200_UNITS and ALBUMS200_UNITS[_k][1] == 'Billboard':
+                continue
+            ALBUMS200_UNITS[_k] = (int(_r['Units']), _r['Source'])
 
 # Precompute request-invariant lookups once at startup (data is loaded once and never
 # mutated in-process, so these are constant for the process lifetime).
@@ -2388,7 +2398,8 @@ def _song_chart_page(source_df, available_dates, endpoint, template):
                 tags.append('peak')
             song_info['tags'] = tags
             if endpoint == 'albums200':
-                song_info['units'] = ALBUMS200_UNITS.get((selected_date, song_name, artist_name))
+                song_info['units'], song_info['units_source'] = ALBUMS200_UNITS.get(
+                    (selected_date, song_name, artist_name), (None, None))
 
             chart_songs.append(song_info)
 

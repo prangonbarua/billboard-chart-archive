@@ -431,15 +431,26 @@ def test_registered_chart_without_data_is_hidden_not_broken():
 
 
 def test_albums200_shows_hits_units_for_matched_albums(client):
-    """The Units column comes from data/albums200_units.csv, keyed by the
+    """The Units column comes from data/albums200_units*.csv, keyed by the
     Billboard chart date. J. Cole's The Fall-Off debuted at No. 1 on the chart
-    dated 2026-02-21; HITS's tracking week ending 2026-02-12 gave it 290,861."""
+    dated 2026-02-21: Billboard reported 280,000, HITS 290,861. Billboard's
+    figure wins for the No. 1; No. 2 (Bad Bunny) is HITS's 246,661."""
     body = client.get('/albums200?date=2026-02-21').get_data(as_text=True)
     assert '>Units<' in body
-    assert '290,861' in body
-    assert 'HITS Daily Double' in body
+    assert '280,000' in body and '290,861' not in body
+    assert '246,661' in body
+    assert "The No. 1 figure is Billboard's reported count" in body
 
 
-def test_albums200_has_no_units_column_values_before_2026(client):
+def test_albums200_before_units_shows_the_no1_sales_only(client):
+    """Before the chart dated 2014-12-13 the figure is pure sales. 2010-06-05:
+    Glee Volume 3 at No. 1 with 136,000; nothing for the rest of the chart."""
     body = client.get('/albums200?date=2010-06-05').get_data(as_text=True)
+    assert '>Sales<' in body and '>Units<' not in body
+    assert '136,000' in body
+    assert "reported weekly sales count" in body
+
+
+def test_albums200_has_no_units_before_soundscan(client):
+    body = client.get('/albums200?date=1985-06-01').get_data(as_text=True)
     assert '<p class="units-note">' not in body

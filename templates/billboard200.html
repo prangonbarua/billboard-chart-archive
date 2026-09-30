@@ -353,6 +353,8 @@
         <div class="page-header">
             <div>
                 <h1 class="page-title">Billboard 200™</h1>
+                {% set units_label = 'Sales' if selected_date < '2014-12-13' else 'Units' %}
+                {% set units_sources = {'Billboard': "Billboard's reported figure", 'HITS': 'HITS Daily Double'} %}
                 <p class="page-meta">Top albums ranked by album consumption units &middot; <span class="page-date">{{ selected_date }}</span></p>
             </div>
             <div class="date-nav">
@@ -393,7 +395,7 @@
                         </div>
                         {% if chart_songs[0].units %}
                         <div>
-                            <div class="hero-stat-label">Units</div>
+                            <div class="hero-stat-label">{{ units_label }}</div>
                             <div class="hero-stat-value">{{ "{:,}".format(chart_songs[0].units) }}</div>
                         </div>
                         {% endif %}
@@ -417,7 +419,7 @@
                         <th class="col-change">Change</th>
                         <th class="col-art"></th>
                         <th>Album / Artist</th>
-                        <th class="col-stat col-stats-hide" title="Weekly album units from HITS Daily Double">Units</th>
+                        <th class="col-stat col-stats-hide" title="Weekly album {{ units_label|lower }}">{{ units_label }}</th>
                         <th class="col-stat col-stats-hide">Last Wk</th>
                         <th class="col-stat col-stats-hide">Peak</th>
                         <th class="col-stat col-stats-hide">Weeks</th>
@@ -444,7 +446,7 @@
                             <div class="song-title">{{ song.song }}</div>
                             <div class="song-artist">{{ song.artist }}</div>
                         </td>
-                        <td class="cell-stat col-stats-hide"><div class="stat-val">{% if song.units %}{{ "{:,}".format(song.units) }}{% else %}&#8212;{% endif %}</div></td>
+                        <td class="cell-stat col-stats-hide"{% if song.units %} title="{{ units_sources[song.units_source] }}"{% endif %}><div class="stat-val">{% if song.units %}{{ "{:,}".format(song.units) }}{% else %}&#8212;{% endif %}</div></td>
                         <td class="cell-stat col-stats-hide"><div class="stat-val">{% if song.last_week %}#{{ song.last_week }}{% else %}&#8212;{% endif %}</div></td>
                         <td class="cell-stat cell-peak col-stats-hide"><div class="stat-val">#{{ song.peak }}</div></td>
                         <td class="cell-stat col-stats-hide"><div class="stat-val">{{ song.weeks }}</div></td>
@@ -472,7 +474,7 @@
                             <div class="song-title">{{ song.song }}</div>
                             <div class="song-artist">{{ song.artist }}</div>
                         </td>
-                        <td class="cell-stat col-stats-hide"><div class="stat-val">{% if song.units %}{{ "{:,}".format(song.units) }}{% else %}&#8212;{% endif %}</div></td>
+                        <td class="cell-stat col-stats-hide"{% if song.units %} title="{{ units_sources[song.units_source] }}"{% endif %}><div class="stat-val">{% if song.units %}{{ "{:,}".format(song.units) }}{% else %}&#8212;{% endif %}</div></td>
                         <td class="cell-stat col-stats-hide"><div class="stat-val">{% if song.last_week %}#{{ song.last_week }}{% else %}&#8212;{% endif %}</div></td>
                         <td class="cell-stat cell-peak col-stats-hide"><div class="stat-val">#{{ song.peak }}</div></td>
                         <td class="cell-stat col-stats-hide"><div class="stat-val">{{ song.weeks }}</div></td>
@@ -482,8 +484,13 @@
                 </tbody>
             </table>
         </div>
-        {% if chart_songs|selectattr('units')|list %}
-        <p class="units-note">Units are HITS Daily Double's weekly figures for its top 50, which run a few percent off Billboard's official count. Albums outside that top 50 show &#8212;.</p>
+        {% set units_from = chart_songs|selectattr('units')|map(attribute='units_source')|list %}
+        {% if units_from %}
+        <p class="units-note">
+        {%- if 'Billboard' in units_from and 'HITS' in units_from %}The No. 1 figure is Billboard's reported count. The others are HITS Daily Double's figures for its top 50, which run a few percent off Billboard's. Albums outside that top 50 show &#8212;.
+        {%- elif 'Billboard' in units_from %}The No. 1 figure is Billboard's reported weekly {{ units_label|lower }} count. Figures for the rest of this chart are not included here, so they show &#8212;.
+        {%- else %}{{ units_label }} are HITS Daily Double's weekly figures for its top 50, which run a few percent off Billboard's official count. Albums outside that top 50 show &#8212;.
+        {%- endif %}</p>
         {% endif %}
         {% endif %}
         {% endif %}
