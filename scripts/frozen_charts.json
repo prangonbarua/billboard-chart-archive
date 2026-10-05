@@ -7,5 +7,6 @@
   "mexico_ingles_airplay": {"kind": "discontinued", "until": "2022-09-03"},
   "mexico_espanol_airplay": {"kind": "discontinued", "until": "2022-09-03"},
   "mexico_popular_airplay": {"kind": "discontinued", "until": "2022-09-03"},
-  "world_singles": {"kind": "not_billboard", "source": "MediaTraffic", "refresher": "scripts/backfill_mediatraffic.py"}
+  "world_singles": {"kind": "not_billboard", "source": "MediaTraffic", "refresher": "scripts/backfill_mediatraffic.py"},
+  "world_albums_mediatraffic": {"kind": "not_billboard", "source": "MediaTraffic", "refresher": "scripts/backfill_mediatraffic.py <csv> <first-year> <last-year> albums"}
 }

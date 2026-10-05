@@ -528,6 +528,11 @@ BATCH_CHARTS = {
     # (ab74b5a), and "World Single Chart (MediaTraffic)" at 33 characters is
     # longer than any Billboard label and fails that test outright.
     'world_singles':      ('World Singles (MediaTraffic)', 'International', 40, 'song', 'world_singles.csv'),
+    # MediaTraffic's other weekly chart, same source and site layout. Album
+    # pages print "Artist - Album" where track pages print "Song - Artist".
+    # Weekly from 2004-01-03 (no albums-week page exists for 2003); a top 40
+    # until mid-2016, then a top 10, and a top 20 since 2024.
+    'world_albums_mediatraffic': ('World Albums (MediaTraffic)', 'International', 40, 'album', 'world_albums_mediatraffic.csv'),
 
     # ── Batch added 2026-08-17 ───────────────────────────────────────────────
     # 57 charts that survived the archive test. Depths here are CURRENT depth,

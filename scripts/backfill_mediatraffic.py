@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Backfill MediaTraffic's World Single Chart to CSV.
+"""Backfill MediaTraffic's World Single Chart (or World Album Chart) to CSV.
 
 Resumable: reads the existing CSV and skips weeks already stored, so a killed
-run picks up where it stopped. Checkpoints every 25 weeks.
+run picks up where it stopped. Appends one week at a time, in date order when
+run forward over years.
 
 No clamp comparison here, unlike backfill_chart.py. That script drops a week
 whose ordering is identical to its neighbour because Billboard serves
@@ -13,19 +14,21 @@ dropping it would delete history. The integrity checks that DO apply live in
 the scraper: stated week must match, rank sequence must be a complete 1..N.
 
 Usage:
-  backfill_mediatraffic.py <csv-path> [first-year] [last-year]
+  backfill_mediatraffic.py <csv-path> [first-year] [last-year] [tracks|albums]
+
+New weeks are appended; existing rows are never rewritten (an earlier version
+rewrote the file through pandas, which turned 1 into 1.0 and CRLF into LF, so
+refreshes had to run on a copy).
 """
 
+import csv
 import sys
 from pathlib import Path
 
-import pandas as pd
-
 sys.path.insert(0, str(Path(__file__).parent))
-from fast_mediatraffic_scraper import FIRST_DATED_YEAR, scrape_mediatraffic_week
+from fast_mediatraffic_scraper import FIRST_ALBUM_YEAR, FIRST_DATED_YEAR, scrape_mediatraffic_week
 
 COLUMNS = ['Date', 'Rank', 'Song', 'Artist', 'Last Week', 'Peak Position', 'Weeks on Chart']
-CHECKPOINT_EVERY = 25
 
 
 def main():
@@ -33,19 +36,27 @@ def main():
         print(__doc__)
         return 1
     csv_path = Path(sys.argv[1])
-    first_year = int(sys.argv[2]) if len(sys.argv) > 2 else FIRST_DATED_YEAR
+    chart = sys.argv[4] if len(sys.argv) > 4 else 'tracks'
+    first_year = int(sys.argv[2]) if len(sys.argv) > 2 else (
+        FIRST_ALBUM_YEAR if chart == 'albums' else FIRST_DATED_YEAR)
     last_year = int(sys.argv[3]) if len(sys.argv) > 3 else 2026
 
-    existing = pd.read_csv(csv_path) if csv_path.exists() else pd.DataFrame(columns=COLUMNS)
-    have = set(existing['Date'].astype(str)) if len(existing) else set()
-    rows = existing.to_dict('records')
+    have, newline = set(), '\r\n'
+    if csv_path.exists():
+        with open(csv_path, newline='') as f:
+            first = f.readline()
+            newline = '\r\n' if first.endswith('\r\n') else '\n'
+            have = {row['Date'] for row in csv.DictReader(f, fieldnames=COLUMNS)}
+    else:
+        with open(csv_path, 'w', newline='') as f:
+            csv.writer(f, lineterminator=newline).writerow(COLUMNS)
 
-    fetched = missing = ambiguous_total = 0
+    fetched = missing = ambiguous_total = n_rows = 0
     for year in range(first_year, last_year + 1):
         # Week 53 exists in some years and 404s in the rest, which is the
-        # normal signal that the year ended at 52 — not an error to retry.
+        # normal signal that the year ended at 52 -- not an error to retry.
         for week in range(1, 54):
-            result = scrape_mediatraffic_week(year, week)
+            result = scrape_mediatraffic_week(year, week, chart=chart)
             if result is None:
                 missing += 1
                 continue
@@ -54,15 +65,15 @@ def main():
             if date in have:
                 continue
             have.add(date)
-            rows.extend(week_rows)
+            # One append per week, in the file's own line ending: existing rows
+            # are never rewritten, and a kill leaves whole weeks behind.
+            with open(csv_path, 'a', newline='') as f:
+                w = csv.DictWriter(f, fieldnames=COLUMNS, lineterminator=newline)
+                w.writerows(week_rows)
             fetched += 1
-            if fetched % CHECKPOINT_EVERY == 0:
-                pd.DataFrame(rows)[COLUMNS].to_csv(csv_path, index=False)
-                print(f'  … checkpoint: {fetched} weeks, {len(rows)} rows')
+            n_rows += len(week_rows)
 
-    out = pd.DataFrame(rows)[COLUMNS].sort_values(['Date', 'Rank'])
-    out.to_csv(csv_path, index=False)
-    print(f'DONE: {fetched} weeks fetched, {len(out)} rows, {missing} unavailable, '
+    print(f'DONE: {fetched} weeks appended ({n_rows} rows), {missing} unavailable, '
           f'{ambiguous_total} ambiguous titles -> {csv_path}')
     return 0
 

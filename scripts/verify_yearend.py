@@ -62,6 +62,11 @@ CSV_FOR = {
     'country_songs': 'country_songs.csv',
     'rock_songs': 'rock_songs.csv',
     'latin_songs': 'latin_songs.csv',
+    # MediaTraffic stores the album title in Song on both sides, so unlike
+    # albums200 its album chart compares like with like. Its 2017-2025 weeklies
+    # are a top 10/20 against a top-40 year-end, so those years score 72-89%.
+    'world_singles': 'world_singles.csv',
+    'world_albums_mediatraffic': 'world_albums_mediatraffic.csv',
 }
 
 # Years with too little weekly coverage to test, triaged and accepted. Each is
@@ -80,6 +85,9 @@ CSV_FOR = {
 UNTESTABLE_OK = {
     ('dance_electronic', 2013),
     ('alternative', 1988),
+    # MediaTraffic's weekly album archive starts at week 1 of 2004 (the 2003
+    # page is a 404), but albums-2003.htm states "COUNTDOWN 2003" itself.
+    ('world_albums_mediatraffic', 2003),
     *(('dance_sales', y) for y in range(2007, 2014)),
 }
 

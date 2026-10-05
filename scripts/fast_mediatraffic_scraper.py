@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
-"""Scrape one week of MediaTraffic's World Single Chart.
+"""Scrape one week of MediaTraffic's World Single Chart or World Album Chart.
 
 This is the first non-Billboard source in the project, so none of the
 Billboard scraper's assumptions carry over. What changes, measured at source
 on 2026-08-19:
 
-  * HTTPS does not work at all. www.mediatraffic.de answers on port 80 only;
-    every https:// request fails to connect. So this fetches over plaintext.
+  * HTTPS: on 2026-08-19 the site answered on port 80 only. By 2026-10-04 that
+    had flipped: https:// serves the pages and http:// 301-redirects to it. So
+    this fetches over HTTPS (requests would follow the redirect either way).
+
+  * Two weekly charts share one page layout. Tracks print "Song - Artist";
+    albums (albums-weekNN-YYYY, 2004 onward, measured 2026-10-04) print
+    "Artist - Album", so the album parse swaps the halves. The album chart was
+    a top 40 and is a top 20 by 2026; the 1..N rank check holds either depth.
 
   * There is no date parameter, and therefore no clamp. Billboard serves an
     out-of-range date by returning a boundary week's rankings under the date
@@ -46,16 +52,21 @@ from datetime import datetime
 
 import requests
 
-BASE = 'http://www.mediatraffic.de'
+BASE = 'https://www.mediatraffic.de'
 # The dated era. 2003 is served as singles-weekNN-2003 and 2004 onward as
 # tracks-weekNN-YYYY; both state their own date in the same dateline and share
 # one layout. Every year before 2003 exists only as weekNN-YYYY "GLOBAL CHART"
 # pages: a top 10, not this top 40, with a year and week number but no date.
 FIRST_DATED_YEAR = 2003
+# The album archive starts at albums-week01-2004; albums-week01-2003 is a 404.
+FIRST_ALBUM_YEAR = 2004
 
 
-def week_url(year, week):
-    prefix = 'singles-week' if year == 2003 else 'tracks-week'
+def week_url(year, week, chart='tracks'):
+    if chart == 'albums':
+        prefix = 'albums-week'
+    else:
+        prefix = 'singles-week' if year == 2003 else 'tracks-week'
     return f'{BASE}/{prefix}{week:02d}-{year}.htm'
 
 HEADERS = {'User-Agent': 'Mozilla/5.0 (compatible; chart-archive/1.0)'}
@@ -118,22 +129,44 @@ def _split_title(strong_text):
     return parts[0].strip(), parts[1].strip()
 
 
-def scrape_mediatraffic_week(year, week, session=None, timeout=30):
-    """One week of the World Single Chart, or None.
+# Rows whose own markup mistypes the ' - ' separator (". ", "-X", "X-", or none
+# at all), each read off the live page by hand. A looser separator regex would
+# mis-split every hyphenated name (Jay-Z, "X-Factor"), and "Seventeen Attacca"
+# has no separator to find. Keyed (chart, year, week, rank); the value is the
+# exact title text the override was checked against, then the CSV's (Song,
+# Artist). If the page's text ever differs, the override does not apply and the
+# week is refused.
+SEPARATOR_TYPOS = {
+    ('tracks', 2007, 50, 40): ('Headlines (Friendship Never Ends)- Spice Girls',
+                               'Headlines (Friendship Never Ends)', 'Spice Girls'),
+    ('albums', 2009, 39, 14): ('Takeshi Tsuruno -Tsuru No Oto', 'Tsuru No Oto', 'Takeshi Tsuruno'),
+    ('albums', 2012, 50, 32): ('Booba- Futur', 'Futur', 'Booba'),
+    ('albums', 2015, 47, 18): ('MyName . MyBestName', 'MyBestName', 'MyName'),
+    ('albums', 2021, 3, 10): ('Harry Styles . Fine Line', 'Fine Line', 'Harry Styles'),
+    ('albums', 2021, 39, 9): ('Billie Eilish -Happier Than Ever', 'Happier Than Ever', 'Billie Eilish'),
+    ('albums', 2021, 45, 1): ('Seventeen Attacca', 'Attacca', 'Seventeen'),
+}
+
+
+def scrape_mediatraffic_week(year, week, session=None, timeout=30, chart='tracks'):
+    """One week of the World Single Chart (or, chart='albums', the World Album
+    Chart), or None.
 
     Returns (date, rows, ambiguous_titles). `rows` are dicts in the project's
     CSV shape. None means the week is genuinely unavailable — a 404, a page
     whose stated week is not the one asked for, or a rank sequence with a hole
     in it. Every one of those is a refusal, never a partial chart.
     """
+    if chart == 'albums' and year < FIRST_ALBUM_YEAR:
+        raise ValueError(f'the album archive starts in {FIRST_ALBUM_YEAR}')
     if year < FIRST_DATED_YEAR:
         raise ValueError(
             f'{year} predates the dated era: only {FIRST_DATED_YEAR}+ pages state '
             'their own date, and deriving the rest would invent them')
 
-    url = week_url(year, week)
+    url = week_url(year, week, chart)
     get = (session or requests).get
-    print(f'  📥 MediaTraffic {year} week {week:02d}...', end=' ', flush=True)
+    print(f'  📥 MediaTraffic {chart} {year} week {week:02d}...', end=' ', flush=True)
     try:
         r = get(url, headers=HEADERS, timeout=timeout)
     except requests.RequestException as e:
@@ -177,7 +210,7 @@ def scrape_mediatraffic_week(year, week, session=None, timeout=30):
         print(f'✗ unparseable date "{month} {day}"')
         return None
 
-    rows, ambiguous = [], 0
+    rows, ambiguous, unparsed = [], 0, []
     for frag in _ROW.findall(html_text):
         cells = _CELL.findall(frag)
         if len(cells) < 3:
@@ -193,8 +226,15 @@ def scrape_mediatraffic_week(year, week, session=None, timeout=30):
 
         title_text = _title_block(cells[2])
         song, artist = _split_title(title_text)
+        if chart == 'albums':
+            song, artist = artist, song  # "Artist - Album"; the CSV's Song column holds the album
         if not song or not artist:
-            continue
+            typo = SEPARATOR_TYPOS.get((chart, year, week, int(rank_m.group(1))))
+            if typo and typo[0] == title_text:
+                song, artist = typo[1], typo[2]
+            else:
+                unparsed.append((int(rank_m.group(1)), title_text))
+                continue
         if title_text.count(' - ') > 1:
             ambiguous += 1
 
@@ -212,6 +252,12 @@ def scrape_mediatraffic_week(year, week, session=None, timeout=30):
     if not rows:
         print('✗ no rows parsed')
         return None
+    # A ranked row that did not parse is a dropped row. The rank check below
+    # cannot see one dropped from the END (1..9 is a complete run), which is how
+    # a top 10 was once stored with 9 albums.
+    if unparsed:
+        print(f'✗ unparseable ranked rows {unparsed} — skipping')
+        return None
 
     # The ranks come from sequential images, so a correct parse yields exactly
     # 1..N with no hole and no repeat. A hole means rows were dropped, and a
@@ -227,3 +273,45 @@ def scrape_mediatraffic_week(year, week, session=None, timeout=30):
     print(f'✓ ({len(rows)} tracks, {date})')
     time.sleep(1)  # Be respectful — this is a small site on one host.
     return date, rows, ambiguous
+
+
+_COUNTDOWN = re.compile(r'COUNTDOWN\s+(\d{4})', re.I)
+
+
+def scrape_mediatraffic_yearend(year, chart='tracks', session=None, timeout=30):
+    """MediaTraffic's year-end top 40 (tracks-YYYY.htm / albums-YYYY.htm), or None.
+
+    Returns a list of (rank, song, artist); for albums, song is the album
+    title. Same layout as the weekly pages (rank image + bold "A - B"), and the
+    same refusals: the page must state the year asked for ("COUNTDOWN 2004")
+    and the ranks must run 1..N with no hole.
+    """
+    url = f'{BASE}/{chart}-{year}.htm'
+    try:
+        r = (session or requests).get(url, headers=HEADERS, timeout=timeout)
+    except requests.RequestException:
+        return None
+    if r.status_code != 200:
+        return None
+    html_text = r.content.decode('iso-8859-1', errors='replace')
+    m = _COUNTDOWN.search(_text(html_text))
+    if not m or int(m.group(1)) != year:
+        return None
+    rows = []
+    for frag in _ROW.findall(html_text):
+        cells = _CELL.findall(frag)
+        rank_m = _RANK_IMG.search(cells[0]) if cells else None
+        if not rank_m:
+            continue
+        for cell in cells[1:]:
+            a, b = _split_title(_title_block(cell))
+            if a and b:
+                rows.append((int(rank_m.group(1)),) + ((b, a) if chart == 'albums' else (a, b)))
+                break
+        else:
+            return None  # a ranked row that did not parse; see scrape_mediatraffic_week
+    ranks = sorted(r[0] for r in rows)
+    if not rows or ranks != list(range(1, len(rows) + 1)):
+        return None
+    time.sleep(1)
+    return sorted(rows)

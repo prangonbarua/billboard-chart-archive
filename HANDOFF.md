@@ -1,3 +1,31 @@
+# HANDOFF - 2026-10-04 (committed, NOT pushed/deployed)
+
+Asked: refresh every chart to the latest week, finish MediaTraffic, add every MediaTraffic chart.
+
+## Done and committed (2 commits on main, unpushed)
+- Refresh to 2026-10-03: 142 charts advanced (italy_albums needed a solo retry: read timeout, not a slug change).
+  Not advanced, nothing to fix: arabic_artist100, arabic_hot100, lyricfind_global (09-26),
+  philippines_hot100 + philippines_top_songs (09-12) -- Billboard has not posted newer weeks.
+  greece_albums stuck at 08-08: Billboard serves the 08-08 rankings for 08-15..08-29 (clamp), correctly refused.
+  Still slug-unproven: adult_alternative, afrobeats_songs, hot_rnb_songs, smooth_jazz_airplay.
+- New chart world_albums_mediatraffic: 1,188 weeks 2004-01-03..2026-10-03 (= MediaTraffic's archive),
+  32,720 rows, Saturdays only, every gap 7 days, ranks 1..N every week. Depth 40 -> 10 (mid-2016) -> 20 (2024).
+- MediaTraffic year-end top 40s (46 lists) now checked by verify_yearend.py: every year best-matches itself.
+- Parser bug fixed: a ranked row with a mistyped separator ("Harry Styles . Fine Line", "Booba- Futur",
+  "Seventeen Attacca") was dropped silently; if it was the LAST rank the 1..N check could not see it.
+  Now any unparsed ranked row refuses the week, and the 7 real typos are split by SEPARATOR_TYPOS
+  (exact-text keyed). Repaired: world_singles 2007-12-15 (rank 40 was missing on the LIVE site),
+  albums 2021-01-23 (9 -> 10) and 5 albums weeks that had been refused.
+- The 30 "ambiguous" album titles are 5 distinct titles, all split correctly (dash is in the album name).
+- Full pytest: 486 passed, 153 skipped (live), test_analytics recent-days deselected (known aged-out dates).
+  crossover_baseline: Lush Life weeks 26 -> 27 (real re-entry at #42 on 2026-10-03).
+
+## Next
+1. Push (Railway repo-connect deploys), then verify live: /world_albums_mediatraffic, its year-end, 2007-12-15 on
+   /world_singles, and a refreshed chart at 2026-10-03.
+
+---
+
 # HANDOFF — 2026-09-29
 
 ## Live and verified (2026-09-29, 1bd62c2)
