@@ -1,0 +1,9 @@
+mexico-ingles: 712 weeks total, 710 present, 2 to fetch
+  📥 Scraping mexico-ingles for 2019-05-04... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico-ingles for 2019-05-04... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico-ingles for 2019-05-04... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico-ingles for 2019-05-11... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico-ingles for 2019-05-11... ✓ (50 songs)
+  mexico-ingles: 2/2 fetched, 1 failed, 0 clamped
+DONE mexico-ingles: 711 weeks, 2009-01-17 -> 2022-09-03, 1 failed, 0 clamped/skipped
+  failed weeks (first 20): ['2019-05-04']

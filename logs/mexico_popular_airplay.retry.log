@@ -1,0 +1,6 @@
+mexico-popular: 712 weeks total, 711 present, 1 to fetch
+  📥 Scraping mexico-popular for 2020-07-18... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico-popular for 2020-07-18... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico-popular for 2020-07-18... ✗ No chart date on page (redirect or markup change) — skipping
+DONE mexico-popular: 711 weeks, 2009-01-17 -> 2022-09-03, 1 failed, 0 clamped/skipped
+  failed weeks (first 20): ['2020-07-18']

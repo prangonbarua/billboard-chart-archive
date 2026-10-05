@@ -1,0 +1,11 @@
+mexico: 712 weeks total, 709 present, 3 to fetch
+  📥 Scraping mexico for 2020-08-01... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico for 2020-08-01... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico for 2020-08-01... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico for 2020-09-05... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico for 2020-09-05... ✓ (50 songs)
+  📥 Scraping mexico for 2021-01-09... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico for 2021-01-09... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico for 2021-01-09... ✗ No chart date on page (redirect or markup change) — skipping
+DONE mexico: 710 weeks, 2009-01-17 -> 2022-09-03, 2 failed, 0 clamped/skipped
+  failed weeks (first 20): ['2020-08-01', '2021-01-09']

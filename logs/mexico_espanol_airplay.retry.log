@@ -1,0 +1,12 @@
+mexico-espanol: 712 weeks total, 709 present, 3 to fetch
+  📥 Scraping mexico-espanol for 2020-06-13... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico-espanol for 2020-06-13... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico-espanol for 2020-06-13... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico-espanol for 2020-06-20... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico-espanol for 2020-06-20... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico-espanol for 2020-06-20... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico-espanol for 2020-07-11... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico-espanol for 2020-07-11... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping mexico-espanol for 2020-07-11... ✗ No chart date on page (redirect or markup change) — skipping
+DONE mexico-espanol: 709 weeks, 2009-01-17 -> 2022-09-03, 3 failed, 0 clamped/skipped
+  failed weeks (first 20): ['2020-06-13', '2020-06-20', '2020-07-11']
