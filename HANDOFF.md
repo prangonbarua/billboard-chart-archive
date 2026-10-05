@@ -21,8 +21,9 @@ Asked: refresh every chart to the latest week, finish MediaTraffic, add every Me
   crossover_baseline: Lush Life weeks 26 -> 27 (real re-entry at #42 on 2026-10-03).
 
 ## Next
-1. Push (Railway repo-connect deploys), then verify live: /world_albums_mediatraffic, its year-end, 2007-12-15 on
-   /world_singles, and a refreshed chart at 2026-10-03.
+1. DONE 2026-10-04: pushed f71d910, deployed, verified live: /world_albums_mediatraffic serves 2026-10-03
+   (top 5 match the CSV), its year-end lists 2003-2025, /world_singles?date=2007-12-15 and /top100 at 2026-10-03
+   match the CSV.
 
 ---
 
