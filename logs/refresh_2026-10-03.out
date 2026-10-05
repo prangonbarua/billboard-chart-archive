@@ -1,0 +1,506 @@
+  📥 Scraping adult-alternative-airplay for 2026-08-15... ✗ Status 404
+  📥 Scraping adult-alternative for 2026-08-15... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping hot-adult-alternative-airplay for 2026-08-15... ✗ Status 404
+  📥 Scraping adult-alternative-airplay-songs for 2026-08-15... ✗ Status 404
+  📥 Scraping adult-contemporary for 2026-08-15... ✓ (30 songs)
+  📥 Scraping adult-pop-songs for 2026-08-15... ✓ (40 songs)
+  📥 Scraping hot-adult-r-and-b-airplay for 2026-08-15... ✓ (30 songs)
+  📥 Scraping hot-christian-adult-contemporary for 2026-08-15... ✓ (30 songs)
+SKIP  adult_alternative                  {"last": "2026-08-15", "why": "slug unproven (last=2026-08-15)"}
+  📥 Scraping adult-contemporary for 2026-09-26... ✓ (30 songs)
+  📥 Scraping adult-contemporary for 2026-10-03... ✓ (30 songs)
+OK    adult_contemporary                 {"from": "2026-09-26", "last": "2026-10-03", "rows": 30, "slug": "adult-contemporary"}
+  📥 Scraping adult-pop-songs for 2026-09-26... ✓ (40 songs)
+  📥 Scraping adult-pop-songs for 2026-10-03... ✓ (40 songs)
+OK    adult_pop                          {"from": "2026-09-26", "last": "2026-10-03", "rows": 40, "slug": "adult-pop-songs"}
+  📥 Scraping hot-adult-r-and-b-airplay for 2026-09-26... ✓ (30 songs)
+  📥 Scraping hot-adult-r-and-b-airplay for 2026-10-03... ✓ (30 songs)
+OK    adult_rnb                          {"from": "2026-09-26", "last": "2026-10-03", "rows": 30, "slug": "hot-adult-r-and-b-airplay"}
+  📥 Scraping u-s-afrobeats-songs for 2026-08-22... ✗ Status 404
+  📥 Scraping afrobeats-songs for 2026-08-22... ✗ Status 404
+  📥 Scraping hot-u-s-afrobeats-songs for 2026-08-22... ✗ Status 404
+  📥 Scraping u-s-afrobeats-songs-songs for 2026-08-22... ✗ Status 404
+  📥 Scraping adult-contemporary for 2026-08-22... ✓ (30 songs)
+  📥 Scraping adult-pop-songs for 2026-08-22... ✓ (40 songs)
+  📥 Scraping alternative-albums for 2026-08-22... ✓ (25 songs)
+  📥 Scraping americana-folk-albums for 2026-08-22... ✓ (25 songs)
+  📥 Scraping australian-albums for 2026-08-22... ✓ (10 songs)
+  📥 Scraping billboard-global-excl-us for 2026-08-22... ✓ (200 songs)
+SKIP  afrobeats_songs                    {"last": "2026-08-22", "why": "slug unproven (last=2026-08-22)"}
+  📥 Scraping billboard-200 for 2026-09-26... ✓ (200 songs)
+  📥 Scraping billboard-200 for 2026-10-03... ✓ (200 songs)
+OK    albums200                          {"from": "2026-09-26", "last": "2026-10-03", "rows": 200, "slug": "billboard-200"}
+  📥 Scraping alternative-airplay for 2026-09-26... ✓ (40 songs)
+  📥 Scraping alternative-airplay for 2026-10-03... ✓ (40 songs)
+OK    alternative                        {"from": "2026-09-26", "last": "2026-10-03", "rows": 40, "slug": "alternative-airplay"}
+  📥 Scraping alternative-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping alternative-albums for 2026-10-03... ✓ (25 songs)
+OK    alternative_albums                 {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "alternative-albums"}
+  📥 Scraping alternative-streaming-songs for 2026-09-26... ✓ (25 songs)
+  📥 Scraping alternative-streaming-songs for 2026-10-03... ✓ (25 songs)
+OK    alternative_streaming              {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "alternative-streaming-songs"}
+  📥 Scraping americana-folk-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping americana-folk-albums for 2026-10-03... ✓ (25 songs)
+OK    americana_folk_albums              {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "americana-folk-albums"}
+  📥 Scraping top-arabic-artist-100 for 2026-09-26... ✓ (25 songs)
+  📥 Scraping top-arabic-artist-100 for 2026-10-03... ✗ No chart date on page (redirect or markup change) — skipping
+NONE  arabic_artist100                   {"last": "2026-09-26", "slug": "top-arabic-artist-100"}
+  📥 Scraping the-arabic-hot-100 for 2026-09-26... ✓ (25 songs)
+  📥 Scraping the-arabic-hot-100 for 2026-10-03... ✗ No chart date on page (redirect or markup change) — skipping
+NONE  arabic_hot100                      {"last": "2026-09-26", "slug": "the-arabic-hot-100"}
+  📥 Scraping billboard-argentina-hot-100 for 2026-09-26... ✓ (25 songs)
+  📥 Scraping billboard-argentina-hot-100 for 2026-10-03... ✓ (25 songs)
+OK    argentina_hot100                   {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "billboard-argentina-hot-100"}
+  📥 Scraping artist-100 for 2026-09-26... ✓ (100 songs)
+  📥 Scraping artist-100 for 2026-10-03... ✓ (100 songs)
+OK    artist100                          {"from": "2026-09-26", "last": "2026-10-03", "rows": 100, "slug": "artist-100"}
+  📥 Scraping australia-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping australia-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    australia_hotw                     {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "australia-songs-hotw"}
+  📥 Scraping austria-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping austria-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    austria_hotw                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "austria-songs-hotw"}
+  📥 Scraping belgium-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping belgium-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    belgium_hotw                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "belgium-songs-hotw"}
+  📥 Scraping bluegrass-albums for 2026-09-26... ✓ (15 songs)
+  📥 Scraping bluegrass-albums for 2026-10-03... ✓ (15 songs)
+OK    bluegrass_albums                   {"from": "2026-09-26", "last": "2026-10-03", "rows": 15, "slug": "bluegrass-albums"}
+  📥 Scraping blues-albums for 2026-09-26... ✓ (15 songs)
+  📥 Scraping blues-albums for 2026-10-03... ✓ (15 songs)
+OK    blues_albums                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 15, "slug": "blues-albums"}
+  📥 Scraping bolivia-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping bolivia-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    bolivia_hotw                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "bolivia-songs-hotw"}
+  📥 Scraping billboard-brasil-hot-100 for 2026-09-26... ✓ (25 songs)
+  📥 Scraping billboard-brasil-hot-100 for 2026-10-03... ✓ (25 songs)
+OK    brasil_hot100                      {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "billboard-brasil-hot-100"}
+  📥 Scraping bubbling-under-hot-100-singles for 2026-09-26... ✓ (25 songs)
+  📥 Scraping bubbling-under-hot-100-singles for 2026-10-03... ✓ (25 songs)
+OK    bubbling                           {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "bubbling-under-hot-100-singles"}
+  📥 Scraping canadian-albums for 2026-09-26... ✓ (100 songs)
+  📥 Scraping canadian-albums for 2026-10-03... ✓ (100 songs)
+OK    canadian_albums                    {"from": "2026-09-26", "last": "2026-10-03", "rows": 100, "slug": "canadian-albums"}
+  📥 Scraping canadian-hot-100 for 2026-09-26... ✓ (100 songs)
+  📥 Scraping canadian-hot-100 for 2026-10-03... ✓ (100 songs)
+OK    canadian_hot100                    {"from": "2026-09-26", "last": "2026-10-03", "rows": 100, "slug": "canadian-hot-100"}
+  📥 Scraping cast-albums for 2026-09-26... ✓ (15 songs)
+  📥 Scraping cast-albums for 2026-10-03... ✓ (15 songs)
+OK    cast_albums                        {"from": "2026-09-26", "last": "2026-10-03", "rows": 15, "slug": "cast-albums"}
+  📥 Scraping chile-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping chile-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    chile_hotw                         {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "chile-songs-hotw"}
+  📥 Scraping china-tme-uni-songs for 2026-09-26... ✓ (50 songs)
+  📥 Scraping china-tme-uni-songs for 2026-10-03... ✓ (50 songs)
+OK    china_tme                          {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "china-tme-uni-songs"}
+  📥 Scraping christian-songs for 2026-09-26... ✓ (50 songs)
+  📥 Scraping christian-songs for 2026-10-03... ✓ (50 songs)
+OK    christian                          {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "christian-songs"}
+  📥 Scraping hot-christian-adult-contemporary for 2026-09-26... ✓ (30 songs)
+  📥 Scraping hot-christian-adult-contemporary for 2026-10-03... ✓ (30 songs)
+OK    christian_ac_airplay               {"from": "2026-09-26", "last": "2026-10-03", "rows": 30, "slug": "hot-christian-adult-contemporary"}
+  📥 Scraping christian-airplay for 2026-09-26... ✓ (40 songs)
+  📥 Scraping christian-airplay for 2026-10-03... ✓ (40 songs)
+OK    christian_airplay                  {"from": "2026-09-26", "last": "2026-10-03", "rows": 40, "slug": "christian-airplay"}
+  📥 Scraping christian-albums for 2026-09-26... ✓ (50 songs)
+  📥 Scraping christian-albums for 2026-10-03... ✓ (50 songs)
+OK    christian_albums                   {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "christian-albums"}
+  📥 Scraping christian-streaming-songs for 2026-09-26... ✓ (25 songs)
+  📥 Scraping christian-streaming-songs for 2026-10-03... ✓ (25 songs)
+OK    christian_streaming                {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "christian-streaming-songs"}
+  📥 Scraping classical-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping classical-albums for 2026-10-03... ✓ (25 songs)
+OK    classical_albums                   {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "classical-albums"}
+  📥 Scraping classical-crossover-albums for 2026-09-26... ✓ (15 songs)
+  📥 Scraping classical-crossover-albums for 2026-10-03... ✓ (15 songs)
+OK    classical_crossover_albums         {"from": "2026-09-26", "last": "2026-10-03", "rows": 15, "slug": "classical-crossover-albums"}
+  📥 Scraping comedy-albums for 2026-09-26... ✓ (10 songs)
+  📥 Scraping comedy-albums for 2026-10-03... ✓ (10 songs)
+OK    comedy_albums                      {"from": "2026-09-26", "last": "2026-10-03", "rows": 10, "slug": "comedy-albums"}
+  📥 Scraping contemporary-jazz for 2026-09-26... ✓ (15 songs)
+  📥 Scraping contemporary-jazz for 2026-10-03... ✓ (15 songs)
+OK    contemporary_jazz_albums           {"from": "2026-09-26", "last": "2026-10-03", "rows": 15, "slug": "contemporary-jazz"}
+  📥 Scraping country-airplay for 2026-09-26... ✓ (60 songs)
+  📥 Scraping country-airplay for 2026-10-03... ✓ (60 songs)
+OK    country_airplay                    {"from": "2026-09-26", "last": "2026-10-03", "rows": 60, "slug": "country-airplay"}
+  📥 Scraping country-albums for 2026-09-26... ✓ (50 songs)
+  📥 Scraping country-albums for 2026-10-03... ✓ (50 songs)
+OK    country_albums                     {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "country-albums"}
+  📥 Scraping country-songs for 2026-09-26... ✓ (50 songs)
+  📥 Scraping country-songs for 2026-10-03... ✓ (50 songs)
+OK    country_songs                      {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "country-songs"}
+  📥 Scraping country-streaming-songs for 2026-09-26... ✓ (25 songs)
+  📥 Scraping country-streaming-songs for 2026-10-03... ✓ (25 songs)
+OK    country_streaming                  {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "country-streaming-songs"}
+  📥 Scraping croatia-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping croatia-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    croatia_hotw                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "croatia-songs-hotw"}
+  📥 Scraping czech-republic-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping czech-republic-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    czech_republic_hotw                {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "czech-republic-songs-hotw"}
+  📥 Scraping hot-dance-airplay for 2026-09-26... ✓ (40 songs)
+  📥 Scraping hot-dance-airplay for 2026-10-03... ✓ (40 songs)
+OK    dance_airplay                      {"from": "2026-09-26", "last": "2026-10-03", "rows": 40, "slug": "hot-dance-airplay"}
+  📥 Scraping dance-electronic-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping dance-electronic-albums for 2026-10-03... ✓ (25 songs)
+OK    dance_albums                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "dance-electronic-albums"}
+  📥 Scraping dance-electronic-songs for 2026-09-26... ✓ (25 songs)
+  📥 Scraping dance-electronic-songs for 2026-10-03... ✓ (25 songs)
+OK    dance_electronic                   {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "dance-electronic-songs"}
+  📥 Scraping hot-dance-pop-songs for 2026-09-26... ✓ (15 songs)
+  📥 Scraping hot-dance-pop-songs for 2026-10-03... ✓ (15 songs)
+OK    dance_pop                          {"from": "2026-09-26", "last": "2026-10-03", "rows": 15, "slug": "hot-dance-pop-songs"}
+  📥 Scraping dance-electronic-streaming-songs for 2026-09-26... ✓ (15 songs)
+  📥 Scraping dance-electronic-streaming-songs for 2026-10-03... ✓ (15 songs)
+OK    dance_streaming                    {"from": "2026-09-26", "last": "2026-10-03", "rows": 15, "slug": "dance-electronic-streaming-songs"}
+  📥 Scraping denmark-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping denmark-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    denmark_hotw                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "denmark-songs-hotw"}
+  📥 Scraping digital-song-sales for 2026-09-26... ✓ (25 songs)
+  📥 Scraping digital-song-sales for 2026-10-03... ✓ (25 songs)
+OK    digital                            {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "digital-song-sales"}
+  📥 Scraping ecuador-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping ecuador-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    ecuador_hotw                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "ecuador-songs-hotw"}
+  📥 Scraping emerging-artists for 2026-09-26... ✓ (50 songs)
+  📥 Scraping emerging-artists for 2026-10-03... ✓ (50 songs)
+OK    emerging_artists                   {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "emerging-artists"}
+  📥 Scraping finland-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping finland-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    finland_hotw                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "finland-songs-hotw"}
+  📥 Scraping france-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping france-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    france_hotw                        {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "france-songs-hotw"}
+  📥 Scraping germany-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping germany-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    germany_hotw                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "germany-songs-hotw"}
+  📥 Scraping billboard-global-200 for 2026-09-26... ✓ (200 songs)
+  📥 Scraping billboard-global-200 for 2026-10-03... ✓ (200 songs)
+OK    global200                          {"from": "2026-09-26", "last": "2026-10-03", "rows": 200, "slug": "billboard-global-200"}
+  📥 Scraping billboard-global-excl-us for 2026-09-26... ✓ (200 songs)
+  📥 Scraping billboard-global-excl-us for 2026-10-03... ✓ (200 songs)
+OK    globalexus                         {"from": "2026-09-26", "last": "2026-10-03", "rows": 200, "slug": "billboard-global-excl-us"}
+  📥 Scraping gospel-songs for 2026-09-26... ✓ (25 songs)
+  📥 Scraping gospel-songs for 2026-10-03... ✓ (25 songs)
+OK    gospel                             {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "gospel-songs"}
+  📥 Scraping gospel-airplay for 2026-09-26... ✓ (30 songs)
+  📥 Scraping gospel-airplay for 2026-10-03... ✓ (30 songs)
+OK    gospel_airplay                     {"from": "2026-09-26", "last": "2026-10-03", "rows": 30, "slug": "gospel-airplay"}
+  📥 Scraping gospel-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping gospel-albums for 2026-10-03... ✓ (25 songs)
+OK    gospel_albums                      {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "gospel-albums"}
+  📥 Scraping gospel-streaming-songs for 2026-09-26... ✓ (15 songs)
+  📥 Scraping gospel-streaming-songs for 2026-10-03... ✓ (15 songs)
+OK    gospel_streaming                   {"from": "2026-09-26", "last": "2026-10-03", "rows": 15, "slug": "gospel-streaming-songs"}
+  📥 Scraping greece-albums for 2026-08-08... ✓ (10 songs)
+  📥 Scraping greece-albums for 2026-08-15... ✓ (10 songs)
+CLAMP greece_albums                      2026-08-15 identical to 2026-08-08
+  📥 Scraping greece-albums for 2026-08-22... ✓ (10 songs)
+CLAMP greece_albums                      2026-08-22 identical to 2026-08-08
+  📥 Scraping greece-albums for 2026-08-29... ✓ (10 songs)
+CLAMP greece_albums                      2026-08-29 identical to 2026-08-08
+NONE  greece_albums                      {"last": "2026-08-08", "slug": "greece-albums"}
+  📥 Scraping greece-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping greece-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    greece_hotw                        {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "greece-songs-hotw"}
+  📥 Scraping hard-rock-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping hard-rock-albums for 2026-10-03... ✓ (25 songs)
+OK    hard_rock_albums                   {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "hard-rock-albums"}
+  📥 Scraping hot-hard-rock-songs for 2026-09-26... ✓ (25 songs)
+  📥 Scraping hot-hard-rock-songs for 2026-10-03... ✓ (25 songs)
+OK    hard_rock_songs                    {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "hot-hard-rock-songs"}
+  📥 Scraping hard-rock-streaming-songs for 2026-09-26... ✓ (25 songs)
+  📥 Scraping hard-rock-streaming-songs for 2026-10-03... ✓ (25 songs)
+OK    hard_rock_streaming                {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "hard-rock-streaming-songs"}
+  📥 Scraping hong-kong-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping hong-kong-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    hong_kong_hotw                     {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "hong-kong-songs-hotw"}
+  📥 Scraping hot-alternative-songs for 2026-09-26... ✓ (25 songs)
+  📥 Scraping hot-alternative-songs for 2026-10-03... ✓ (25 songs)
+OK    hot_alternative_songs              {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "hot-alternative-songs"}
+  📥 Scraping hot-r-and-b-hip-hop-airplay for 2026-09-26... ✓ (50 songs)
+  📥 Scraping hot-r-and-b-hip-hop-airplay for 2026-10-03... ✓ (50 songs)
+OK    hot_rnb_hiphop_airplay             {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "hot-r-and-b-hip-hop-airplay"}
+  📥 Scraping hot-r-and-b-songs for 2026-08-22... ✗ Status 404
+  📥 Scraping hot-r-b-songs for 2026-08-22... ✗ Status 404
+  📥 Scraping hot-rnb-songs for 2026-08-22... ✗ Status 404
+  📥 Scraping hot-hot-r-and-b-songs for 2026-08-22... ✗ Status 404
+  📥 Scraping hot-r-and-b-songs-songs for 2026-08-22... ✗ Status 404
+  📥 Scraping billboard-argentina-hot-100 for 2026-08-22... ✓ (25 songs)
+  📥 Scraping billboard-brasil-hot-100 for 2026-08-22... ✓ (25 songs)
+  📥 Scraping billboard-italy-hot-100 for 2026-08-22... ✓ (25 songs)
+  📥 Scraping billboard-philippines-hot-100 for 2026-08-22... ✓ (25 songs)
+  📥 Scraping bubbling-under-hot-100-singles for 2026-08-22... ✓ (25 songs)
+SKIP  hot_rnb_songs                      {"last": "2026-08-22", "why": "slug unproven (last=2026-08-22)"}
+  📥 Scraping hot-rock-songs for 2026-09-26... ✓ (25 songs)
+  📥 Scraping hot-rock-songs for 2026-10-03... ✓ (25 songs)
+OK    hot_rock_songs                     {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "hot-rock-songs"}
+  📥 Scraping hungary-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping hungary-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    hungary_hotw                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "hungary-songs-hotw"}
+  📥 Scraping iceland-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping iceland-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    iceland_hotw                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "iceland-songs-hotw"}
+  📥 Scraping independent-albums for 2026-09-26... ✓ (50 songs)
+  📥 Scraping independent-albums for 2026-10-03... ✓ (50 songs)
+OK    independent_albums                 {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "independent-albums"}
+  📥 Scraping india-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping india-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    india_hotw                         {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "india-songs-hotw"}
+  📥 Scraping indie-store-album-sales for 2026-09-26... ✓ (25 songs)
+  📥 Scraping indie-store-album-sales for 2026-10-03... ✓ (25 songs)
+OK    indie_store_album_sales            {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "indie-store-album-sales"}
+  📥 Scraping indonesia-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping indonesia-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    indonesia_hotw                     {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "indonesia-songs-hotw"}
+  📥 Scraping ireland-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping ireland-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    ireland_hotw                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "ireland-songs-hotw"}
+  📥 Scraping billboard-italy-albums-top-100 for 2026-09-26... ✗ Network error: HTTPSConnectionPool(host='www.billboard.com', port=443): Read timed out. (read timeout=15)
+  📥 Scraping italy-albums for 2026-09-26... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping hot-italy-albums for 2026-09-26... ✗ Status 404
+  📥 Scraping italy-albums-songs for 2026-09-26... ✗ Status 404
+  📥 Scraping billboard-italy-hot-100 for 2026-09-26... ✓ (25 songs)
+SKIP  italy_albums                       {"last": "2026-09-26", "why": "slug unproven (last=2026-09-26)"}
+  📥 Scraping billboard-italy-hot-100 for 2026-09-26... ✓ (25 songs)
+  📥 Scraping billboard-italy-hot-100 for 2026-10-03... ✓ (25 songs)
+OK    italy_hot100                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "billboard-italy-hot-100"}
+  📥 Scraping japan-hot-100 for 2026-09-26... ✓ (25 songs)
+  📥 Scraping japan-hot-100 for 2026-10-03... ✓ (25 songs)
+OK    japan_hot100                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "japan-hot-100"}
+  📥 Scraping jazz-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping jazz-albums for 2026-10-03... ✓ (25 songs)
+OK    jazz_albums                        {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "jazz-albums"}
+  📥 Scraping kids-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping kids-albums for 2026-10-03... ✓ (25 songs)
+OK    kid_albums                         {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "kids-albums"}
+  📥 Scraping latin-airplay for 2026-09-26... ✓ (50 songs)
+  📥 Scraping latin-airplay for 2026-10-03... ✓ (50 songs)
+OK    latin_airplay                      {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "latin-airplay"}
+  📥 Scraping latin-albums for 2026-09-26... ✓ (50 songs)
+  📥 Scraping latin-albums for 2026-10-03... ✓ (50 songs)
+OK    latin_albums                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "latin-albums"}
+  📥 Scraping latin-pop-airplay for 2026-09-26... ✓ (25 songs)
+  📥 Scraping latin-pop-airplay for 2026-10-03... ✓ (25 songs)
+OK    latin_pop_airplay                  {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "latin-pop-airplay"}
+  📥 Scraping latin-pop-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping latin-pop-albums for 2026-10-03... ✓ (25 songs)
+OK    latin_pop_albums                   {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "latin-pop-albums"}
+  📥 Scraping latin-rhythm-airplay for 2026-09-26... ✓ (25 songs)
+  📥 Scraping latin-rhythm-airplay for 2026-10-03... ✓ (25 songs)
+OK    latin_rhythm_airplay               {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "latin-rhythm-airplay"}
+  📥 Scraping latin-rhythm-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping latin-rhythm-albums for 2026-10-03... ✓ (25 songs)
+OK    latin_rhythm_albums                {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "latin-rhythm-albums"}
+  📥 Scraping latin-songs for 2026-09-26... ✓ (50 songs)
+  📥 Scraping latin-songs for 2026-10-03... ✓ (50 songs)
+OK    latin_songs                        {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "latin-songs"}
+  📥 Scraping latin-streaming-songs for 2026-09-26... ✓ (25 songs)
+  📥 Scraping latin-streaming-songs for 2026-10-03... ✓ (25 songs)
+OK    latin_streaming                    {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "latin-streaming-songs"}
+  📥 Scraping luxembourg-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping luxembourg-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    luxembourg_hotw                    {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "luxembourg-songs-hotw"}
+  📥 Scraping lyricfind-global for 2026-09-26... ✓ (25 songs)
+  📥 Scraping lyricfind-global for 2026-10-03... ✗ No chart date on page (redirect or markup change) — skipping
+NONE  lyricfind_global                   {"last": "2026-09-26", "slug": "lyricfind-global"}
+  📥 Scraping lyricfind-us for 2026-09-26... ✓ (25 songs)
+  📥 Scraping lyricfind-us for 2026-10-03... ✓ (25 songs)
+OK    lyricfind_us                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "lyricfind-us"}
+  📥 Scraping hot-mainstream-rock-tracks for 2026-09-26... ✓ (40 songs)
+  📥 Scraping hot-mainstream-rock-tracks for 2026-10-03... ✓ (40 songs)
+OK    mainstream_rock                    {"from": "2026-09-26", "last": "2026-10-03", "rows": 40, "slug": "hot-mainstream-rock-tracks"}
+  📥 Scraping malaysia-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping malaysia-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    malaysia_hotw                      {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "malaysia-songs-hotw"}
+  📥 Scraping mexico-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping mexico-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    mexico_hotw                        {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "mexico-songs-hotw"}
+  📥 Scraping netherlands-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping netherlands-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    netherlands_hotw                   {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "netherlands-songs-hotw"}
+  📥 Scraping new-age-albums for 2026-09-26... ✓ (15 songs)
+  📥 Scraping new-age-albums for 2026-10-03... ✓ (15 songs)
+OK    new_age_albums                     {"from": "2026-09-26", "last": "2026-10-03", "rows": 15, "slug": "new-age-albums"}
+  📥 Scraping new-zealand-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping new-zealand-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    new_zealand_hotw                   {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "new-zealand-songs-hotw"}
+  📥 Scraping norway-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping norway-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    norway_hotw                        {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "norway-songs-hotw"}
+  📥 Scraping peru-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping peru-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    peru_hotw                          {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "peru-songs-hotw"}
+  📥 Scraping billboard-philippines-hot-100 for 2026-09-12... ✓ (25 songs)
+  📥 Scraping billboard-philippines-hot-100 for 2026-09-19... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping billboard-philippines-hot-100 for 2026-09-26... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping billboard-philippines-hot-100 for 2026-10-03... ✗ No chart date on page (redirect or markup change) — skipping
+NONE  philippines_hot100                 {"last": "2026-09-12", "slug": "billboard-philippines-hot-100"}
+  📥 Scraping billboard-philippines-top-philippine-songs for 2026-09-12... ✓ (25 songs)
+  📥 Scraping billboard-philippines-top-philippine-songs for 2026-09-19... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping billboard-philippines-top-philippine-songs for 2026-09-26... ✗ No chart date on page (redirect or markup change) — skipping
+  📥 Scraping billboard-philippines-top-philippine-songs for 2026-10-03... ✗ No chart date on page (redirect or markup change) — skipping
+NONE  philippines_top_songs              {"last": "2026-09-12", "slug": "billboard-philippines-top-philippine-songs"}
+  📥 Scraping poland-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping poland-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    poland_hotw                        {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "poland-songs-hotw"}
+  📥 Scraping pop-songs for 2026-09-26... ✓ (40 songs)
+  📥 Scraping pop-songs for 2026-10-03... ✓ (40 songs)
+OK    pop_airplay                        {"from": "2026-09-26", "last": "2026-10-03", "rows": 40, "slug": "pop-songs"}
+  📥 Scraping portugal-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping portugal-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    portugal_hotw                      {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "portugal-songs-hotw"}
+  📥 Scraping radio-songs for 2026-09-26... ✓ (50 songs)
+  📥 Scraping radio-songs for 2026-10-03... ✓ (50 songs)
+OK    radio                              {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "radio-songs"}
+  📥 Scraping hot-rap-tracks for 2026-09-26... ✓ (25 songs)
+  📥 Scraping hot-rap-tracks for 2026-10-03... ✓ (25 songs)
+OK    rap_airplay                        {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "hot-rap-tracks"}
+  📥 Scraping rap-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping rap-albums for 2026-10-03... ✓ (25 songs)
+OK    rap_albums                         {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "rap-albums"}
+  📥 Scraping rap-song for 2026-09-26... ✓ (25 songs)
+  📥 Scraping rap-song for 2026-10-03... ✓ (25 songs)
+OK    rap_songs                          {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "rap-song"}
+  📥 Scraping rap-streaming-songs for 2026-09-26... ✓ (15 songs)
+  📥 Scraping rap-streaming-songs for 2026-10-03... ✓ (15 songs)
+OK    rap_streaming                      {"from": "2026-09-26", "last": "2026-10-03", "rows": 15, "slug": "rap-streaming-songs"}
+  📥 Scraping reggae-albums for 2026-09-26... ✓ (10 songs)
+  📥 Scraping reggae-albums for 2026-10-03... ✓ (10 songs)
+OK    reggae_albums                      {"from": "2026-09-26", "last": "2026-10-03", "rows": 10, "slug": "reggae-albums"}
+  📥 Scraping latin-regional-mexican-airplay for 2026-09-26... ✓ (40 songs)
+  📥 Scraping latin-regional-mexican-airplay for 2026-10-03... ✓ (40 songs)
+OK    regional_mexican_airplay           {"from": "2026-09-26", "last": "2026-10-03", "rows": 40, "slug": "latin-regional-mexican-airplay"}
+  📥 Scraping regional-mexican-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping regional-mexican-albums for 2026-10-03... ✓ (25 songs)
+OK    regional_mexican_albums            {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "regional-mexican-albums"}
+  📥 Scraping rhythmic-40 for 2026-09-26... ✓ (40 songs)
+  📥 Scraping rhythmic-40 for 2026-10-03... ✓ (40 songs)
+OK    rhythmic                           {"from": "2026-09-26", "last": "2026-10-03", "rows": 40, "slug": "rhythmic-40"}
+  📥 Scraping r-and-b-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping r-and-b-albums for 2026-10-03... ✓ (25 songs)
+OK    rnb_albums                         {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "r-and-b-albums"}
+  📥 Scraping mainstream-r-and-b-hip-hop for 2026-09-26... ✓ (40 songs)
+  📥 Scraping mainstream-r-and-b-hip-hop for 2026-10-03... ✓ (40 songs)
+OK    rnb_hiphop                         {"from": "2026-09-26", "last": "2026-10-03", "rows": 40, "slug": "mainstream-r-and-b-hip-hop"}
+  📥 Scraping r-b-hip-hop-albums for 2026-09-26... ✓ (50 songs)
+  📥 Scraping r-b-hip-hop-albums for 2026-10-03... ✓ (50 songs)
+OK    rnb_hiphop_albums                  {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "r-b-hip-hop-albums"}
+  📥 Scraping r-and-b-hip-hop-streaming-songs for 2026-09-26... ✓ (25 songs)
+  📥 Scraping r-and-b-hip-hop-streaming-songs for 2026-10-03... ✓ (25 songs)
+OK    rnb_hiphop_streaming               {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "r-and-b-hip-hop-streaming-songs"}
+  📥 Scraping r-b-hip-hop-songs for 2026-09-26... ✓ (50 songs)
+  📥 Scraping r-b-hip-hop-songs for 2026-10-03... ✓ (50 songs)
+OK    rnb_songs                          {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "r-b-hip-hop-songs"}
+  📥 Scraping r-and-b-streaming-songs for 2026-09-26... ✓ (15 songs)
+  📥 Scraping r-and-b-streaming-songs for 2026-10-03... ✓ (15 songs)
+OK    rnb_streaming                      {"from": "2026-09-26", "last": "2026-10-03", "rows": 15, "slug": "r-and-b-streaming-songs"}
+  📥 Scraping rock-airplay for 2026-09-26... ✓ (50 songs)
+  📥 Scraping rock-airplay for 2026-10-03... ✓ (50 songs)
+OK    rock_airplay                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "rock-airplay"}
+  📥 Scraping rock-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping rock-albums for 2026-10-03... ✓ (25 songs)
+OK    rock_albums                        {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "rock-albums"}
+  📥 Scraping top-rock-alternative-albums for 2026-09-26... ✓ (50 songs)
+  📥 Scraping top-rock-alternative-albums for 2026-10-03... ✓ (50 songs)
+OK    rock_alternative_albums            {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "top-rock-alternative-albums"}
+  📥 Scraping rock-songs for 2026-09-26... ✓ (50 songs)
+  📥 Scraping rock-songs for 2026-10-03... ✓ (50 songs)
+OK    rock_songs                         {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "rock-songs"}
+  📥 Scraping rock-streaming-songs for 2026-09-26... ✓ (25 songs)
+  📥 Scraping rock-streaming-songs for 2026-10-03... ✓ (25 songs)
+OK    rock_streaming                     {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "rock-streaming-songs"}
+  📥 Scraping romania-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping romania-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    romania_hotw                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "romania-songs-hotw"}
+  📥 Scraping singapore-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping singapore-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    singapore_hotw                     {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "singapore-songs-hotw"}
+  📥 Scraping slovakia-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping slovakia-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    slovakia_hotw                      {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "slovakia-songs-hotw"}
+  📥 Scraping smooth-jazz-airplay for 2026-08-22... ✗ Status 404
+  📥 Scraping hot-smooth-jazz-airplay for 2026-08-22... ✗ Status 404
+  📥 Scraping smooth-jazz-airplay-songs for 2026-08-22... ✗ Status 404
+SKIP  smooth_jazz_airplay                {"last": "2026-08-22", "why": "slug unproven (last=2026-08-22)"}
+  📥 Scraping soundtracks for 2026-09-26... ✓ (25 songs)
+  📥 Scraping soundtracks for 2026-10-03... ✓ (25 songs)
+OK    soundtracks                        {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "soundtracks"}
+  📥 Scraping south-africa-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping south-africa-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    south_africa_hotw                  {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "south-africa-songs-hotw"}
+  📥 Scraping spain-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping spain-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    spain_hotw                         {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "spain-songs-hotw"}
+  📥 Scraping streaming-songs for 2026-09-26... ✓ (50 songs)
+  📥 Scraping streaming-songs for 2026-10-03... ✓ (50 songs)
+OK    streaming                          {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "streaming-songs"}
+  📥 Scraping sweden-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping sweden-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    sweden_hotw                        {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "sweden-songs-hotw"}
+  📥 Scraping switzerland-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping switzerland-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    switzerland_hotw                   {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "switzerland-songs-hotw"}
+  📥 Scraping taiwan-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping taiwan-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    taiwan_hotw                        {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "taiwan-songs-hotw"}
+  📥 Scraping thailand-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping thailand-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    thailand_hotw                      {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "thailand-songs-hotw"}
+  📥 Scraping hot-100 for 2026-09-26... ✓ (100 songs)
+  📥 Scraping hot-100 for 2026-10-03... ✓ (100 songs)
+OK    top100                             {"from": "2026-09-26", "last": "2026-10-03", "rows": 100, "slug": "hot-100"}
+  📥 Scraping top-album-sales for 2026-09-26... ✓ (50 songs)
+  📥 Scraping top-album-sales for 2026-10-03... ✓ (50 songs)
+OK    top_album_sales                    {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "top-album-sales"}
+  📥 Scraping top-streaming-albums for 2026-09-26... ✓ (50 songs)
+  📥 Scraping top-streaming-albums for 2026-10-03... ✓ (50 songs)
+OK    top_streaming_albums               {"from": "2026-09-26", "last": "2026-10-03", "rows": 50, "slug": "top-streaming-albums"}
+  📥 Scraping traditional-classic-albums for 2026-09-26... ✓ (15 songs)
+  📥 Scraping traditional-classic-albums for 2026-10-03... ✓ (15 songs)
+OK    traditional_classical_albums       {"from": "2026-09-26", "last": "2026-10-03", "rows": 15, "slug": "traditional-classic-albums"}
+  📥 Scraping traditional-jazz-albums for 2026-09-26... ✓ (15 songs)
+  📥 Scraping traditional-jazz-albums for 2026-10-03... ✓ (15 songs)
+OK    traditional_jazz_albums            {"from": "2026-09-26", "last": "2026-10-03", "rows": 15, "slug": "traditional-jazz-albums"}
+  📥 Scraping latin-tropical-airplay for 2026-09-26... ✓ (25 songs)
+  📥 Scraping latin-tropical-airplay for 2026-10-03... ✓ (25 songs)
+OK    tropical_airplay                   {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "latin-tropical-airplay"}
+  📥 Scraping tropical-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping tropical-albums for 2026-10-03... ✓ (25 songs)
+OK    tropical_albums                    {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "tropical-albums"}
+  📥 Scraping turkey-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping turkey-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    turkey_hotw                        {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "turkey-songs-hotw"}
+  📥 Scraping u-k-songs-hotw for 2026-09-26... ✓ (25 songs)
+  📥 Scraping u-k-songs-hotw for 2026-10-03... ✓ (25 songs)
+OK    u_k_hotw                           {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "u-k-songs-hotw"}
+  📥 Scraping official-uk-albums for 2026-09-26... ✓ (20 songs)
+  📥 Scraping official-uk-albums for 2026-10-03... ✓ (20 songs)
+OK    uk_albums                          {"from": "2026-09-26", "last": "2026-10-03", "rows": 20, "slug": "official-uk-albums"}
+  📥 Scraping official-uk-songs for 2026-09-26... ✓ (20 songs)
+  📥 Scraping official-uk-songs for 2026-10-03... ✓ (20 songs)
+OK    uk_songs                           {"from": "2026-09-26", "last": "2026-10-03", "rows": 20, "slug": "official-uk-songs"}
+  📥 Scraping vinyl-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping vinyl-albums for 2026-10-03... ✓ (25 songs)
+OK    vinyl_albums                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "vinyl-albums"}
+  📥 Scraping world-albums for 2026-09-26... ✓ (25 songs)
+  📥 Scraping world-albums for 2026-10-03... ✓ (25 songs)
+OK    world_albums                       {"from": "2026-09-26", "last": "2026-10-03", "rows": 25, "slug": "world-albums"}
+
+==== SUMMARY (target 2026-10-03) ====
+current : 0
+updated : 141
+none    : 6
+skipped : 5
+frozen  : 8
+   SKIPPED adult_alternative: {"last": "2026-08-15", "why": "slug unproven (last=2026-08-15)"}
+   SKIPPED afrobeats_songs: {"last": "2026-08-22", "why": "slug unproven (last=2026-08-22)"}
+   SKIPPED hot_rnb_songs: {"last": "2026-08-22", "why": "slug unproven (last=2026-08-22)"}
+   SKIPPED italy_albums: {"last": "2026-09-26", "why": "slug unproven (last=2026-09-26)"}
+   SKIPPED smooth_jazz_airplay: {"last": "2026-08-22", "why": "slug unproven (last=2026-08-22)"}
+   NONE    arabic_artist100: {"last": "2026-09-26", "slug": "top-arabic-artist-100"}
+   NONE    arabic_hot100: {"last": "2026-09-26", "slug": "the-arabic-hot-100"}
+   NONE    greece_albums: {"last": "2026-08-08", "slug": "greece-albums"}
+   NONE    lyricfind_global: {"last": "2026-09-26", "slug": "lyricfind-global"}
+   NONE    philippines_hot100: {"last": "2026-09-12", "slug": "billboard-philippines-hot-100"}
+   NONE    philippines_top_songs: {"last": "2026-09-12", "slug": "billboard-philippines-top-philippine-songs"}
