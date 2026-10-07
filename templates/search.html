@@ -140,6 +140,35 @@
             font-size: 0.9375rem;
         }
         .title-row .t-detail { color: var(--text-muted); white-space: nowrap; }
+        /* A button so the row is reachable by keyboard; the resets keep it
+           reading as the plain row it was. */
+        button.title-row {
+            width: 100%;
+            background: none;
+            border-width: 0 0 1px;
+            font: inherit;
+            color: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+        button.title-row:hover .t-name,
+        button.title-row:focus-visible .t-name { text-decoration: underline; }
+        .title-row .t-caret { color: var(--text-muted); margin-right: 0.5rem; display: inline-block; transition: transform 0.15s; }
+        .title-row[aria-expanded="true"] .t-caret { transform: rotate(90deg); }
+        .t-weeks { padding: 0.5rem 0 0.75rem 1.25rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
+        .t-weeks[hidden] { display: none; }
+        .t-weeks .t-list { max-height: 18rem; overflow-y: auto; }
+        .t-weeks a {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.1875rem 0;
+            color: inherit;
+            text-decoration: none;
+        }
+        .t-weeks a:hover .t-date { text-decoration: underline; }
+        .t-weeks .t-rank { font-weight: 600; white-space: nowrap; }
+        .t-weeks .t-rank.is-peak { color: #0c492c; }
         .title-error { color: #a01212; font-size: 0.9375rem; }
         .clear-btn { margin-top: 2rem; background: none; border: 1px solid var(--border); color: var(--text-dim); font-size: 0.75rem; padding: 0.375rem 0.75rem; cursor: pointer; display: none; }
         .clear-btn:hover { color: var(--text); border-color: var(--border-accent); }
@@ -346,17 +375,75 @@
             titleResults.appendChild(count);
 
             rows.forEach(r => {
-                const row = document.createElement('div');
+                const row = document.createElement('button');
+                row.type = 'button';
                 row.className = 'title-row';
+                row.setAttribute('aria-expanded', 'false');
                 const name = document.createElement('span');
-                name.textContent = r.label;
+                const caret = document.createElement('span');
+                caret.className = 't-caret';
+                caret.textContent = '›';
+                const label = document.createElement('span');
+                label.className = 't-name';
+                label.textContent = r.label;
+                name.append(caret, label);
                 const detail = document.createElement('span');
                 detail.className = 't-detail';
                 detail.textContent = 'peak #' + r.peak + ' · ' + r.weeks +
                     (r.weeks === 1 ? ' week' : ' weeks') + ' · from ' + r.debut;
                 row.append(name, detail);
-                titleResults.appendChild(row);
+
+                const weeks = document.createElement('div');
+                weeks.className = 't-weeks';
+                weeks.hidden = true;
+                row.addEventListener('click', () => {
+                    const open = row.getAttribute('aria-expanded') !== 'true';
+                    row.setAttribute('aria-expanded', String(open));
+                    weeks.hidden = !open;
+                    if (open && !weeks.dataset.loaded) loadWeeks(weeks, r.chart, title, artist);
+                });
+                titleResults.append(row, weeks);
             });
+        }
+
+        // One title's week-by-week run on one chart, from the endpoint the
+        // chart pages' modal reads. Asked with the index's artist key, the same
+        // one the row's counts came from, so the run holds exactly the weeks
+        // the row claims. Each week links to that chart's page for that week.
+        async function loadWeeks(box, chart, title, artist) {
+            box.textContent = 'Loading…';
+            let body;
+            try {
+                const res = await fetch('/api/song-history?chart=' + encodeURIComponent(chart) +
+                    '&song=' + encodeURIComponent(title) + '&artist=' + encodeURIComponent(artist));
+                body = await res.json();
+                if (!res.ok || !body.history) throw new Error(body.error || 'lookup failed');
+            } catch (err) {
+                box.textContent = '';
+                const p = document.createElement('p');
+                p.className = 'title-error';
+                p.textContent = 'Could not load the weekly history. Try again.';
+                box.appendChild(p);
+                return;
+            }
+            box.textContent = '';
+            box.dataset.loaded = '1';
+            const list = document.createElement('div');
+            list.className = 't-list';
+            body.history.forEach(w => {
+                const a = document.createElement('a');
+                a.href = '/' + encodeURIComponent(chart) + '?date=' + w.date +
+                    '&highlight=' + encodeURIComponent(title) + '&rank=' + w.rank;
+                const date = document.createElement('span');
+                date.className = 't-date';
+                date.textContent = 'Week ' + w.weeks + ' · ' + w.date;
+                const rank = document.createElement('span');
+                rank.className = 't-rank' + (w.rank === body.peak ? ' is-peak' : '');
+                rank.textContent = '#' + w.rank;
+                a.append(date, rank);
+                list.appendChild(a);
+            });
+            box.appendChild(list);
         }
 
         // Autocomplete

@@ -204,3 +204,34 @@ def test_a_crossover_row_opens_the_run_it_advertises(client, application):
         # The way back: the chart just left has to reappear in the new list,
         # or a reader who clicks through is stranded.
         assert origin in {c['chart'] for c in landed['crossover']}
+
+
+@pytest.mark.parametrize('song, artist, kind', [
+    ('Both Of Us', 'b.o.b', 'song'),
+    ('1989', 'taylor swift', 'album'),
+    ('Blinding Lights', 'the weeknd', 'song'),
+])
+def test_reports_page_week_runs_match_the_rows_they_expand(client, song, artist, kind):
+    """The Reports page lists each chart a title reached and expands a row into
+    its weekly run from /api/song-history. Both are asked with the index's
+    artist key, and every run must hold exactly the weeks its row claims, or
+    the expansion contradicts the line it sits under."""
+    charts = client.get('/api/song-charts', query_string={
+        'song': song, 'artist': artist, 'kind': kind}).get_json()['charts']
+    assert len(charts) >= 2
+    for r in charts:
+        h = client.get('/api/song-history', query_string={
+            'chart': r['chart'], 'song': song, 'artist': artist})
+        assert h.status_code == 200, r['chart']
+        body = h.get_json()
+        assert body['chart'] == r['chart']
+        assert len(body['history']) == r['weeks'], r['chart']
+        assert min(w['rank'] for w in body['history']) == r['peak'], r['chart']
+        assert body['history'][0]['date'] == r['debut'], r['chart']
+
+
+def test_reports_page_expands_rows_into_week_runs():
+    import pathlib
+    src = (pathlib.Path(__file__).resolve().parent.parent
+           / 'templates' / 'search.html').read_text()
+    assert '/api/song-history' in src
