@@ -1095,9 +1095,18 @@ def artist_chart_detail(artist_name, chart_key):
         weeks=('Date', 'nunique'),
         peak=('Rank', 'min'),
     )
+    # The credit each title actually charted under, for the modal's cross-chart
+    # lookup. The index keys on the credit's primary artist, so querying with
+    # the report's artist misses every song they are only featured on.
+    credits = (
+        rows.assign(Credit=rows['Artist'].astype(str))
+        .groupby('Title')['Credit']
+        .agg(lambda x: x.mode().iloc[0])
+    )
     items = [
         {
             'name': title,
+            'artist': credits[title],
             'peak': int(row['peak']),
             'weeks': int(row['weeks']),
             'first_date': row['first_date'].strftime('%b %Y'),

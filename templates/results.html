@@ -373,6 +373,61 @@
         .modal-body::-webkit-scrollbar { width: 4px; }
         .modal-body::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 2px; }
 
+        /* "Also charted on", the same block and colours as the chart pages'
+           modal (chart.html), so a title reads the same from either entry. */
+        .modal-chart-ctx {
+            margin-bottom: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #0c492c;
+        }
+        .modal-crossover {
+            font-size: 0.8125rem;
+            color: var(--text);
+            background: #edfff7;
+            border-left: 3px solid #0c492c;
+            padding: 0.625rem 0.875rem;
+            margin-bottom: 1rem;
+        }
+        .modal-crossover:empty { display: none; }
+        .modal-crossover .x-detail { color: var(--text-muted); }
+        .modal-crossover .x-head { font-weight: 600; display: block; margin-bottom: 0.375rem; }
+        .modal-crossover .x-list { max-height: 13rem; overflow-y: auto; }
+        .modal-crossover .x-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 1rem;
+            padding: 0.1875rem 0.25rem;
+            width: 100%;
+            margin: 0 -0.25rem;
+            font: inherit;
+            color: inherit;
+            text-align: left;
+            background: none;
+            border: 0;
+            cursor: pointer;
+        }
+        .modal-crossover .x-row:hover:not(:disabled),
+        .modal-crossover .x-row:focus-visible { background: #d9f7e9; }
+        .modal-crossover .x-row:hover:not(:disabled) .x-name { text-decoration: underline; }
+        .modal-crossover .x-row:disabled { cursor: default; opacity: 0.6; }
+        .modal-crossover .x-row .x-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .modal-crossover .x-row .x-detail { white-space: nowrap; }
+        .modal-crossover .x-more {
+            background: none;
+            border: 0;
+            padding: 0.25rem 0;
+            font: inherit;
+            font-size: 0.75rem;
+            color: #0c492c;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .modal-crossover.x-failed { background: #fff4f4; border-left-color: #a01212; }
+
         .weekly-list { display: flex; flex-direction: column; gap: 0.4rem; }
         .weekly-row {
             display: flex;
@@ -588,7 +643,7 @@
                     </thead>
                     <tbody>
                         {% for item in detail['items'] %}
-                        <tr data-song="{{ item.name|e }}">
+                        <tr data-song="{{ item.name|e }}" data-artist="{{ item.artist|e }}">
                             <td class="col-rank">{{ loop.index }}</td>
                             <td class="col-title" title="{{ item.name }}">{{ item.name }}</td>
                             <td class="col-peak{{ ' peak-one' if item.is_number_one }}">#{{ 1 if item.is_number_one else item.peak }}</td>
@@ -609,6 +664,8 @@
                 </div>
                 <div class="modal-body">
                     <div id="songStreamsStrip" class="song-streams-strip" style="display:none;"></div>
+                    <div id="otherCharts" class="modal-crossover"></div>
+                    <div id="modalChartCtx" class="modal-chart-ctx"></div>
                     <div id="weeklyData" class="weekly-list"></div>
                 </div>
             </div>
@@ -684,6 +741,7 @@
             detail.items.forEach((item, i) => {
                 const tr = document.createElement('tr');
                 tr.dataset.song = item.name;
+                tr.dataset.artist = item.artist;
 
                 // Every cell is built with createElement/textContent: scraped
                 // fields are untrusted and this table is rebuilt from JSON on
@@ -874,6 +932,11 @@
         function renderWeeks(title) {
             const container = document.getElementById('weeklyData');
             container.textContent = '';
+            // Names the chart the weeks below belong to, now that the modal
+            // can move between charts.
+            document.getElementById('modalChartCtx').textContent =
+                currentDetail ? currentDetail.chart.label : '';
+            renderOtherCharts(title);
 
             const data = currentDetail && currentDetail.series ? currentDetail.series[title] : null;
             if (!data || !data.length) {
@@ -897,6 +960,110 @@
                     + '&rank=' + entry.rank;
                 container.appendChild(makeWeekRow(entry.date, 'Week ' + (i+1), entry.rank, entry.rank === best, href));
             });
+        }
+
+        // Where else this title charted, from the same index the chart pages'
+        // modal reads. Queried with the row's own credit, not ARTIST_NAME: the
+        // index keys on the credit's primary artist, so a song the artist is
+        // only featured on would otherwise chart nowhere.
+        //
+        // Three states, kept apart as on the chart pages: a failed lookup says
+        // so, an empty list says "nowhere else", and neither borrows the other's
+        // wording.
+        let otherChartsReq = 0;
+        function renderOtherCharts(title) {
+            const box = document.getElementById('otherCharts');
+            box.className = 'modal-crossover';
+            box.textContent = '';
+            const kind = currentDetail.chart.kind;
+            if (kind !== 'song' && kind !== 'album') return;
+
+            const here = currentDetail.chart.key;
+            const tr = document.querySelector('#detailTable tbody tr[data-song="' + CSS.escape(title) + '"]');
+            const artist = (tr && tr.dataset.artist) || ARTIST_NAME;
+            const reqId = ++otherChartsReq;
+            box.textContent = 'Checking the other charts…';
+
+            fetch('/api/song-charts?song=' + encodeURIComponent(title)
+                  + '&artist=' + encodeURIComponent(artist)
+                  + '&kind=' + encodeURIComponent(kind))
+                .then(r => r.ok ? r.json() : Promise.reject(r.status))
+                .then(data => {
+                    if (reqId !== otherChartsReq) return;
+                    box.textContent = '';
+                    if (!data.found) throw new Error('lookup failed');
+                    const runs = (data.charts || []).filter(r => r.chart !== here);
+                    if (!runs.length) {
+                        box.textContent = 'Did not chart anywhere else.';
+                        return;
+                    }
+                    const head = document.createElement('span');
+                    head.className = 'x-head';
+                    head.textContent = 'Also charted on ' + runs.length +
+                        (runs.length === 1 ? ' other chart' : ' other charts');
+                    box.appendChild(head);
+
+                    const list = document.createElement('div');
+                    list.className = 'x-list';
+                    const SHOWN = 8;
+                    const addRow = function (r) {
+                        const row = document.createElement('button');
+                        row.type = 'button';
+                        row.className = 'x-row';
+                        // Clicking switches the whole report to that chart and
+                        // reopens this title there. Only charts in the coverage
+                        // table can be switched to.
+                        if (document.querySelector('.coverage-row[data-chart="' + CSS.escape(r.chart) + '"]')) {
+                            row.addEventListener('click', () => openOnChart(r.chart, title));
+                        } else {
+                            row.disabled = true;
+                        }
+                        const name = document.createElement('span');
+                        name.className = 'x-name';
+                        name.textContent = r.label;
+                        const detail = document.createElement('span');
+                        detail.className = 'x-detail';
+                        detail.textContent = 'peak #' + r.peak + ' · ' +
+                            r.weeks + (r.weeks === 1 ? ' week' : ' weeks') +
+                            ' · from ' + r.debut;
+                        row.appendChild(name);
+                        row.appendChild(detail);
+                        list.appendChild(row);
+                    };
+                    runs.slice(0, SHOWN).forEach(addRow);
+                    box.appendChild(list);
+                    if (runs.length > SHOWN) {
+                        const more = document.createElement('button');
+                        more.type = 'button';
+                        more.className = 'x-more';
+                        more.textContent = 'Show all ' + runs.length;
+                        more.addEventListener('click', () => {
+                            runs.slice(SHOWN).forEach(addRow);
+                            more.remove();
+                        });
+                        box.appendChild(more);
+                    }
+                })
+                .catch(() => {
+                    if (reqId !== otherChartsReq) return;
+                    box.classList.add('x-failed');
+                    box.textContent = 'Could not check the other charts.';
+                });
+        }
+
+        async function openOnChart(key, title) {
+            await selectChart(key);
+            if (selectedChart !== key) return;
+            // Casing drifts between charts' scrapes, so find the title the
+            // new chart's series actually uses.
+            const want = title.toLowerCase();
+            const match = Object.keys(currentDetail.series || {})
+                .find(t => t.toLowerCase() === want) || title;
+            if (currentDetail.chart.kind === 'album') {
+                showAlbumDetails(match);
+            } else {
+                showSongDetails(match);
+            }
         }
 
         function showSongDetails(songName) {

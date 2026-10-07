@@ -274,3 +274,28 @@ def test_every_album_chart_detail_carries_its_own_url(application):
         if meta['kind'] != 'album' or key == 'albums200':
             continue
         assert application._chart_url(key) != '/albums200', f'{key} links to the Billboard 200'
+
+
+def test_detail_items_carry_the_credit_the_index_is_keyed_on(application):
+    """The report's song modal asks the cross-chart index where else a title
+    charted. The index keys on the credit's primary artist, so asking with the
+    report's artist misses every song they are only featured on: 'Both Of Us'
+    is B.o.B's, and keyed on 'Taylor Swift' it charted nowhere."""
+    import chart_index
+    detail = application.artist_chart_detail('Taylor Swift', 'top100')
+    item = next(i for i in detail['items'] if i['name'] == 'Both Of Us')
+    assert item['artist'] == 'B.o.B Featuring Taylor Swift'
+
+    others = chart_index.lookup(application.CHART_INDEX, item['name'], item['artist'],
+                                kind='song', exclude_chart='top100')
+    assert {'canadian_hot100', 'digital', 'pop_airplay'} <= {r['chart'] for r in others}
+    assert chart_index.lookup(application.CHART_INDEX, 'Both Of Us', 'Taylor Swift',
+                              kind='song') == []
+
+
+def test_report_modal_asks_for_the_other_charts():
+    """The modal used to show only the selected chart's run."""
+    src = (pathlib.Path(__file__).resolve().parent.parent
+           / 'templates' / 'results.html').read_text()
+    assert '/api/song-charts' in src
+    assert 'item.artist' in src or 'dataset.artist' in src
